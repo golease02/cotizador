@@ -23,19 +23,23 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
         <span class="card-subtitle">Cotización rápida en tiempo real</span>
       </div>
 
-      <!-- Quick Preset Chips -->
+      <!-- Quick Preset: two cascade dropdowns (Brand → Model) -->
       <div class="preset-chips-section">
         <span class="preset-label">Selección Rápida:</span>
-        <div class="preset-chips-scroll">
-          <button 
-            type="button" 
-            *ngFor="let v of presetVehicles" 
-            class="preset-chip"
-            [class.active]="quoteForm.get('brand')?.value === v.brand && quoteForm.get('model')?.value === v.model"
-            (click)="applyPresetVehicle(v)"
-          >
-            {{ v.brand }} {{ v.model }}
-          </button>
+        <div class="preset-cascade-row">
+          <!-- 1. Brand dropdown -->
+          <select id="presetBrandSelect" class="preset-select" (change)="onBrandSelectChange($event)">
+            <option value="">Marca</option>
+            <option *ngFor="let group of presetGroups" [value]="group.brand">{{ group.brand }}</option>
+          </select>
+
+          <!-- 2. Model dropdown (filtered by brand) -->
+          <select id="presetModelSelect" class="preset-select" (change)="onPresetSelectChange($event)" [disabled]="!selectedPresetBrand">
+            <option value="">Modelo</option>
+            <option *ngFor="let v of filteredPresetVehicles" [value]="v.id">
+              {{ v.model }} &mdash; {{ v.suggestedPriceNet | currency:'MXN':'symbol':'1.0-0' }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -45,7 +49,7 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
           <!-- Client Name -->
           <div class="form-group full-width">
             <label class="form-label" for="clientName">Atención a (Cliente / Prospecto)</label>
-            <input id="clientName" type="text" formControlName="clientName" class="form-control" placeholder="Ej. Juan Pérez / Empresa SA de CV" />
+            <input id="clientName" type="text" formControlName="clientName" class="form-control" placeholder="" />
           </div>
 
           <!-- Brand -->
@@ -105,7 +109,7 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
                 NO (Renta Básica $6,000 + IVA)
               </button>
               <button type="button" class="toggle-btn hybrid-btn" [class.active]="quoteForm.get('isHybridOrElectric')?.value === true" (click)="setHybrid(true)">
-                ⚡ SÍ (Renta Básica $8,550 + IVA)
+                 SÍ (Renta Básica $8,550 + IVA)
               </button>
             </div>
           </div>
@@ -118,7 +122,7 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
                 <span class="term-months">{{ t }}</span>
                 <span class="term-unit">Meses</span>
               </button>
-            </div>
+            </div>  
           </div>
 
           <!-- Extraordinary Rent % -->
@@ -170,6 +174,9 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       padding: 1.5rem;
       color: #0f172a;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      box-sizing: border-box;
+      overflow: hidden;
+      width: 100%;
     }
 
     .card-header {
@@ -215,42 +222,40 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       display: block;
     }
 
-    .preset-chips-scroll {
-      display: flex;
-      gap: 0.4rem;
-      overflow-x: auto;
-      padding-bottom: 2px;
+    .preset-cascade-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-top: 0.35rem;
     }
 
-    .preset-chip {
+    .preset-select {
+      width: 100%;
+      box-sizing: border-box;
       background: #ffffff;
       border: 1px solid #cbd5e1;
-      color: #334155;
-      font-size: 0.75rem;
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.875rem;
       font-weight: 600;
-      padding: 0.3rem 0.75rem;
-      border-radius: 20px;
+      color: #0f172a;
       cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s ease;
+      appearance: auto;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .preset-chip:hover {
+    .preset-select:focus {
+      outline: none;
       border-color: #20b038;
-      color: #15803d;
-    }
-
-    .preset-chip.active {
-      background: #20b038;
-      border-color: #15803d;
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(32, 176, 56, 0.3);
+      box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.15);
     }
 
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1.1rem;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .full-width {
@@ -261,6 +266,8 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .form-label {
@@ -277,6 +284,9 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       color: #0f172a;
       font-size: 0.875rem;
       transition: all 0.2s ease;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
     }
 
     .form-control:focus {
@@ -350,6 +360,8 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       background: #f1f5f9;
       padding: 4px;
       border-radius: 10px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .narrow-toggle {
@@ -489,14 +501,29 @@ export class QuoteFormComponent implements OnInit {
   public quoteForm!: FormGroup;
   public statePlates: StatePlateOption[] = [];
   public presetVehicles: VehicleCatalogItem[] = [];
+  public presetGroups: { brand: string; vehicles: VehicleCatalogItem[] }[] = [];
+  public selectedPresetBrand: string = '';
+
+  get filteredPresetVehicles(): VehicleCatalogItem[] {
+    if (!this.selectedPresetBrand) return [];
+    return this.presetVehicles.filter(v => v.brand === this.selectedPresetBrand);
+  }
 
   ngOnInit(): void {
     this.statePlates = this.supabaseService.getStatePlates();
     this.presetVehicles = this.supabaseService.getVehicleCatalog();
 
+    // Group vehicles by brand for the grouped preset chips
+    const brandMap = new Map<string, VehicleCatalogItem[]>();
+    for (const v of this.presetVehicles) {
+      if (!brandMap.has(v.brand)) brandMap.set(v.brand, []);
+      brandMap.get(v.brand)!.push(v);
+    }
+    this.presetGroups = Array.from(brandMap.entries()).map(([brand, vehicles]) => ({ brand, vehicles }));
+
     // Default with Audi Q3 Sportback matching user's PDF sample
     this.quoteForm = this.fb.group({
-      clientName: ['Atención a'],
+      clientName: [''],
       brand: ['Audi', Validators.required],
       model: ['Q3 Sportback', Validators.required],
       year: [2026, [Validators.required, Validators.min(2015)]],
@@ -532,6 +559,19 @@ export class QuoteFormComponent implements OnInit {
       priceNet: v.suggestedPriceNet,
       isHybridOrElectric: v.isHybridOrElectric,
     });
+  }
+
+  public onBrandSelectChange(event: Event): void {
+    this.selectedPresetBrand = (event.target as HTMLSelectElement).value;
+  }
+
+  public onPresetSelectChange(event: Event): void {
+    const id = (event.target as HTMLSelectElement).value;
+    if (!id) return;
+    const vehicle = this.presetVehicles.find(v => v.id === id);
+    if (vehicle) this.applyPresetVehicle(vehicle);
+    // Reset model select back to placeholder after applying
+    (event.target as HTMLSelectElement).value = '';
   }
 
   public setPrice(price: number): void {
