@@ -258,7 +258,7 @@ import { LeasingOptionResult, QuoteCalculationResult } from '../../models/leasin
       margin: 0;
       font-family: 'Fjalla One', sans-serif;
       font-size: 1.25rem;
-      color: #0f172a;
+    color: #0f172a;
       letter-spacing: 0.5px;
     }
 

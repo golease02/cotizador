@@ -13,7 +13,7 @@ import { SupabaseService } from '../../services/supabase.service';
       <!-- Action Bar (Hidden in Print) -->
       <div class="document-action-bar no-print">
         <div class="action-info">
-          <span class="action-badge">✅ Hoja Oficial de Cotización (Formato PDF)</span>
+          <span class="action-badge">Hoja Oficial de Cotización (Formato PDF)</span>
           <span class="action-desc">Muestra el desglose simultáneo de las 3 Opciones</span>
         </div>
         <div class="action-buttons">

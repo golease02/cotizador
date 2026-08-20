@@ -27,15 +27,15 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       <div class="preset-chips-section">
         <span class="preset-label">Selección Rápida:</span>
         <div class="preset-cascade-row">
-          <!-- 1. Brand dropdown -->
-          <select id="presetBrandSelect" class="preset-select" (change)="onBrandSelectChange($event)">
-            <option value="">Marca</option>
+          <!-- 1. Brand dropdown (oculto) -->
+          <select id="presetBrandSelect" class="preset-select" (change)="onBrandSelectChange($event)" style="display:none;">
+            <option value="" disabled selected hidden>Marca</option>
             <option *ngFor="let group of presetGroups" [value]="group.brand">{{ group.brand }}</option>
           </select>
 
           <!-- 2. Model dropdown (filtered by brand) -->
           <select id="presetModelSelect" class="preset-select" (change)="onPresetSelectChange($event)" [disabled]="!selectedPresetBrand">
-            <option value="">Modelo</option>
+            <option value="" disabled selected hidden>Selecciona</option>
             <option *ngFor="let v of filteredPresetVehicles" [value]="v.id">
               {{ v.model }} &mdash; {{ v.suggestedPriceNet | currency:'MXN':'symbol':'1.0-0' }}
             </option>
@@ -52,8 +52,8 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
             <input id="clientName" type="text" formControlName="clientName" class="form-control" placeholder="" />
           </div>
 
-          <!-- Brand -->
-          <div class="form-group">
+          <!-- Brand (oculto) -->
+          <div class="form-group" style="display:none;">
             <label class="form-label" for="brand">Marca *</label>
             <input id="brand" type="text" formControlName="brand" class="form-control" placeholder="Ej. Audi, HINO, Toyota" />
           </div>
@@ -490,130 +490,127 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
       }
     }
   `]
-})
-export class QuoteFormComponent implements OnInit {
+
+
+  export class QuoteFormComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   private supabaseService = inject(SupabaseService);
 
-  @Output() quoteChange = new EventEmitter<VehicleQuoteInput>();
+    @Output() quoteChange = new EventEmitter<VehicleQuoteInput>();
 
-  public quoteForm!: FormGroup;
-  public statePlates: StatePlateOption[] = [];
-  public presetVehicles: VehicleCatalogItem[] = [];
-  public presetGroups: { brand: string; vehicles: VehicleCatalogItem[] }[] = [];
-  public selectedPresetBrand: string = '';
+    public quoteForm!: FormGroup;
+    public statePlates: StatePlateOption[] = [];
+    public presetVehicles: VehicleCatalogItem[] = [];
+    public presetGroups: { brand: string; vehicles: VehicleCatalogItem[] } [] = [];
+    public selectedPresetBrand: string = 'HINO';
 
-  get filteredPresetVehicles(): VehicleCatalogItem[] {
-    if (!this.selectedPresetBrand) return [];
-    return this.presetVehicles.filter(v => v.brand === this.selectedPresetBrand);
-  }
+    get filteredPresetVehicles(): VehicleCatalogItem[] {
+  if (!this.selectedPresetBrand) return [];
+  return this.presetVehicles.filter(v => v.brand === this.selectedPresetBrand);
+}
 
-  ngOnInit(): void {
-    this.statePlates = this.supabaseService.getStatePlates();
-    this.presetVehicles = this.supabaseService.getVehicleCatalog();
+    public async ngOnInit(): Promise < void> {
+  this.statePlates = await this.supabaseService.getStatePlates();
+  this.presetVehicles = await this.supabaseService.getVehicleCatalog();
 
-    // Group vehicles by brand for the grouped preset chips
-    const brandMap = new Map<string, VehicleCatalogItem[]>();
-    for (const v of this.presetVehicles) {
-      if (!brandMap.has(v.brand)) brandMap.set(v.brand, []);
-      brandMap.get(v.brand)!.push(v);
-    }
-    this.presetGroups = Array.from(brandMap.entries()).map(([brand, vehicles]) => ({ brand, vehicles }));
+  const brandMap = new Map<string, VehicleCatalogItem[]>();
+  for(const v of this.presetVehicles) {
+  if (!brandMap.has(v.brand)) brandMap.set(v.brand, []);
+  brandMap.get(v.brand)!.push(v);
+}
+this.presetGroups = Array.from(brandMap.entries()).map(([brand, vehicles]) => ({ brand, vehicles }));
 
-    // Default with Audi Q3 Sportback matching user's PDF sample
-    this.quoteForm = this.fb.group({
-      clientName: [''],
-      brand: ['Audi', Validators.required],
-      model: ['Q3 Sportback', Validators.required],
-      year: [2026, [Validators.required, Validators.min(2015)]],
-      priceNet: [969900, [Validators.required, Validators.min(10000)]],
-      isHybridOrElectric: [false],
-      termMonths: [48, Validators.required],
-      extraordinaryRentPct: [0.10, [Validators.required, Validators.min(0.10)]],
-      securityDepositPct: [0.0],
-      selectedStatePlateId: ['pendiente'],
-      isInsuranceEstimated: [false],
-    });
+this.quoteForm = this.fb.group({
+  clientName: [''],
+  brand: ['HINO', Validators.required],
+  model: ['616 LONG', Validators.required],
+  year: [2026, [Validators.required, Validators.min(2015)]],
+  priceNet: [407900, [Validators.required, Validators.min(10000)]],
+  isHybridOrElectric: [false],
+  termMonths: [48, Validators.required],
+  extraordinaryRentPct: [0.10, [Validators.required, Validators.min(0.10)]],
+  securityDepositPct: [0.0],
+  selectedStatePlateId: ['pendiente'],
+  isInsuranceEstimated: [false],
+});
 
-    this.quoteForm.valueChanges.subscribe((val) => {
-      if (this.quoteForm.valid) {
-        this.emitQuoteInput();
-      }
-    });
-
-    // Initial emit
+this.quoteForm.valueChanges.subscribe((val) => {
+  if (this.quoteForm.valid) {
     this.emitQuoteInput();
   }
+});
 
-  get isPreOwned(): boolean {
-    const y = this.quoteForm.get('year')?.value;
-    return y ? y < 2024 : false;
-  }
+this.emitQuoteInput();
+    }
 
-  public applyPresetVehicle(v: VehicleCatalogItem): void {
-    this.quoteForm.patchValue({
-      brand: v.brand,
-      model: v.model,
-      year: v.year,
-      priceNet: v.suggestedPriceNet,
-      isHybridOrElectric: v.isHybridOrElectric,
-    });
-  }
-
-  public onBrandSelectChange(event: Event): void {
-    this.selectedPresetBrand = (event.target as HTMLSelectElement).value;
-  }
-
-  public onPresetSelectChange(event: Event): void {
-    const id = (event.target as HTMLSelectElement).value;
-    if (!id) return;
-    const vehicle = this.presetVehicles.find(v => v.id === id);
-    if (vehicle) this.applyPresetVehicle(vehicle);
-    // Reset model select back to placeholder after applying
-    (event.target as HTMLSelectElement).value = '';
-  }
-
-  public setPrice(price: number): void {
-    this.quoteForm.patchValue({ priceNet: price });
-  }
-
-  public setHybrid(isHybrid: boolean): void {
-    this.quoteForm.patchValue({ isHybridOrElectric: isHybrid });
-  }
-
-  public setTerm(months: number): void {
-    this.quoteForm.patchValue({ termMonths: months });
-  }
-
-  public setExtraordinaryRent(pct: number): void {
-    this.quoteForm.patchValue({ extraordinaryRentPct: pct });
-  }
-
-  public setDeposit(depositPct: number): void {
-    this.quoteForm.patchValue({ securityDepositPct: depositPct });
-  }
-
-  public setInsurance(isEstimated: boolean): void {
-    this.quoteForm.patchValue({ isInsuranceEstimated: isEstimated });
-  }
-
-  private emitQuoteInput(): void {
-    const raw = this.quoteForm.value;
-    const input: VehicleQuoteInput = {
-      clientName: raw.clientName,
-      brand: raw.brand,
-      model: raw.model,
-      year: Number(raw.year),
-      priceNet: Number(raw.priceNet),
-      isHybridOrElectric: Boolean(raw.isHybridOrElectric),
-      termMonths: Number(raw.termMonths) as any,
-      extraordinaryRentPct: Number(raw.extraordinaryRentPct),
-      securityDepositPct: Number(raw.securityDepositPct),
-      selectedStatePlateId: raw.selectedStatePlateId,
-      isInsuranceEstimated: Boolean(raw.isInsuranceEstimated),
-    };
-
-    this.quoteChange.emit(input);
-  }
+    get isPreOwned(): boolean {
+  const y = this.quoteForm.get('year')?.value;
+  return y ? y < 2024 : false;
 }
+
+    public applyPresetVehicle(v: VehicleCatalogItem): void {
+  this.quoteForm.patchValue({
+    brand: v.brand,
+    model: v.model,
+    year: v.year,
+    priceNet: v.suggestedPriceNet,
+    isHybridOrElectric: v.isHybridOrElectric,
+  });
+}
+
+    public onBrandSelectChange(event: Event): void {
+  this.selectedPresetBrand = (event.target as HTMLSelectElement).value;
+}
+
+    public onPresetSelectChange(event: Event): void {
+  const id = (event.target as HTMLSelectElement).value;
+  if(!id) return;
+  const vehicle = this.presetVehicles.find(v => v.id === id);
+  if(vehicle) this.applyPresetVehicle(vehicle);
+      (event.target as HTMLSelectElement).value = '';
+    }
+
+    public setPrice(price: number): void {
+  this.quoteForm.patchValue({ priceNet: price });
+}
+
+    public setHybrid(isHybrid: boolean): void {
+  this.quoteForm.patchValue({ isHybridOrElectric: isHybrid });
+}
+
+    public setTerm(months: number): void {
+  this.quoteForm.patchValue({ termMonths: months });
+}
+
+    public setExtraordinaryRent(pct: number): void {
+  this.quoteForm.patchValue({ extraordinaryRentPct: pct });
+}
+
+    public setDeposit(depositPct: number): void {
+  this.quoteForm.patchValue({ securityDepositPct: depositPct });
+}
+
+    public setInsurance(isEstimated: boolean): void {
+  this.quoteForm.patchValue({ isInsuranceEstimated: isEstimated });
+}
+
+    private emitQuoteInput(): void {
+  const raw = this.quoteForm.value;
+  const input: VehicleQuoteInput = {
+    clientName: raw.clientName,
+    brand: raw.brand,
+    model: raw.model,
+    year: Number(raw.year),
+    priceNet: Number(raw.priceNet),
+    isHybridOrElectric: Boolean(raw.isHybridOrElectric),
+    termMonths: Number(raw.termMonths) as any,
+    extraordinaryRentPct: Number(raw.extraordinaryRentPct),
+    securityDepositPct: Number(raw.securityDepositPct),
+    selectedStatePlateId: raw.selectedStatePlateId,
+    isInsuranceEstimated: Boolean(raw.isInsuranceEstimated),
+  };
+
+  this.quoteChange.emit(input);
+}
+  }
