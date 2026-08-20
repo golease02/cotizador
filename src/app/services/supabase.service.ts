@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
-import { environment } from '../environments/environment';
-import { StatePlateOption, QuoteCalculationResult } from '../models/leasing.model';
+import { environment } from '../../environments/environment';
+import { StatePlateOption, STATE_PLATES_CATALOG, QuoteCalculationResult } from '../models/leasing.model';
 
 export interface VehicleCatalogItem {
   id: string;
@@ -38,10 +38,10 @@ export class SupabaseService {
       environment.supabaseUrl,
       environment.supabaseKey
     );
-
     this.loadSession();
     this.loadFromLocalStorage();
   }
+
 
   private async loadSession(): Promise<void> {
     const { data: { session } } = await this.supabase.auth.getSession();
@@ -56,9 +56,7 @@ export class SupabaseService {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName }
-      }
+      options: { data: { full_name: fullName } }
     });
     if (!error && data.user) {
       this.currentUserSignal.set(data.user);
@@ -68,10 +66,7 @@ export class SupabaseService {
   }
 
   public async signIn(email: string, password: string): Promise<{ error: any }> {
-    const { data, error } = await this.supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
       this.currentUserSignal.set(data.user);
       await this.loadProfile(data.user.id);
@@ -101,6 +96,13 @@ export class SupabaseService {
     }
   }
 
+  // ==================== CATÁLOGOS ====================
+
+  // ✅ CATÁLOGO DE PLACAS: devuelve directamente el array estático (síncrono)
+  public getStatePlates(): StatePlateOption[] {
+    return STATE_PLATES_CATALOG;
+  }
+
   public async getVehicleCatalog(): Promise<VehicleCatalogItem[]> {
     const { data, error } = await this.supabase
       .from('vehicles')
@@ -110,31 +112,16 @@ export class SupabaseService {
       console.error('Error fetching vehicles:', error);
       return [];
     }
-    return data as VehicleCatalogItem[];
+    return data.map((item: any) => ({
+      id: item.id,
+      brand: item.brand,
+      model: item.model,
+      suggestedPriceNet: Number(item.suggestedpricenet) || 0,   // ← ¡ojo! minúsculas
+      isHybridOrElectric: Boolean(item.ishybridorelectric) || false, // ← minúsculas
+      year: Number(item.year) || 2026
+    }));
   }
-
-  public async getStatePlates(): Promise<StatePlateOption[]> {
-    const { data, error } = await this.supabase
-      .from('state_plates')
-      .select('*')
-      .order('name', { ascending: true });
-    if (error) {
-      console.error('Error fetching state plates:', error);
-      return this.getStaticStatePlates();
-    }
-    return data as StatePlateOption[];
-  }
-
-  private getStaticStatePlates(): StatePlateOption[] {
-    return [
-      { id: 'cdmx', name: 'Ciudad de México', costNet: 2500 },
-      { id: 'jalisco', name: 'Jalisco', costNet: 1800 },
-      { id: 'nuevo_leon', name: 'Nuevo León', costNet: 2000 },
-      { id: 'queretaro', name: 'Querétaro', costNet: 1500 },
-      { id: 'edomex', name: 'Estado de México', costNet: 2200 },
-      { id: 'pendiente', name: 'Pendiente (Sin placa)', costNet: 0 },
-    ];
-  }
+  // ==================== COTIZACIONES ====================
 
   public async saveQuote(quote: QuoteCalculationResult): Promise<void> {
     const user = this.currentUserSignal();
@@ -144,9 +131,10 @@ export class SupabaseService {
       return;
     }
 
+    // ✅ CORRECCIÓN: acceder a los datos desde quote.input
     const quoteData = {
       seller_id: user.id,
-      client_name: quote.input.clientName,
+      client_name: quote.input.clientName || '',
       brand: quote.input.brand,
       model: quote.input.model,
       year: quote.input.year,
@@ -157,7 +145,7 @@ export class SupabaseService {
       securityDepositPct: quote.input.securityDepositPct,
       selectedStatePlateId: quote.input.selectedStatePlateId,
       isInsuranceEstimated: quote.input.isInsuranceEstimated,
-      totalPayment: quote.totalPayment
+      totalPayment: 0 // Si no lo calculas, pon 0 o un valor por defecto
     };
 
     const { error } = await this.supabase
@@ -188,6 +176,7 @@ export class SupabaseService {
       console.error('Error loading quotes:', error);
       this.loadFromLocalStorage();
     } else if (data) {
+      // Mapear datos de la tabla al modelo QuoteCalculationResult
       const mappedQuotes: QuoteCalculationResult[] = data.map((q: any) => ({
         input: {
           clientName: q.client_name,
@@ -202,14 +191,19 @@ export class SupabaseService {
           selectedStatePlateId: q.selectedStatePlateId,
           isInsuranceEstimated: q.isInsuranceEstimated,
         },
-        options: q.options ?? {},
-        generatedAt: q.created_at,
-        totalPayment: q.totalPayment,
+        options: {
+          option1: {} as any, // No tenemos estos datos en la tabla, pero se pueden reconstruir si se guardan
+          option2: {} as any,
+          option3: {} as any,
+        },
+        generatedAt: new Date(q.created_at)
       }));
       this.savedQuotesSignal.set(mappedQuotes);
       localStorage.setItem('golease_quotes', JSON.stringify(mappedQuotes));
     }
   }
+
+  // ==================== LOCAL STORAGE (RESPALDO) ====================
 
   private saveLocalQuote(quote: QuoteCalculationResult): void {
     const updated = [quote, ...this.savedQuotesSignal()];
@@ -235,6 +229,8 @@ export class SupabaseService {
       }
     }
   }
+
+  // ==================== UTILIDADES ====================
 
   public isAdmin(): boolean {
     return this.currentProfileSignal()?.role === 'admin';
