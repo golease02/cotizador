@@ -1,0 +1,52 @@
+<div class="options-container" *ngIf="calculation">
+    <div class="section-header">
+        <h3>Opciones de arrendamiento (plazo {{ calculation.input.termMonths }} meses)</h3>
+        <span class="badge">Compara estrategias de valor residual</span>
+    </div>
+
+    <div class="cards-grid">
+        <div *ngFor="let key of optionKeys" class="option-card" [class.selected]="selectedOptionKey === key"
+            (click)="selectOption(key)">
+            <div class="card-badge" *ngIf="selectedOptionKey === key">Seleccionada</div>
+            <div class="option-header">
+                <h4>{{ key.replace('_', ' ') }}</h4>
+                <span class="vr-tag">VR {{ getVR(key) }}</span>
+            </div>
+
+            <div class="rate-info">
+                <span>Tasa anual</span>
+                <span class="rate-value">{{ getOption(key).annualRatePct * 100 | number:'1.1-1' }}%</span>
+            </div>
+
+            <div class="price-box">
+                <span class="price-label">Renta mensual neta (con IVA)</span>
+                <div class="price-amount">{{ getOption(key).monthlyCosts.totalMonthlyRentNet |
+                    currency:'MXN':'symbol':'1.2-2' }}</div>
+                <span class="price-sub">Subtotal sin IVA: {{ getOption(key).monthlyCosts.subtotalNoIva |
+                    currency:'MXN':'symbol':'1.2-2' }}</span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="details-list">
+                <div class="detail-row">
+                    <span>Desembolso inicial</span>
+                    <strong>{{ getOption(key).initialCosts.totalInitialPayment | currency:'MXN':'symbol':'1.2-2'
+                        }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Valor residual neto</span>
+                    <strong>{{ getOption(key).residualValue.valueNet | currency:'MXN':'symbol':'1.0-0' }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Monto financiar sin IVA</span>
+                    <span>{{ getOption(key).amountToFinanceNoIva | currency:'MXN':'symbol':'1.0-0' }}</span>
+                </div>
+            </div>
+
+            <button class="select-btn" [class.btn-active]="selectedOptionKey === key">
+                {{ selectedOptionKey === key ? 'Opción seleccionada' : 'Ver desglose ' + key.replace('_', ' ') }}
+            </button>
+        </div>
+    </div>
+</div>

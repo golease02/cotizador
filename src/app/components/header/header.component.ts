@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
+import { SupabaseService } from '../../services/supabase.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <header class="app-header">
       <div class="header-container">
@@ -23,6 +25,15 @@ import { CommonModule } from '@angular/common';
         </div>
 
         <div class="header-meta">
+          <!-- Mostrar información del vendedor si está autenticado -->
+          <div *ngIf="supabase.currentUser()" class="user-info">
+            <span class="user-name">
+              {{ supabase.currentProfile()?.full_name || 'Vendedor' }}
+            </span>
+            <button class="logout-btn" (click)="logout()">Cerrar sesión</button>
+          </div>
+
+          <!-- Fecha y vigencia -->
           <div class="meta-item">
             <span class="meta-label">Cotizador Oficial:</span>
             <span class="meta-value">{{ currentDate | date: 'dd/MM/yyyy' }}</span>
@@ -85,17 +96,6 @@ import { CommonModule } from '@angular/common';
       line-height: 1;
     }
 
-    .exatec-badge {
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      color: #334155;
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-    }
-
     .brand-slogan {
       font-family: 'Source Sans Pro', sans-serif;
       font-size: 0.825rem;
@@ -109,6 +109,38 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       gap: 1.25rem;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: #f8fafc;
+      padding: 0.3rem 0.8rem 0.3rem 1.2rem;
+      border-radius: 30px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .user-name {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.9rem;
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.3rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #dc2626;
     }
 
     .meta-item {
@@ -160,5 +192,13 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class HeaderComponent {
+  public supabase = inject(SupabaseService);  // ← público para el template
+  private router = inject(Router);
+
   currentDate = new Date();
+
+  async logout(): Promise<void> {
+    await this.supabase.signOut();
+    this.router.navigate(['/login']);
+  }
 }

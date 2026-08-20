@@ -1,0 +1,190 @@
+.options-container {
+    margin: 2rem 0;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+}
+
+.section-header h3 {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 1.25rem;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.badge {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+    padding: 0.25rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.option-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.option-card:hover {
+    transform: translateY(-4px);
+    border-color: #20b038;
+    box-shadow: 0 12px 24px rgba(32, 176, 56, 0.12);
+}
+
+.option-card.selected {
+    border: 2px solid #20b038;
+    box-shadow: 0 0 0 4px rgba(32, 176, 56, 0.1);
+}
+
+.card-badge {
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background: #20b038;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.1rem 0.7rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(32, 176, 56, 0.3);
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.option-header h4 {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 1.15rem;
+    color: #0f172a;
+    margin: 0;
+}
+
+.vr-tag {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 0.15rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.rate-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.8rem;
+}
+
+.rate-value {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.price-box {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 0.8rem;
+}
+
+.price-label {
+    font-size: 0.65rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.price-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #15803d;
+    line-height: 1.2;
+    margin: 0.1rem 0;
+}
+
+.price-sub {
+    font-size: 0.65rem;
+    color: #64748b;
+}
+
+.divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 0.8rem 0;
+}
+
+.details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    color: #64748b;
+}
+
+.detail-row strong {
+    color: #0f172a;
+}
+
+.select-btn {
+    width: 100%;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    padding: 0.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.select-btn.btn-active {
+    background: linear-gradient(135deg, #15803d, #20b038);
+    border-color: #15803d;
+    color: white;
+    box-shadow: 0 4px 12px rgba(32, 176, 56, 0.25);
+}
+
+@media (max-width: 992px) {
+    .cards-grid {
+        grid-template-columns: 1fr;
+    }
+}

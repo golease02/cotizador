@@ -1,0 +1,13 @@
+<div class="cotizador-wrapper">
+    <div class="cotizador-grid">
+        <div class="left-column">
+            <app-quote-form (quoteChange)="onQuoteInputChange($event)" />
+        </div>
+        <div class="right-column">
+            <app-quote-options [calculation]="calculationResult()" (optionSelected)="onOptionSelected($event)" />
+            <app-quote-breakdown *ngIf="calculationResult()" [calculation]="calculationResult()"
+                (saveQuote)="onSaveQuote()" />
+        </div>
+    </div>
+</div>
+<div *ngIf="notificationMessage()" class="toast">{{ notificationMessage() }}</div>

@@ -231,7 +231,33 @@ export class SupabaseService {
   }
 
   // ==================== UTILIDADES ====================
+  public async updateProfile(userId: string, data: any): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('profiles')
+      .upsert(
+        { id: userId, ...data },
+        { onConflict: 'id' }
+      );
+    return { error };
+  }
+  public async getProfileBySellerNumber(sellerNumber: string): Promise<{ data: any; error: any }> {
+    console.log('🔍 Buscando perfil con seller_number:', sellerNumber);
 
+    // Usar RPC para evitar problemas de RLS
+    const { data, error } = await this.supabase
+      .rpc('get_profile_by_seller', { seller_number_input: sellerNumber });
+
+    if (error) {
+      console.error('❌ Error al buscar perfil:', error);
+      return { data: null, error };
+    }
+
+    // La función devuelve un array, tomamos el primero
+    const profile = data && data.length > 0 ? data[0] : null;
+    console.log('✅ Perfil encontrado:', profile);
+
+    return { data: profile, error: null };
+  }
   public isAdmin(): boolean {
     return this.currentProfileSignal()?.role === 'admin';
   }

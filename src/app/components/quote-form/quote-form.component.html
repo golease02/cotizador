@@ -1,0 +1,131 @@
+<div class="form-card">
+  <div class="card-header">
+    <h2>Datos del vehículo</h2>
+    <span class="subtitle">Cotización rápida en tiempo real</span>
+  </div>
+
+  <div class="preset-section">
+    <span class="preset-label">Selección rápida</span>
+    <div class="preset-row">
+      <select class="preset-select" (change)="onBrandSelectChange($event)">
+        <option value="" disabled selected hidden>Marca</option>
+        <option *ngFor="let group of presetGroups" [value]="group.brand">{{ group.brand }}</option>
+      </select>
+
+      <select class="preset-select" (change)="onPresetSelectChange($event)" [disabled]="!selectedPresetBrand">
+        <option value="" disabled selected hidden>Modelo</option>
+        <option *ngFor="let v of filteredPresetVehicles" [value]="v.id">
+          {{ v.model }} — {{ v.suggestedPriceNet | currency:'MXN':'symbol':'1.0-0' }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <form [formGroup]="quoteForm">
+    <div class="form-grid">
+      <div class="full-width">
+        <label for="clientName">Atención a (Cliente / Prospecto)</label>
+        <input id="clientName" type="text" formControlName="clientName" placeholder="Nombre del cliente" />
+      </div>
+
+      <div>
+        <label for="brand">Marca *</label>
+        <input id="brand" type="text" formControlName="brand" placeholder="Ej. Audi, HINO, Toyota" />
+      </div>
+
+      <div>
+        <label for="model">Modelo *</label>
+        <input id="model" type="text" formControlName="model" placeholder="Ej. Q3 Sportback, 616 LONG" />
+      </div>
+
+      <div>
+        <label for="year">Año Modelo *</label>
+        <input id="year" type="number" formControlName="year" min="2015" max="2030" />
+        <div *ngIf="isPreOwned" class="warning">Seminuevo (< 2024): IVA al 16% en factura.</div>
+        </div>
+
+        <div>
+          <label for="selectedStatePlateId">Alta de Placas</label>
+          <select id="selectedStatePlateId" formControlName="selectedStatePlateId">
+            <option *ngFor="let p of statePlates" [value]="p.id">
+              {{ p.name }} ({{ p.costNet | currency:'MXN':'symbol':'1.0-0' }})
+            </option>
+          </select>
+        </div>
+
+        <div class="full-width price-group">
+          <label for="priceNet">Precio Neto del Vehículo (con IVA) *</label>
+          <div class="currency-input-wrapper">
+            <span class="currency-symbol">$</span>
+            <input id="priceNet" type="number" formControlName="priceNet" placeholder="969,900" step="5000" />
+          </div>
+          <div class="quick-amounts">
+            <span>Montos rápidos:</span>
+            <button type="button" (click)="setPrice(407900)">$407.9k</button>
+            <button type="button" (click)="setPrice(520000)">$520k</button>
+            <button type="button" (click)="setPrice(780000)">$780k</button>
+            <button type="button" (click)="setPrice(969900)">$969.9k</button>
+          </div>
+        </div>
+
+        <div class="full-width">
+          <label>¿Es híbrido o eléctrico?</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle-btn"
+              [class.active]="quoteForm.get('isHybridOrElectric')?.value === false" (click)="setHybrid(false)">No (Renta
+              básica $6,000 + IVA)</button>
+            <button type="button" class="toggle-btn"
+              [class.active]="quoteForm.get('isHybridOrElectric')?.value === true" (click)="setHybrid(true)">Sí (Renta
+              básica $8,550 + IVA)</button>
+          </div>
+        </div>
+
+        <div class="full-width">
+          <label>Plazo (Meses)</label>
+          <div class="term-grid">
+            <button type="button" *ngFor="let t of [12, 24, 36, 48]" class="term-btn"
+              [class.active]="quoteForm.get('termMonths')?.value === t" (click)="setTerm(t)">
+              <span class="term-number">{{ t }}</span>
+              <span class="term-label">Meses</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="full-width">
+          <div class="label-row">
+            <label>Renta Extraordinaria (Enganche Deducible)</label>
+            <span class="slider-value">{{ (quoteForm.get('extraordinaryRentPct')?.value * 100) | number:'1.0-1'
+              }}%</span>
+          </div>
+          <input type="range" min="0.10" max="0.50" step="0.01" formControlName="extraordinaryRentPct"
+            class="range-slider" />
+          <div class="chip-group">
+            <button type="button" *ngFor="let pct of [0.10, 0.15, 0.20, 0.30]" class="chip-btn"
+              [class.active]="quoteForm.get('extraordinaryRentPct')?.value === pct"
+              (click)="setExtraordinaryRent(pct)">{{ (pct * 100) }}%</button>
+          </div>
+        </div>
+
+        <div>
+          <label>Depósito en Garantía</label>
+          <div class="chip-group">
+            <button type="button" *ngFor="let p of [0, 0.05, 0.10]" class="chip-btn"
+              [class.active]="quoteForm.get('securityDepositPct')?.value === p" (click)="setDeposit(p)">{{ (p * 100)
+              }}%</button>
+          </div>
+        </div>
+
+        <div>
+          <label>Seguro de Unidad</label>
+          <div class="toggle-group">
+            <button type="button" class="toggle-btn"
+              [class.active]="quoteForm.get('isInsuranceEstimated')?.value === false"
+              (click)="setInsurance(false)">Pendiente ($0)</button>
+            <button type="button" class="toggle-btn"
+              [class.active]="quoteForm.get('isInsuranceEstimated')?.value === true" (click)="setInsurance(true)">Est.
+              (3.5%)</button>
+          </div>
+        </div>
+      </div>
+  </form>
+</div>
