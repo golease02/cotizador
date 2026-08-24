@@ -1,7 +1,7 @@
 <div class="cotizador-wrapper">
     <div class="cotizador-grid">
         <div class="left-column">
-            <app-quote-form (quoteChange)="onQuoteInputChange($event)" />
+            <app-quote-form (quoteChange)="onQuoteInputChange($event)" (newQuote)="resetQuoteId()" />
         </div>
         <div class="right-column">
             <app-quote-options [calculation]="calculationResult()" (optionSelected)="onOptionSelected($event)" />

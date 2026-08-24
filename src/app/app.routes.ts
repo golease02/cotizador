@@ -11,10 +11,23 @@ export const routes: Routes = [
         path: 'register',
         loadComponent: () => import('./components/auth/register/register').then(m => m.RegisterComponent)
     },
+    // ✅ Ruta raíz → Mis Cotizaciones (página principal del vendedor)
     {
         path: '',
+        loadComponent: () => import('./components/vendedor/mis-cotizaciones/mis-cotizaciones').then(m => m.MisCotizacionesComponent),
+        canActivate: [AuthGuard]
+    },
+    // ✅ Ruta del Cotizador (accesible desde Mis Cotizaciones)
+    {
+        path: 'cotizador',
         loadComponent: () => import('./components/cotizador/cotizador').then(m => m.CotizadorComponent),
         canActivate: [AuthGuard]
+    },
+    // ✅ Ruta alternativa por si alguien escribe /mis-cotizaciones (redirige a raíz)
+    {
+        path: 'mis-cotizaciones',
+        redirectTo: '',
+        pathMatch: 'full'
     },
     {
         path: 'admin',

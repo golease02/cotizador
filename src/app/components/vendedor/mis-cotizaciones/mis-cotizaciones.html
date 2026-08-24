@@ -1,0 +1,58 @@
+<div class="mis-cotizaciones-container">
+    <!-- Cabecera con botón de nueva cotización -->
+    <div class="header-actions">
+        <a routerLink="/cotizador" class="btn-nueva-cotizacion">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nueva Cotización
+        </a>
+    </div>
+
+    <h2>Mis Cotizaciones</h2>
+
+    <div *ngIf="loading()" class="loading">Cargando...</div>
+
+    <div *ngIf="!loading() && cotizaciones().length === 0" class="empty-state">
+        <p>No tienes cotizaciones guardadas aún.</p>
+        <p>Haz clic en <strong>"Nueva Cotización"</strong> para comenzar.</p>
+    </div>
+
+    <!-- Tabla de cotizaciones -->
+    <div class="table-wrapper" *ngIf="!loading() && cotizaciones().length > 0">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Vehículo</th>
+                    <th>Precio</th>
+                    <th>Plazo</th>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of cotizaciones()">
+                    <td>{{ item.client_name || '-' }}</td>
+                    <td>{{ item.brand }} {{ item.model }}</td>
+                    <td>{{ item.pricenet | currency:'MXN':'symbol':'1.0-0' }}</td>
+                    <td>{{ item.termmonths }} meses</td>
+                    <td>{{ item.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                        <button class="btn-ver" (click)="verCotizacion(item)">Ver detalle</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detalle de la cotización (sin botón "Guardar Cotización") -->
+<div *ngIf="showDetail() && selectedQuote()">
+    <div class="detail-header">
+        <button class="btn-back" (click)="volverAlListado()">← Volver al listado</button>
+    </div>
+    <app-quote-breakdown [calculation]="selectedQuote()" [mostrarGuardar]="false" (saveQuote)="volverAlListado()" />
+</div>

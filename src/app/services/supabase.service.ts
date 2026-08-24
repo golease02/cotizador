@@ -127,12 +127,13 @@ export class SupabaseService {
 
   // ==================== COTIZACIONES ====================
 
-  public async saveQuote(quote: QuoteCalculationResult): Promise<void> {
+  // ✅ MODIFICADO: acepta quoteId opcional y devuelve { id, error }
+  public async saveQuote(quote: QuoteCalculationResult, quoteId?: number): Promise<{ id: number | null; error: any }> {
     const user = this.currentUserSignal();
     if (!user) {
       console.warn('No hay usuario logueado. Cotización guardada solo localmente.');
       this.saveLocalQuote(quote);
-      return;
+      return { id: null, error: null };
     }
 
     const quoteData = {
@@ -151,15 +152,36 @@ export class SupabaseService {
       totalpayment: 0
     };
 
-    const { error } = await this.supabase
-      .from('quotes')
-      .insert([quoteData]);
+    if (quoteId) {
+      // Actualizar cotización existente
+      const { error } = await this.supabase
+        .from('quotes')
+        .update(quoteData)
+        .eq('id', quoteId)
+        .eq('seller_id', user.id);
 
-    if (error) {
-      console.error('Error saving quote to Supabase:', error);
+      if (error) {
+        console.error('Error actualizando cotización:', error);
+        this.saveLocalQuote(quote);
+        return { id: null, error };
+      }
       this.saveLocalQuote(quote);
+      return { id: quoteId, error: null };
     } else {
+      // Insertar nueva cotización
+      const { data, error } = await this.supabase
+        .from('quotes')
+        .insert([quoteData])
+        .select('id');
+
+      if (error) {
+        console.error('Error insertando cotización:', error);
+        this.saveLocalQuote(quote);
+        return { id: null, error };
+      }
+      const insertedId = data?.[0]?.id || null;
       this.saveLocalQuote(quote);
+      return { id: insertedId, error: null };
     }
   }
 
@@ -233,6 +255,16 @@ export class SupabaseService {
   }
 
   // ==================== UTILIDADES ====================
+
+  // Obtener cotizaciones de un vendedor (solo datos del input)
+  public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabase
+      .from('quotes')
+      .select('*')
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+    return { data, error };
+  }
 
   public async updateProfile(userId: string, data: any): Promise<{ error: any }> {
     const { error } = await this.supabase
