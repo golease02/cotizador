@@ -1,0 +1,34 @@
+<header class="app-header" [class.scrolled]="isScrolled()">
+  <div class="header-container">
+    <!-- Logo y eslogan -->
+    <div class="brand-logo-container">
+      <a routerLink="/" class="logo-link">
+        <img
+          src="https://img1.wsimg.com/isteam/ip/b2c8c497-599d-4df4-9ab6-2aaaf690a095/LOGO%20GOLEASE%20SIN%20FONDO.png"
+          alt="GO LEASE MX Logo" class="header-logo-img" />
+      </a>
+      <div class="logo-text">
+        <span class="brand-title">GO LEASE MX</span>
+        <span class="brand-slogan">"Haz de tus impuestos, la renta de tu auto"</span>
+      </div>
+    </div>
+
+    <!-- Área de usuario -->
+    <div class="header-right">
+      <div *ngIf="supabase.currentUser()" class="user-area">
+        <span class="user-avatar">{{ (supabase.currentProfile()?.full_name || 'V').charAt(0).toUpperCase() }}</span>
+        <div class="user-info">
+          <span class="user-name">{{ supabase.currentProfile()?.full_name || 'Vendedor' }}</span>
+          <span class="user-role">{{ supabase.isAdmin() ? 'Administrador' : 'Vendedor' }}</span>
+        </div>
+        <button class="logout-btn" (click)="logout()" title="Cerrar sesión">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

@@ -17,6 +17,7 @@ import { SupabaseService } from '../../../services/supabase.service';
         </div>
 
         <form (ngSubmit)="onRegister()">
+          <!-- Número de celular -->
           <div class="form-group">
             <label>Número de celular *</label>
             <input 
@@ -28,6 +29,7 @@ import { SupabaseService } from '../../../services/supabase.service';
             />
           </div>
 
+          <!-- Nombre completo -->
           <div class="form-group">
             <label>Nombre Completo *</label>
             <input 
@@ -39,6 +41,7 @@ import { SupabaseService } from '../../../services/supabase.service';
             />
           </div>
 
+          <!-- Contraseña -->
           <div class="form-group">
             <label>Contraseña *</label>
             <input 
@@ -50,6 +53,7 @@ import { SupabaseService } from '../../../services/supabase.service';
             />
           </div>
 
+          <!-- Marca (Agencia) -->
           <div class="form-group">
             <label>Marca (Agencia) *</label>
             <select [(ngModel)]="agencyBrand" name="agencyBrand" required>
@@ -67,12 +71,22 @@ import { SupabaseService } from '../../../services/supabase.service';
             />
           </div>
 
+          <!-- Ubicación de Sucursal -->
           <div class="form-group">
             <label>Ubicación de Sucursal *</label>
             <select [(ngModel)]="agencyLocation" name="agencyLocation" required>
               <option value="">Selecciona una ubicación</option>
               <option *ngFor="let loc of locations" [value]="loc">{{ loc }}</option>
+              <option value="Otro">Otro</option>
             </select>
+            <input 
+              *ngIf="agencyLocation === 'Otro'" 
+              type="text" 
+              [(ngModel)]="otherLocation" 
+              placeholder="Escribe la ubicación" 
+              name="otherLocation" 
+              style="margin-top: 0.5rem;"
+            />
           </div>
 
           <button type="submit" class="btn-primary">Registrarse</button>
@@ -189,10 +203,47 @@ export class RegisterComponent {
   agencyBrand = '';
   otherBrand = '';
   agencyLocation = '';
+  otherLocation = ''; // ✅ Nuevo campo para ubicación manual
   errorMessage = '';
 
-  brands = ['HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI'];
+  // ✅ Lista ampliada de marcas (agencias) presentes en Querétaro
+  brands = [
+    'HINO',
+    'TOYOTA',
+    'NISSAN',
+    'BYD',
+    'FORD',
+    'AUDI',
+    'VOLKSWAGEN',
+    'CHEVROLET',
+    'HONDA',
+    'MAZDA',
+    'HYUNDAI',
+    'KIA',
+    'MITSUBISHI',
+    'SUZUKI',
+    'RENAULT',
+    'PEUGEOT',
+    'BMW',
+    'MERCEDES-BENZ',
+    'JEEP',
+    'DODGE',
+    'RAM',
+    'SUBARU',
+    'JAGUAR',
+    'LAND ROVER',
+    'VOLVO',
+    'PORSCHE',
+    'MINI',
+    'FIAT',
+    'ALFA ROMEO',
+    'MASERATI',
+    'LEXUS',
+    'INFINITI',
+    'ACURA'
+  ];
 
+  // ✅ Ubicaciones de sucursales en Querétaro (zonas y concesionarios conocidos)
   locations = [
     'Centro Histórico',
     'Juriquilla',
@@ -201,7 +252,29 @@ export class RegisterComponent {
     'Zaklo',
     'Paseo Querétaro',
     'Antea',
-    'Ciudad del Sol'
+    'Ciudad del Sol',
+    'Corregidora',
+    'Santa Rosa Jáuregui',
+    'San José Iturbide',
+    'Pedro Escobedo',
+    'Colón',
+    'Tequisquiapan',
+    'San Juan del Río',
+    'Amealco',
+    'Cadereyta',
+    'Ezequiel Montes',
+    'Huimilpan',
+    'Ampliación Paseos del Sol',
+    'Zona Industrial',
+    'Blvd. Bernardo Quintana',
+    'Av. Constituyentes',
+    'Av. 5 de Febrero',
+    'Plaza La Victoria',
+    'El Refugio',
+    'Zibatá',
+    'Lomas de Juriquilla',
+    'Residencial España',
+    'La Pradera'
   ];
 
   async onRegister() {
@@ -211,15 +284,22 @@ export class RegisterComponent {
       return;
     }
 
+    // Si seleccionó "Otro" en marca, usar el valor escrito
     const finalBrand = this.agencyBrand === 'Otro' ? this.otherBrand : this.agencyBrand;
     if (!finalBrand) {
       this.errorMessage = 'Debes escribir el nombre de la marca';
       return;
     }
 
+    // Si seleccionó "Otro" en ubicación, usar el valor escrito
+    const finalLocation = this.agencyLocation === 'Otro' ? this.otherLocation : this.agencyLocation;
+    if (!finalLocation) {
+      this.errorMessage = 'Debes escribir la ubicación de la sucursal';
+      return;
+    }
+
     const email = `vendedor_${this.phoneNumber}@golease.com`;
 
-    // ✅ CORRECCIÓN: signUp solo devuelve { error }
     const { error: authError } = await this.supabase.signUp(email, this.password, this.fullName);
     if (authError) {
       console.error('Error de autenticación:', authError);
@@ -227,22 +307,17 @@ export class RegisterComponent {
       return;
     }
 
-    // Obtener el usuario recién creado (ya está disponible en currentUser)
     const user = this.supabase.currentUser();
     if (!user) {
       this.errorMessage = 'No se pudo obtener el usuario después del registro';
       return;
     }
 
-    // Guardar datos adicionales en el perfil
-    // Después de signUp, esperar un momento para que el trigger cree el perfil
-    // o usar upsert directamente. Como upsert ya está en updateProfile, no necesitamos esperar.
-
     const { error: profileError } = await this.supabase.updateProfile(user.id, {
-      seller_number: this.phoneNumber,   // ← coincide con la columna
-      full_name: this.fullName,          // ← ya existe
-      agency_brand: finalBrand,          // ← coincide con la columna
-      agency_location: this.agencyLocation // ← coincide con la columna
+      seller_number: this.phoneNumber,
+      full_name: this.fullName,
+      agency_brand: finalBrand,
+      agency_location: finalLocation // ✅ Se guarda la ubicación (manual o seleccionada)
     });
 
     if (profileError) {
@@ -251,7 +326,6 @@ export class RegisterComponent {
       return;
     }
 
-    // Registro exitoso → redirigir al dashboard
     this.router.navigate(['/']);
   }
 }

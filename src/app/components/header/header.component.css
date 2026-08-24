@@ -1,0 +1,224 @@
+.app-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0.8rem 2rem;
+  /* más padding */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+  animation: slideDown 0.5s ease forwards;
+}
+
+/* Animación de entrada */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Sombra al hacer scroll */
+.app-header.scrolled {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border-bottom-color: transparent;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+/* Logo más grande */
+.brand-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-shrink: 0;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.header-logo-img {
+  height: 56px;
+  /* aumentado de 42px a 56px */
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.logo-link:hover .header-logo-img {
+  transform: scale(1.05);
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-title {
+  font-family: 'Fjalla One', sans-serif;
+  font-size: 1.4rem;
+  /* aumentado de 1.2rem */
+  color: #0f172a;
+  letter-spacing: 0.5px;
+}
+
+.brand-slogan {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-size: 0.8rem;
+  /* aumentado de 0.7rem */
+  color: #20b038;
+  font-style: italic;
+  font-weight: 700;
+}
+
+/* Resto del CSS igual que antes, pero ajustando tamaños */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+
+.user-area {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 40px;
+  padding: 0.3rem 0.8rem 0.3rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.user-area:hover {
+  border-color: #20b038;
+  box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.1);
+}
+
+.user-avatar {
+  width: 36px;
+  /* aumentado de 32px */
+  height: 36px;
+  background: linear-gradient(135deg, #15803d, #20b038);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  /* aumentado de 0.85rem */
+  color: #0f172a;
+}
+
+.user-role {
+  font-size: 0.65rem;
+  /* aumentado de 0.6rem */
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 0.3rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.logout-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+  transform: scale(1.1);
+}
+
+.logout-btn svg {
+  stroke: currentColor;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0.6rem 1rem;
+  }
+
+  .header-logo-img {
+    height: 40px;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .brand-slogan {
+    font-size: 0.6rem;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+
+  .user-name {
+    font-size: 0.8rem;
+  }
+
+  .user-role {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .brand-slogan,
+  .user-info {
+    display: none;
+  }
+
+  .app-header {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .header-logo-img {
+    height: 32px;
+  }
+
+  .brand-title {
+    font-size: 0.9rem;
+  }
+}

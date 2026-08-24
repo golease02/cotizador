@@ -5,11 +5,12 @@ import { SupabaseService } from '../../../services/supabase.service';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-mis-cotizaciones',
   standalone: true,
-  imports: [CommonModule, RouterModule, QuoteBreakdownComponent],
+  imports: [CommonModule, RouterModule, FormsModule, QuoteBreakdownComponent],
   templateUrl: './mis-cotizaciones.html',
   styleUrls: ['./mis-cotizaciones.css']
 })
@@ -18,10 +19,14 @@ export class MisCotizacionesComponent implements OnInit {
   private calculator = inject(FinancialCalculatorService);
 
   cotizaciones = signal<any[]>([]);
+  cotizacionesFiltradas = signal<any[]>([]);
   loading = signal(true);
-
   selectedQuote = signal<QuoteCalculationResult | null>(null);
   showDetail = signal(false);
+
+  // Filtros
+  filtroTexto = '';
+  filtroPeriodo = 'todos'; // 'todos', '7dias', '30dias'
 
   async ngOnInit() {
     await this.cargarCotizaciones();
@@ -43,7 +48,43 @@ export class MisCotizacionesComponent implements OnInit {
     }
 
     this.cotizaciones.set(data || []);
+    this.aplicarFiltros();
     this.loading.set(false);
+  }
+
+  aplicarFiltros() {
+    let items = this.cotizaciones();
+
+    // Filtro por texto (cliente, marca, modelo)
+    if (this.filtroTexto.trim()) {
+      const term = this.filtroTexto.toLowerCase().trim();
+      items = items.filter(item =>
+        (item.client_name || '').toLowerCase().includes(term) ||
+        (item.brand || '').toLowerCase().includes(term) ||
+        (item.model || '').toLowerCase().includes(term)
+      );
+    }
+
+    // Filtro por período
+    if (this.filtroPeriodo !== 'todos') {
+      const ahora = new Date();
+      const limite = new Date();
+      if (this.filtroPeriodo === '7dias') {
+        limite.setDate(ahora.getDate() - 7);
+      } else if (this.filtroPeriodo === '30dias') {
+        limite.setDate(ahora.getDate() - 30);
+      }
+      items = items.filter(item => {
+        const fecha = new Date(item.created_at);
+        return fecha >= limite;
+      });
+    }
+
+    this.cotizacionesFiltradas.set(items);
+  }
+
+  onFiltroCambiar() {
+    this.aplicarFiltros();
   }
 
   verCotizacion(cotizacion: any) {

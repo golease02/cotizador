@@ -1,58 +1,112 @@
-<div class="mis-cotizaciones-container">
-    <!-- Cabecera con botón de nueva cotización -->
-    <div class="header-actions">
-        <a routerLink="/cotizador" class="btn-nueva-cotizacion">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
+<div class="dashboard-cotizaciones">
+    <!-- Encabezado -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <h1>Mis Cotizaciones</h1>
+            <span class="counter">{{ cotizacionesFiltradas().length }} cotizaciones</span>
+        </div>
+        <a routerLink="/cotizador" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             Nueva Cotización
         </a>
+    </header>
+
+    <!-- Filtros integrados -->
+    <div class="filters-panel" *ngIf="!showDetail()">
+        <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input type="text" [(ngModel)]="filtroTexto" (input)="onFiltroCambiar()"
+                placeholder="Buscar por cliente, marca o modelo..." class="search-input" />
+        </div>
+        <div class="period-selector">
+            <button class="period-btn" [class.active]="filtroPeriodo === 'todos'"
+                (click)="filtroPeriodo='todos'; onFiltroCambiar()">Todos</button>
+            <button class="period-btn" [class.active]="filtroPeriodo === '7dias'"
+                (click)="filtroPeriodo='7dias'; onFiltroCambiar()">Últimos 7 días</button>
+            <button class="period-btn" [class.active]="filtroPeriodo === '30dias'"
+                (click)="filtroPeriodo='30dias'; onFiltroCambiar()">Últimos 30 días</button>
+        </div>
     </div>
 
-    <h2>Mis Cotizaciones</h2>
+    <!-- Contenido principal -->
+    <div class="content-area" *ngIf="!showDetail()">
+        <!-- Cargando -->
+        <div *ngIf="loading()" class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando cotizaciones...</p>
+        </div>
 
-    <div *ngIf="loading()" class="loading">Cargando...</div>
+        <!-- Vacío -->
+        <div *ngIf="!loading() && cotizacionesFiltradas().length === 0" class="empty-state">
+            <div class="empty-icon">📄</div>
+            <h3>No hay cotizaciones</h3>
+            <p *ngIf="filtroTexto || filtroPeriodo !== 'todos'">Prueba ajustando los filtros.</p>
+            <p *ngIf="!filtroTexto && filtroPeriodo === 'todos'">Comienza creando tu primera cotización.</p>
+        </div>
 
-    <div *ngIf="!loading() && cotizaciones().length === 0" class="empty-state">
-        <p>No tienes cotizaciones guardadas aún.</p>
-        <p>Haz clic en <strong>"Nueva Cotización"</strong> para comenzar.</p>
+        <!-- Grid de tarjetas -->
+        <div *ngIf="!loading() && cotizacionesFiltradas().length > 0" class="cards-grid">
+            <div *ngFor="let item of cotizacionesFiltradas(); let i = index" class="quote-card"
+                [style.animation-delay]="(i * 0.05) + 's'">
+                <div class="card-header">
+                    <div class="client-info">
+                        <span class="client-initial">{{ (item.client_name || '?').charAt(0).toUpperCase() }}</span>
+                        <div>
+                            <div class="client-name">{{ item.client_name || 'Cliente sin nombre' }}</div>
+                            <div class="vehicle-name">{{ item.brand }} {{ item.model }}</div>
+                        </div>
+                    </div>
+                    <span class="date-badge">{{ item.created_at | date:'dd/MM/yyyy' }}</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="detail-item">
+                        <span class="detail-label">Precio</span>
+                        <span class="detail-value price">{{ item.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Plazo</span>
+                        <span class="detail-value">{{ item.termmonths }} meses</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Hora</span>
+                        <span class="detail-value">{{ item.created_at | date:'HH:mm' }}</span>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button class="btn-view-detail" (click)="verCotizacion(item)">
+                        Ver detalle completo
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Tabla de cotizaciones -->
-    <div class="table-wrapper" *ngIf="!loading() && cotizaciones().length > 0">
-        <table>
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Vehículo</th>
-                    <th>Precio</th>
-                    <th>Plazo</th>
-                    <th>Fecha</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngFor="let item of cotizaciones()">
-                    <td>{{ item.client_name || '-' }}</td>
-                    <td>{{ item.brand }} {{ item.model }}</td>
-                    <td>{{ item.pricenet | currency:'MXN':'symbol':'1.0-0' }}</td>
-                    <td>{{ item.termmonths }} meses</td>
-                    <td>{{ item.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
-                    <td>
-                        <button class="btn-ver" (click)="verCotizacion(item)">Ver detalle</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Detalle de cotización (se mantiene igual) -->
+    <div *ngIf="showDetail() && selectedQuote()" class="detail-view">
+        <div class="detail-header">
+            <button class="btn-back" (click)="volverAlListado()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Volver al listado
+            </button>
+        </div>
+        <div class="detail-content">
+            <app-quote-breakdown [calculation]="selectedQuote()" [mostrarGuardar]="false"
+                (saveQuote)="volverAlListado()" />
+        </div>
     </div>
-</div>
-
-<!-- Detalle de la cotización (sin botón "Guardar Cotización") -->
-<div *ngIf="showDetail() && selectedQuote()">
-    <div class="detail-header">
-        <button class="btn-back" (click)="volverAlListado()">← Volver al listado</button>
-    </div>
-    <app-quote-breakdown [calculation]="selectedQuote()" [mostrarGuardar]="false" (saveQuote)="volverAlListado()" />
 </div>

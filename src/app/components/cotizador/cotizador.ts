@@ -2,6 +2,7 @@ import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QuoteFormComponent } from '../quote-form/quote-form.component';
 import { QuoteOptionsComponent } from '../quote-options/quote-options.component';
+import { RouterModule } from '@angular/router';
 import { QuoteBreakdownComponent } from '../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../services/financial-calculator.service';
 import { SupabaseService } from '../../services/supabase.service';
@@ -12,6 +13,7 @@ import { VehicleQuoteInput, QuoteCalculationResult } from '../../models/leasing.
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     QuoteFormComponent,
     QuoteOptionsComponent,
     QuoteBreakdownComponent,
