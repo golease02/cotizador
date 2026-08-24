@@ -1,46 +1,106 @@
 .stats-container {
-    background: white;
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    background: transparent;
 }
 
-.stats-container h2 {
+.stats-header {
+    margin-bottom: 1.5rem;
+}
+
+.stats-header h2 {
     font-family: 'Fjalla One', sans-serif;
-    margin-top: 0;
+    margin: 0 0 0.2rem 0;
+    font-size: 1.6rem;
+    color: #0f172a;
+}
+
+.stats-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
 }
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
     margin-bottom: 2rem;
 }
 
 .stat-card {
-    background: #f8fafc;
-    padding: 1.2rem;
+    background: white;
+    padding: 1.25rem;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.accent-blue .stat-icon {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.accent-green .stat-icon {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.accent-amber .stat-icon {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.stat-body {
+    display: flex;
+    flex-direction: column;
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #64748b;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
 
 .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.7rem;
+    font-weight: 800;
     color: #0f172a;
-    margin-top: 0.3rem;
+    margin-top: 0.2rem;
+    font-family: 'Fjalla One', sans-serif;
+}
+
+.recent-section {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
 }
 
 .recent-section h3 {
     font-family: 'Fjalla One', sans-serif;
-    margin-bottom: 1rem;
+    margin: 0 0 1rem 0;
+    font-size: 1.15rem;
+    color: #0f172a;
 }
 
 .table-wrapper {
@@ -55,7 +115,7 @@ table {
 
 th,
 td {
-    padding: 0.6rem 0.8rem;
+    padding: 0.7rem 0.8rem;
     text-align: left;
     border-bottom: 1px solid #e2e8f0;
 }
@@ -63,10 +123,17 @@ td {
 th {
     background: #f8fafc;
     font-weight: 700;
+    color: #334155;
 }
 
-.loading {
+tr:hover td {
+    background: #f8fafc;
+}
+
+.loading,
+.empty-state {
     text-align: center;
     padding: 2rem;
     color: #64748b;
+    font-style: italic;
 }

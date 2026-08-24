@@ -157,41 +157,33 @@ export class LoginComponent {
     }
 
     try {
-      // 1. Buscar el perfil por número de celular
-      console.log('🔍 Buscando perfil con seller_number:', this.phoneNumber);
       const { data: profile, error: profileError } = await this.supabase.getProfileBySellerNumber(this.phoneNumber);
 
       if (profileError) {
-        console.error('❌ Error al buscar perfil:', profileError);
         this.errorMessage = 'Error al buscar el perfil. Intenta de nuevo.';
         return;
       }
 
       if (!profile) {
-        console.warn('⚠️ No se encontró perfil con seller_number:', this.phoneNumber);
-        // Intentar buscar en la tabla directamente para depurar
-        // Podríamos mostrar un mensaje más amigable
         this.errorMessage = 'Número de celular no registrado. Verifica o regístrate.';
         return;
       }
 
-      console.log('✅ Perfil encontrado:', profile);
-
-      // 2. Generar el email que se usó en el registro
       const email = `vendedor_${this.phoneNumber}@golease.com`;
 
-      // 3. Iniciar sesión con email y contraseña
-      console.log('🔐 Intentando login con email:', email);
       const { error } = await this.supabase.signIn(email, this.password);
       if (error) {
-        console.error('❌ Error al iniciar sesión:', error);
         this.errorMessage = error.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+        return;
+      }
+
+      const loggedProfile = this.supabase.currentProfile();
+      if (loggedProfile?.role === 'admin') {
+        this.router.navigate(['/admin']);
       } else {
-        console.log('✅ Login exitoso');
         this.router.navigate(['/']);
       }
     } catch (error) {
-      console.error('❌ Error inesperado:', error);
       this.errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
     }
   }
