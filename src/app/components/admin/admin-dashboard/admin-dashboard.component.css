@@ -1,0 +1,82 @@
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f1f5f9;
+}
+
+.admin-sidebar {
+    width: 280px;
+    background: #0f172a;
+    color: white;
+    padding: 1.5rem 1rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.sidebar-header h2 {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem 0;
+    color: #20b038;
+}
+
+.admin-sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-sidebar nav li {
+    margin-bottom: 0.2rem;
+}
+
+.admin-sidebar nav a {
+    display: block;
+    padding: 0.6rem 1rem;
+    color: #cbd5e1;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.admin-sidebar nav a:hover {
+    background: #1e293b;
+    color: white;
+}
+
+.admin-sidebar nav a.active {
+    background: #20b038;
+    color: white;
+}
+
+.back-link {
+    margin-top: 2rem;
+    border-top: 1px solid #334155;
+    padding-top: 1rem;
+    color: #94a3b8 !important;
+}
+
+.admin-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 1rem;
+    }
+
+    .admin-content {
+        padding: 1rem;
+    }
+}

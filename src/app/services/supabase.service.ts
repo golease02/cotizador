@@ -33,6 +33,11 @@ export class SupabaseService {
   public readonly currentProfile = this.currentProfileSignal.asReadonly();
   public readonly savedQuotes = this.savedQuotesSignal.asReadonly();
 
+  // ✅ GETTER PARA EXPONER EL CLIENTE DE SUPABASE
+  public get client() {
+    return this.supabase;
+  }
+
   constructor() {
     this.supabase = createClient(
       environment.supabaseUrl,
@@ -41,7 +46,6 @@ export class SupabaseService {
     this.loadSession();
     this.loadFromLocalStorage();
   }
-
 
   private async loadSession(): Promise<void> {
     const { data: { session } } = await this.supabase.auth.getSession();
@@ -98,7 +102,6 @@ export class SupabaseService {
 
   // ==================== CATÁLOGOS ====================
 
-  // ✅ CATÁLOGO DE PLACAS: devuelve directamente el array estático (síncrono)
   public getStatePlates(): StatePlateOption[] {
     return STATE_PLATES_CATALOG;
   }
@@ -116,11 +119,12 @@ export class SupabaseService {
       id: item.id,
       brand: item.brand,
       model: item.model,
-      suggestedPriceNet: Number(item.suggestedpricenet) || 0,   // ← ¡ojo! minúsculas
-      isHybridOrElectric: Boolean(item.ishybridorelectric) || false, // ← minúsculas
+      suggestedPriceNet: Number(item.suggestedpricenet) || 0,
+      isHybridOrElectric: Boolean(item.ishybridorelectric) || false,
       year: Number(item.year) || 2026
     }));
   }
+
   // ==================== COTIZACIONES ====================
 
   public async saveQuote(quote: QuoteCalculationResult): Promise<void> {
@@ -131,21 +135,20 @@ export class SupabaseService {
       return;
     }
 
-    // ✅ CORRECCIÓN: acceder a los datos desde quote.input
     const quoteData = {
       seller_id: user.id,
       client_name: quote.input.clientName || '',
       brand: quote.input.brand,
       model: quote.input.model,
       year: quote.input.year,
-      priceNet: quote.input.priceNet,
-      isHybridOrElectric: quote.input.isHybridOrElectric,
-      termMonths: quote.input.termMonths,
-      extraordinaryRentPct: quote.input.extraordinaryRentPct,
-      securityDepositPct: quote.input.securityDepositPct,
-      selectedStatePlateId: quote.input.selectedStatePlateId,
-      isInsuranceEstimated: quote.input.isInsuranceEstimated,
-      totalPayment: 0 // Si no lo calculas, pon 0 o un valor por defecto
+      pricenet: quote.input.priceNet,
+      ishybridorelectric: quote.input.isHybridOrElectric,
+      termmonths: quote.input.termMonths,
+      extraordinaryrentpct: quote.input.extraordinaryRentPct || 0,
+      securitydepositpct: quote.input.securityDepositPct || 0,
+      selectedstateplateid: quote.input.selectedStatePlateId || 'pendiente',
+      isinsuranceestimated: quote.input.isInsuranceEstimated || false,
+      totalpayment: 0
     };
 
     const { error } = await this.supabase
@@ -176,23 +179,22 @@ export class SupabaseService {
       console.error('Error loading quotes:', error);
       this.loadFromLocalStorage();
     } else if (data) {
-      // Mapear datos de la tabla al modelo QuoteCalculationResult
       const mappedQuotes: QuoteCalculationResult[] = data.map((q: any) => ({
         input: {
           clientName: q.client_name,
           brand: q.brand,
           model: q.model,
           year: q.year,
-          priceNet: q.priceNet,
-          isHybridOrElectric: q.isHybridOrElectric,
-          termMonths: q.termMonths,
-          extraordinaryRentPct: q.extraordinaryRentPct,
-          securityDepositPct: q.securityDepositPct,
-          selectedStatePlateId: q.selectedStatePlateId,
-          isInsuranceEstimated: q.isInsuranceEstimated,
+          priceNet: q.pricenet,
+          isHybridOrElectric: q.ishybridorelectric,
+          termMonths: q.termmonths,
+          extraordinaryRentPct: q.extraordinaryrentpct,
+          securityDepositPct: q.securitydepositpct,
+          selectedStatePlateId: q.selectedstateplateid,
+          isInsuranceEstimated: q.isinsuranceestimated,
         },
         options: {
-          option1: {} as any, // No tenemos estos datos en la tabla, pero se pueden reconstruir si se guardan
+          option1: {} as any,
           option2: {} as any,
           option3: {} as any,
         },
@@ -231,6 +233,7 @@ export class SupabaseService {
   }
 
   // ==================== UTILIDADES ====================
+
   public async updateProfile(userId: string, data: any): Promise<{ error: any }> {
     const { error } = await this.supabase
       .from('profiles')
@@ -240,10 +243,10 @@ export class SupabaseService {
       );
     return { error };
   }
+
   public async getProfileBySellerNumber(sellerNumber: string): Promise<{ data: any; error: any }> {
     console.log('🔍 Buscando perfil con seller_number:', sellerNumber);
 
-    // Usar RPC para evitar problemas de RLS
     const { data, error } = await this.supabase
       .rpc('get_profile_by_seller', { seller_number_input: sellerNumber });
 
@@ -252,12 +255,86 @@ export class SupabaseService {
       return { data: null, error };
     }
 
-    // La función devuelve un array, tomamos el primero
     const profile = data && data.length > 0 ? data[0] : null;
     console.log('✅ Perfil encontrado:', profile);
 
     return { data: profile, error: null };
   }
+
+  public async getProfileById(userId: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    return { data, error };
+  }
+
+  public async getAdmins(): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'admin')
+      .order('created_at', { ascending: false });
+    return { data, error };
+  }
+
+  public async getSellersWithQuoteCount(): Promise<{ data: any; error: any }> {
+    const { data: profiles, error: profilesError } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'seller')
+      .order('created_at', { ascending: false });
+
+    if (profilesError) return { data: null, error: profilesError };
+
+    const sellersWithCounts = await Promise.all(
+      profiles.map(async (profile: any) => {
+        const { count, error } = await this.supabase
+          .from('quotes')
+          .select('*', { count: 'exact', head: true })
+          .eq('seller_id', profile.id);
+        return {
+          ...profile,
+          quote_count: count || 0
+        };
+      })
+    );
+
+    return { data: sellersWithCounts, error: null };
+  }
+
+  public async getAllQuotesWithSeller(): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabase
+      .from('quotes')
+      .select(`
+        *,
+        profiles!seller_id (full_name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) return { data: null, error };
+    const mapped = data.map((q: any) => ({
+      ...q,
+      seller_name: q.profiles?.full_name || 'N/A'
+    }));
+    return { data: mapped, error: null };
+  }
+
+  public async deleteSeller(sellerId: string): Promise<{ error: any }> {
+    const { error: quotesError } = await this.supabase
+      .from('quotes')
+      .delete()
+      .eq('seller_id', sellerId);
+    if (quotesError) return { error: quotesError };
+
+    const { error } = await this.supabase
+      .from('profiles')
+      .delete()
+      .eq('id', sellerId);
+    return { error };
+  }
+
   public isAdmin(): boolean {
     return this.currentProfileSignal()?.role === 'admin';
   }

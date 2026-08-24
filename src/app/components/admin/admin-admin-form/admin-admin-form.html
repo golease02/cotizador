@@ -1,0 +1,35 @@
+<div class="form-container">
+    <div class="page-header">
+        <h2>{{ isEditMode ? 'Editar Administrador' : 'Nuevo Administrador' }}</h2>
+        <a routerLink="/admin/admins" class="btn-secondary">← Volver</a>
+    </div>
+
+    <div *ngIf="loading" class="loading">Cargando...</div>
+
+    <form (ngSubmit)="onSubmit()" *ngIf="!loading">
+        <div class="form-group">
+            <label>Número de Identificación *</label>
+            <input type="text" [(ngModel)]="admin.seller_number" name="seller_number" required [disabled]="isEditMode"
+                placeholder="Ej. 001" />
+            <small *ngIf="!isEditMode">Este número se usará para iniciar sesión (junto con la contraseña).</small>
+        </div>
+
+        <div class="form-group">
+            <label>Nombre Completo *</label>
+            <input type="text" [(ngModel)]="admin.full_name" name="full_name" required placeholder="Juan Pérez" />
+        </div>
+
+        <div class="form-group" *ngIf="!isEditMode">
+            <label>Contraseña *</label>
+            <input type="password" [(ngModel)]="admin.password" name="password" required
+                placeholder="Mínimo 6 caracteres" />
+            <small>La contraseña será usada para acceder al sistema.</small>
+        </div>
+
+        <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+        <button type="submit" class="btn-primary" [disabled]="loading">
+            {{ isEditMode ? 'Actualizar Administrador' : 'Crear Administrador' }}
+        </button>
+    </form>
+</div>

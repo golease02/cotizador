@@ -1,0 +1,68 @@
+<div class="form-container">
+    <div class="page-header">
+        <h2>{{ isEditMode ? 'Editar Usuario' : 'Nuevo Usuario' }}</h2>
+        <a routerLink="/admin/sellers" class="btn-secondary">← Volver</a>
+    </div>
+
+    <div *ngIf="loading" class="loading">Cargando...</div>
+
+    <form (ngSubmit)="onSubmit()" *ngIf="!loading">
+        <div class="form-group">
+            <label>Número de Vendedor *</label>
+            <input type="text" [(ngModel)]="seller.seller_number" name="seller_number" required
+                [disabled]="isEditMode" />
+        </div>
+
+        <div class="form-group">
+            <label>Nombre Completo *</label>
+            <input type="text" [(ngModel)]="seller.full_name" name="full_name" required />
+        </div>
+
+        <div class="form-group" *ngIf="!isEditMode">
+            <label>Contraseña *</label>
+            <input type="password" [(ngModel)]="seller.password" name="password" required
+                placeholder="Mínimo 6 caracteres" />
+        </div>
+
+        <div class="form-group" *ngIf="isEditMode">
+            <label>Correo</label>
+            <input type="email" [(ngModel)]="seller.email" name="email" disabled />
+        </div>
+
+        <div class="form-group">
+            <label>Rol *</label>
+            <select [(ngModel)]="seller.role" name="role" required>
+                <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Agencia (Marca) *</label>
+            <select [(ngModel)]="seller.agency_brand" name="agency_brand" required>
+                <option value="">Selecciona una marca</option>
+                <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Ubicación de Sucursal *</label>
+            <select [(ngModel)]="seller.agency_location" name="agency_location" required>
+                <option value="">Selecciona una ubicación</option>
+                <option *ngFor="let loc of locations" [value]="loc">{{ loc }}</option>
+            </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <label>
+                <input type="checkbox" [(ngModel)]="seller.active" name="active" />
+                Activo
+            </label>
+        </div>
+
+        <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+        <button type="submit" class="btn-primary" [disabled]="loading">
+            {{ isEditMode ? 'Actualizar Usuario' : 'Crear Usuario' }}
+        </button>
+    </form>
+</div>

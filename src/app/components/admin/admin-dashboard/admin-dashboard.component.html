@@ -1,0 +1,21 @@
+<div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <h2>Go Lease Admin</h2>
+        </div>
+        <nav>
+            <ul>
+                <li><a routerLink="/admin" routerLinkActive="active">Dashboard</a></li>
+                <li><a routerLink="/admin/sellers" routerLinkActive="active">Vendedores</a></li>
+                <li><a routerLink="/admin/admins" routerLinkActive="active">Administradores</a></li>
+                <li><a routerLink="/admin/quotes" routerLinkActive="active">Cotizaciones</a></li>
+                <li><a routerLink="/" class="back-link">← Volver al Cotizador</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main class="admin-content">
+        <router-outlet></router-outlet>
+    </main>
+</div>
