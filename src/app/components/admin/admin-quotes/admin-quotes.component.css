@@ -118,7 +118,7 @@
     width: 100px;
 }
 
-/* Tarjetas - SIN BORDE IZQUIERDO COLOREADO */
+/* Tarjetas */
 .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -131,30 +131,48 @@
     border: 1px solid #e2e8f0;
     padding: 1.2rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-    transition: transform 0.3s, box-shadow 0.3s;
-    animation: fadeInUp 0.4s ease forwards;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    animation: fadeInUp 0.45s ease forwards;
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(20px) scale(0.98);
 }
 
 .quote-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.04);
+    transform: translateY(-6px) scale(1.005);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+    border-color: #20b038;
+}
+
+.quote-card:active {
+    transform: scale(0.98);
+    transition-duration: 0.1s;
 }
 
 @keyframes fadeInUp {
-    to {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
 }
 
-/* Solo la línea superior de color */
+/* Línea superior de color (automática) */
 .card-color-indicator {
     width: 100%;
     height: 4px;
     border-radius: 4px 4px 0 0;
     margin-bottom: 0.8rem;
+}
+
+.card-color-indicator.color-reciente {
+    background: #3b82f6;
 }
 
 .card-color-indicator.color-verde {
@@ -240,6 +258,11 @@
     border: none;
 }
 
+.status-badge.color-reciente {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
 .status-badge.color-verde {
     background: #dcfce7;
     color: #15803d;
@@ -293,50 +316,32 @@
     margin-top: 0.2rem;
 }
 
-.color-selector {
-    display: flex;
-    gap: 0.2rem;
-    margin-right: auto;
-}
-
-.color-btn {
-    border: none;
+/* Botón Fijar */
+.btn-fijar {
     background: transparent;
+    border: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8rem;
     cursor: pointer;
-    padding: 2px;
-    border-radius: 50%;
+    padding: 0.2rem 0.4rem;
     transition: 0.2s;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
 }
 
-.color-btn:hover {
-    transform: scale(1.2);
+.btn-fijar:hover {
+    background: #f1f5f9;
+    color: #0f172a;
 }
 
-.color-btn.active {
-    outline: 2px solid #0f172a;
-    outline-offset: 2px;
+.btn-fijar:active {
+    transform: scale(0.95);
 }
 
-.color-dot {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    border: 1px solid #e2e8f0;
-}
-
-.color-dot.dot-verde {
-    background: #22c55e;
-}
-
-.color-dot.dot-amarillo {
-    background: #f59e0b;
-}
-
-.color-dot.dot-rojo {
-    background: #ef4444;
-}
-
+/* Botón Notas */
 .btn-note {
     background: transparent;
     border: none;
@@ -347,12 +352,31 @@
     padding: 0.2rem 0.4rem;
     transition: 0.2s;
     border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-note::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: #15803d;
+    transition: width 0.3s ease, left 0.3s ease;
+}
+
+.btn-note:hover::after {
+    width: 80%;
+    left: 10%;
 }
 
 .btn-note:hover {
     background: #f0fdf4;
 }
 
+/* Botón Ver detalle */
 .btn-view {
     background: transparent;
     border: none;
@@ -362,15 +386,33 @@
     cursor: pointer;
     padding: 0.2rem 0.4rem;
     transition: 0.2s;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-view::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: #15803d;
+    transition: width 0.3s ease, left 0.3s ease;
+}
+
+.btn-view:hover::after {
+    width: 80%;
+    left: 10%;
 }
 
 .btn-view:hover {
     background: #f0fdf4;
-    border-radius: 6px;
 }
 
 /* ============================================
-   MODAL DE NOTAS - REDISEÑADO
+   MODAL DE NOTAS
    ============================================ */
 .notas-modal {
     max-width: 520px;
@@ -413,7 +455,6 @@
     margin: 0.1rem 0 0 0;
 }
 
-/* Lista de notas */
 .notas-list {
     max-height: 280px;
     overflow-y: auto;
@@ -435,7 +476,6 @@
     border-radius: 4px;
 }
 
-/* Estado de carga */
 .notas-loading {
     display: flex;
     align-items: center;
@@ -455,7 +495,6 @@
     flex-shrink: 0;
 }
 
-/* Estado vacío */
 .notas-empty {
     text-align: center;
     padding: 2rem 0;
@@ -473,7 +512,6 @@
     font-size: 0.9rem;
 }
 
-/* Cada nota */
 .nota-item {
     background: #f8fafc;
     border-radius: 12px;
@@ -543,7 +581,6 @@
     background: #fee2e2;
 }
 
-/* Editor de notas */
 .nota-editor {
     margin-top: 1.2rem;
     background: #f8fafc;
@@ -635,136 +672,6 @@
 }
 
 /* ============================================
-   ANIMACIÓN DE TARJETAS (hover mejorado)
-   ============================================ */
-.quote-card {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-}
-
-.quote-card:hover {
-    transform: translateY(-6px) scale(1.005);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
-    border-color: #20b038;
-}
-
-.quote-card:active {
-    transform: scale(0.98);
-    transition-duration: 0.1s;
-}
-
-/* Pequeña animación de entrada para las tarjetas */
-@keyframes fadeInUp {
-    0% {
-        opacity: 0;
-        transform: translateY(20px) scale(0.98);
-    }
-
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.quote-card {
-    animation: fadeInUp 0.45s ease forwards;
-}
-
-/* ============================================
-   ESTILOS DE BOTONES DE NOTA Y DETALLE
-   ============================================ */
-.btn-note,
-.btn-view {
-    position: relative;
-    overflow: hidden;
-    transition: all 0.25s ease;
-}
-
-.btn-note::after,
-.btn-view::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 2px;
-    background: #15803d;
-    transition: width 0.3s ease, left 0.3s ease;
-}
-
-.btn-note:hover::after,
-.btn-view:hover::after {
-    width: 80%;
-    left: 10%;
-}
-
-.btn-note {
-    background: transparent;
-    border: none;
-    color: #15803d;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    padding: 0.2rem 0.4rem;
-}
-
-.btn-note:hover {
-    background: #f0fdf4;
-    border-radius: 6px;
-}
-
-.btn-view {
-    background: transparent;
-    border: none;
-    color: #15803d;
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    padding: 0.2rem 0.4rem;
-}
-
-.btn-view:hover {
-    background: #f0fdf4;
-    border-radius: 6px;
-}
-
-/* ============================================
-   RESPONSIVE DEL MODAL
-   ============================================ */
-@media (max-width: 600px) {
-    .notas-modal {
-        padding: 1.2rem;
-        max-width: 95%;
-    }
-
-    .notas-header {
-        flex-wrap: wrap;
-    }
-
-    .nota-item {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.3rem;
-    }
-
-    .nota-acciones {
-        justify-content: flex-end;
-    }
-
-    .nota-editor-actions {
-        flex-direction: column;
-    }
-
-    .nota-editor-actions .btn-primary,
-    .nota-editor-actions .btn-secondary {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-/* ============================================
    TOOLTIP DE NOTAS AL HACER HOVER
    ============================================ */
 .tooltip-container {
@@ -798,7 +705,6 @@
     color: #20b038;
 }
 
-/* Scroll del tooltip */
 .tooltip-container::-webkit-scrollbar {
     width: 3px;
 }
@@ -902,7 +808,6 @@
     clear: both;
 }
 
-/* Scroll del modal */
 .modal-container::-webkit-scrollbar {
     width: 6px;
 }

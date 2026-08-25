@@ -49,9 +49,9 @@ export class AdminQuotesComponent implements OnInit {
   notaError = '';
   selectedQuoteId: string | null = null;
 
-  // Colores
-  colores = ['verde', 'amarillo', 'rojo'];
+  // Colores (solo para etiquetas automáticas)
   colorLabels: Record<string, string> = {
+    reciente: 'Reciente',
     verde: 'Revisada',
     amarillo: 'Pendiente',
     rojo: 'Urgente'
@@ -73,12 +73,17 @@ export class AdminQuotesComponent implements OnInit {
     if (error) {
       console.error('Error loading quotes:', error);
     } else {
-      // Actualizar colores automáticamente
+      // Actualizar colores automáticamente según días y revisión
       for (const q of data) {
         const dias = this.getDiasSinActualizar(q);
-        let colorCalculado = 'verde';
-        if (dias > 7) colorCalculado = 'rojo';
-        else if (dias > 2) colorCalculado = 'amarillo';
+        let colorCalculado = 'reciente';
+        if (q.revisada) {
+          colorCalculado = 'verde';
+        } else {
+          if (dias > 7) colorCalculado = 'rojo';
+          else if (dias > 2) colorCalculado = 'amarillo';
+          else colorCalculado = 'reciente';
+        }
         if (q.color !== colorCalculado) {
           await this.supabase.client
             .from('quotes')
@@ -108,6 +113,7 @@ export class AdminQuotesComponent implements OnInit {
   applyFilters() {
     let filtered = this.quotes();
 
+    // Búsqueda
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(q =>
@@ -118,10 +124,12 @@ export class AdminQuotesComponent implements OnInit {
       );
     }
 
+    // Vendedor
     if (this.filtroVendedor !== 'todos') {
       filtered = filtered.filter(q => q.seller_id === this.filtroVendedor);
     }
 
+    // Período
     if (this.filtroPeriodo !== 'todos') {
       const ahora = new Date();
       const limite = new Date();
@@ -131,6 +139,7 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => new Date(q.created_at) >= limite);
     }
 
+    // Fechas
     if (this.filtroFechaInicio) {
       const inicio = new Date(this.filtroFechaInicio);
       inicio.setHours(0, 0, 0);
@@ -142,6 +151,7 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => new Date(q.created_at) <= fin);
     }
 
+    // Precios
     if (this.filtroPrecioMin !== null && this.filtroPrecioMin > 0) {
       filtered = filtered.filter(q => q.pricenet >= this.filtroPrecioMin!);
     }
@@ -149,9 +159,17 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => q.pricenet <= this.filtroPrecioMax!);
     }
 
+    // Color
     if (this.filtroColor !== 'todos') {
       filtered = filtered.filter(q => q.color === this.filtroColor);
     }
+
+    // ✅ Ordenar: primero fijadas, luego por fecha de creación descendente
+    filtered.sort((a, b) => {
+      if (a.fijada && !b.fijada) return -1;
+      if (!a.fijada && b.fijada) return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 
     this.filteredQuotes.set(filtered);
     this.cdr.detectChanges();
@@ -272,11 +290,15 @@ export class AdminQuotesComponent implements OnInit {
   async marcarComoRevisado(quoteId: string) {
     await this.supabase.client
       .from('quotes')
-      .update({ color: 'verde', ultima_actualizacion: new Date().toISOString() })
+      .update({
+        revisada: true,
+        color: 'verde',
+        ultima_actualizacion: new Date().toISOString()
+      })
       .eq('id', quoteId);
-    // Actualizar localmente
     const updatedQuotes = this.quotes().map(q => {
       if (q.id === quoteId) {
+        q.revisada = true;
         q.color = 'verde';
         q.ultima_actualizacion = new Date().toISOString();
       }
@@ -284,27 +306,6 @@ export class AdminQuotesComponent implements OnInit {
     });
     this.quotes.set(updatedQuotes);
     this.applyFilters();
-  }
-
-  async cambiarColor(quote: any, color: string) {
-    const { error } = await this.supabase.client
-      .from('quotes')
-      .update({ color: color, ultima_actualizacion: new Date().toISOString() })
-      .eq('id', quote.id);
-    if (error) {
-      console.error('Error actualizando color:', error);
-      alert('Error al cambiar color');
-    } else {
-      const updatedQuotes = this.quotes().map(q => {
-        if (q.id === quote.id) {
-          q.color = color;
-          q.ultima_actualizacion = new Date().toISOString();
-        }
-        return q;
-      });
-      this.quotes.set(updatedQuotes);
-      this.applyFilters();
-    }
   }
 
   getDiasSinActualizar(quote: any): number {
@@ -315,14 +316,44 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   getColorClase(quote: any): string {
-    const color = quote.color || 'verde';
+    const color = quote.color || 'reciente';
     return `color-${color}`;
   }
 
-  // ===================== TOOLTIP (hover) =====================
+  getEtiqueta(quote: any): string {
+    const labels: Record<string, string> = {
+      reciente: 'Reciente',
+      verde: 'Revisada',
+      amarillo: 'Pendiente',
+      rojo: 'Urgente'
+    };
+    return labels[quote.color] || 'Reciente';
+  }
+
+  // ===================== FIJAR COTIZACIÓN =====================
+
+  async toggleFijar(quote: any) {
+    const nuevoEstado = !quote.fijada;
+    const { error } = await this.supabase.client
+      .from('quotes')
+      .update({ fijada: nuevoEstado })
+      .eq('id', quote.id);
+    if (error) {
+      console.error('Error al fijar cotización:', error);
+      alert('Error al fijar cotización');
+    } else {
+      const updatedQuotes = this.quotes().map(q => {
+        if (q.id === quote.id) q.fijada = nuevoEstado;
+        return q;
+      });
+      this.quotes.set(updatedQuotes);
+      this.applyFilters();
+    }
+  }
+
+  // ===================== TOOLTIP =====================
 
   onMouseEnter(event: MouseEvent, quote: any) {
-    // Obtener notas de esta cotización
     this.supabase.client
       .from('notas')
       .select('texto, created_at')
@@ -337,15 +368,10 @@ export class AdminQuotesComponent implements OnInit {
           this.tooltipContent = 'Sin notas';
         }
         this.showTooltip = true;
-        // Posicionar tooltip
         let x = event.clientX + 12;
         let y = event.clientY + 12;
-        if (x + 280 > window.innerWidth) {
-          x = event.clientX - 290;
-        }
-        if (y + 120 > window.innerHeight) {
-          y = event.clientY - 120;
-        }
+        if (x + 280 > window.innerWidth) x = event.clientX - 290;
+        if (y + 120 > window.innerHeight) y = event.clientY - 120;
         this.tooltipPosition = { x, y };
         this.cdr.detectChanges();
       });
@@ -387,9 +413,7 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   cerrarModalFondo(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      this.cerrarModal();
-    }
+    if (event.target === event.currentTarget) this.cerrarModal();
   }
 
   // ===================== UTILIDADES =====================
@@ -413,4 +437,7 @@ export class AdminQuotesComponent implements OnInit {
     const v = this.vendedores.find(v => v.id === id);
     return v ? v.seller_number : '';
   }
+
+
 }
+

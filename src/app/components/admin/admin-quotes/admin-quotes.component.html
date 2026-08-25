@@ -36,6 +36,7 @@
                 <label>Estado</label>
                 <select [(ngModel)]="filtroColor" (change)="applyFilters()" class="filter-select">
                     <option value="todos">Todos</option>
+                    <option value="reciente">Reciente</option>
                     <option value="verde">Revisada</option>
                     <option value="amarillo">Pendiente</option>
                     <option value="rojo">Urgente</option>
@@ -93,7 +94,7 @@
                     <div class="card-right">
                         <span class="price-tag">{{ q.pricenet | currency : 'MXN' : 'symbol' : '1.0-0' }}</span>
                         <span class="status-badge" [class]="getColorClase(q)">
-                            {{ q.color === 'verde' ? 'Revisada' : q.color === 'amarillo' ? 'Pendiente' : 'Urgente' }}
+                            {{ getEtiqueta(q) }}
                         </span>
                     </div>
                 </div>
@@ -121,12 +122,10 @@
                 </div>
 
                 <div class="card-footer">
-                    <div class="color-selector">
-                        <button class="color-btn" *ngFor="let c of colores" [class.active]="q.color === c"
-                            (click)="cambiarColor(q, c)" title="{{ colorLabels[c] }}">
-                            <span class="color-dot" [class]="'dot-' + c"></span>
-                        </button>
-                    </div>
+                    <!-- Botón para fijar/desfijar -->
+                    <button class="btn-fijar" (click)="toggleFijar(q)" title="Fijar / Desfijar">
+                        {{ q.fijada ? '📌 Fijada' : '📌 Fijar' }}
+                    </button>
                     <button class="btn-note" (click)="abrirNotas(q)">Notas</button>
                     <button class="btn-view" (click)="abrirModal(q)">Ver detalle →</button>
                 </div>
