@@ -1,84 +1,178 @@
-<div class="stats-container">
-    <div class="stats-header">
-        <h2>Dashboard</h2>
-        <span class="stats-subtitle">Resumen general de la operación</span>
+<div class="dashboard-container">
+
+    <!-- Encabezado -->
+    <div class="dashboard-header">
+        <div>
+            <h1>Dashboard</h1>
+            <span class="subtitle">Resumen general de la operación</span>
+        </div>
+        <span class="update-badge">Actualizado: {{ today | date:'dd/MM/yyyy HH:mm' }}</span>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card accent-blue">
-            <div class="stat-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    <!-- Tarjetas de métricas -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon blue">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
                 </svg>
             </div>
-            <div class="stat-body">
-                <div class="stat-label">Total Vendedores</div>
-                <div class="stat-value">{{ totalSellers() }}</div>
+            <div class="metric-info">
+                <span class="metric-label">Cotizaciones</span>
+                <span class="metric-value">{{ totalQuotes() }}</span>
             </div>
         </div>
-
-        <div class="stat-card accent-green">
-            <div class="stat-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
+        <div class="metric-card">
+            <div class="metric-icon green">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
             </div>
-            <div class="stat-body">
-                <div class="stat-label">Total Cotizaciones</div>
-                <div class="stat-value">{{ totalQuotes() }}</div>
+            <div class="metric-info">
+                <span class="metric-label">Vendedores</span>
+                <span class="metric-value">{{ totalSellers() }}</span>
             </div>
         </div>
-
-        <div class="stat-card accent-amber">
-            <div class="stat-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        <div class="metric-card">
+            <div class="metric-icon amber">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9" />
                 </svg>
             </div>
-            <div class="stat-body">
-                <div class="stat-label">Ingresos Estimados</div>
-                <div class="stat-value">{{ totalRevenue() | currency:'MXN':'symbol':'1.0-0' }}</div>
+            <div class="metric-info">
+                <span class="metric-label">Fijadas</span>
+                <span class="metric-value">{{ totalFijadas() }}</span>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-icon red">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M12 8v4" />
+                    <path d="M12 16h.01" />
+                </svg>
+            </div>
+            <div class="metric-info">
+                <span class="metric-label">Urgentes</span>
+                <span class="metric-value">{{ totalUrgentes() }}</span>
             </div>
         </div>
     </div>
 
-    <div class="recent-section">
-        <h3>Últimas Cotizaciones</h3>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Vehículo</th>
-                        <th>Vendedor</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngIf="loading()">
-                        <td colspan="4" class="loading">Cargando...</td>
-                    </tr>
-                    <tr *ngIf="!loading() && recentQuotes().length === 0">
-                        <td colspan="4" class="empty-state">Aún no hay cotizaciones registradas</td>
-                    </tr>
-                    <tr *ngFor="let quote of recentQuotes()">
-                        <td>{{ quote.client_name || '-' }}</td>
-                        <td>{{ quote.brand }} {{ quote.model }}</td>
-                        <td>{{ quote.seller_name }}</td>
-                        <td>{{ quote.created_at | date:'dd/MM/yyyy' }}</td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Gráficos -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <h3>Vehículos más cotizados</h3>
+            <div class="chart-body" *ngIf="!loading() && topVehicles().length > 0">
+                <div class="bar-item" *ngFor="let v of topVehicles()">
+                    <span class="bar-label">{{ v.name }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" [style.width.%]="getMaxPercentage(v.count, topVehicles())"
+                            [style.background]="getBarColor(v.count, topVehicles())">
+                            <span class="bar-count">{{ v.count }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="!loading() && topVehicles().length === 0" class="empty-chart">Sin datos</div>
+            <div *ngIf="loading()" class="loading-placeholder">Cargando...</div>
         </div>
+        <div class="chart-card">
+            <h3>Vendedores con más cotizaciones</h3>
+            <div class="chart-body" *ngIf="!loading() && topSellers().length > 0">
+                <div class="bar-item" *ngFor="let s of topSellers()">
+                    <span class="bar-label">
+                        <strong>{{ s.name }}</strong>
+                        <span class="seller-location">{{ s.location }}</span>
+                    </span>
+                    <div class="bar-track">
+                        <div class="bar-fill" [style.width.%]="getMaxPercentage(s.count, topSellers())"
+                            [style.background]="getBarColor(s.count, topSellers())">
+                            <span class="bar-count">{{ s.count }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="!loading() && topSellers().length === 0" class="empty-chart">Sin datos</div>
+            <div *ngIf="loading()" class="loading-placeholder">Cargando...</div>
+        </div>
+    </div>
+
+    <!-- Cotizaciones destacadas con colores -->
+    <div class="quotes-sections">
+        <div class="quotes-column" *ngIf="!loading()">
+            <h3>Fijadas</h3>
+            <div class="quote-list">
+                <div *ngFor="let q of fijadasQuotes()" class="quote-item" [class]="'color-' + (q.color || 'reciente')">
+                    <div class="quote-header">
+                        <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+                        <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+                    </div>
+                    <div class="quote-vehicle">{{ q.brand }} {{ q.model }}</div>
+                    <div class="quote-meta">
+                        <span>Vendedor: {{ q.seller_name }}</span>
+                        <span class="badge" [class]="'color-' + (q.color || 'reciente')">
+                            {{ getEtiqueta(q) }}
+                        </span>
+                    </div>
+                    <a routerLink="/admin/quotes" class="view-link">Ver detalle</a>
+                </div>
+                <div *ngIf="fijadasQuotes().length === 0" class="empty-state">Sin cotizaciones fijadas</div>
+            </div>
+        </div>
+
+        <div class="quotes-column" *ngIf="!loading()">
+            <h3>Urgentes</h3>
+            <div class="quote-list">
+                <div *ngFor="let q of urgentesQuotes()" class="quote-item" [class]="'color-' + (q.color || 'reciente')">
+                    <div class="quote-header">
+                        <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+                        <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+                    </div>
+                    <div class="quote-vehicle">{{ q.brand }} {{ q.model }}</div>
+                    <div class="quote-meta">
+                        <span>Vendedor: {{ q.seller_name }}</span>
+                        <span class="badge" [class]="'color-' + (q.color || 'reciente')">
+                            {{ getEtiqueta(q) }}
+                        </span>
+                    </div>
+                    <a routerLink="/admin/quotes" class="view-link">Ver detalle</a>
+                </div>
+                <div *ngIf="urgentesQuotes().length === 0" class="empty-state">Sin cotizaciones urgentes</div>
+            </div>
+        </div>
+
+        <div class="quotes-column" *ngIf="!loading()">
+            <h3>Últimas cotizaciones</h3>
+            <div class="quote-list">
+                <div *ngFor="let q of recentQuotes()" class="quote-item" [class]="'color-' + (q.color || 'reciente')">
+                    <div class="quote-header">
+                        <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+                        <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+                    </div>
+                    <div class="quote-vehicle">{{ q.brand }} {{ q.model }}</div>
+                    <div class="quote-meta">
+                        <span>Vendedor: {{ q.seller_name }}</span>
+                        <span class="badge" [class]="'color-' + (q.color || 'reciente')">
+                            {{ getEtiqueta(q) }}
+                        </span>
+                    </div>
+                    <a routerLink="/admin/quotes" class="view-link">Ver detalle</a>
+                </div>
+                <div *ngIf="recentQuotes().length === 0" class="empty-state">Sin cotizaciones recientes</div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="loading()" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Cargando estadísticas...</p>
     </div>
 </div>
