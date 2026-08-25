@@ -4,11 +4,14 @@
         <a routerLink="/admin/admins" class="btn-secondary">← Volver</a>
     </div>
 
+    <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
     <div *ngIf="loading" class="loading">Cargando...</div>
 
     <form (ngSubmit)="onSubmit()" *ngIf="!loading">
         <div class="form-group">
-            <label>Número de Identificación *</label>
+            <label>Número de identificación *</label>
             <input type="text" [(ngModel)]="admin.seller_number" name="seller_number" required [disabled]="isEditMode"
                 placeholder="Ej. 001" />
             <small *ngIf="!isEditMode">Este número se usará para iniciar sesión (junto con la contraseña).</small>
@@ -19,14 +22,21 @@
             <input type="text" [(ngModel)]="admin.full_name" name="full_name" required placeholder="Juan Pérez" />
         </div>
 
+        <!-- Contraseña solo en creación -->
         <div class="form-group" *ngIf="!isEditMode">
             <label>Contraseña *</label>
             <input type="password" [(ngModel)]="admin.password" name="password" required
                 placeholder="Mínimo 6 caracteres" />
-            <small>La contraseña será usada para acceder al sistema.</small>
         </div>
 
-        <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+        <!-- Estado solo en edición -->
+        <div class="form-group" *ngIf="isEditMode">
+            <label>Estado</label>
+            <select [(ngModel)]="admin.active" name="active">
+                <option [value]="true">Activo</option>
+                <option [value]="false">Inactivo</option>
+            </select>
+        </div>
 
         <button type="submit" class="btn-primary" [disabled]="loading">
             {{ isEditMode ? 'Actualizar Administrador' : 'Crear Administrador' }}

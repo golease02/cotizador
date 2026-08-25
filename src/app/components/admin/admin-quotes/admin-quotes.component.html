@@ -1,33 +1,122 @@
-<div class="quotes-container">
-    <div class="page-header">
-        <h2>Todas las Cotizaciones</h2>
+<div class="quotes-panel">
+    <!-- Cabecera -->
+    <div class="panel-header">
+        <div class="header-left">
+            <h1>Todas las Cotizaciones</h1>
+            <span class="badge">{{ filteredQuotes().length }} registros</span>
+        </div>
     </div>
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Cliente</th>
-                    <th>Vehículo</th>
-                    <th>Precio</th>
-                    <th>Plazo</th>
-                    <th>Vendedor</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngIf="loading">
-                    <td colspan="6" class="loading">Cargando...</td>
-                </tr>
-                <tr *ngFor="let quote of quotes()">
-                    <td>{{ quote.client_name || '-' }}</td>
-                    <td>{{ quote.brand }} {{ quote.model }}</td>
-                    <td>{{ quote.pricenet | currency:'MXN':'symbol':'1.0-0' }}</td>
-                    <td>{{ quote.termmonths }} meses</td>
-                    <td>{{ quote.seller_name || 'N/A' }}</td>
-                    <td>{{ quote.created_at | date:'dd/MM/yyyy' }}</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Filtros -->
+    <div class="filters-section">
+        <div class="filters-row row-1">
+            <div class="filter-group search-group">
+                <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
+                    placeholder="🔍 Buscar por cliente, vehículo o vendedor..." class="filter-input" />
+            </div>
+
+            <div class="filter-group">
+                <label>Vendedor</label>
+                <select [(ngModel)]="filtroVendedor" (change)="applyFilters()" class="filter-select">
+                    <option value="todos">Todos</option>
+                    <option *ngFor="let v of vendedores" [value]="v.id">
+                        {{ v.full_name }} ({{ v.seller_number }})
+                    </option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Período</label>
+                <select [(ngModel)]="filtroPeriodo" (change)="applyFilters()" class="filter-select">
+                    <option value="todos">Todos</option>
+                    <option value="7dias">Últimos 7 días</option>
+                    <option value="30dias">Últimos 30 días</option>
+                    <option value="90dias">Últimos 90 días</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filters-row row-2">
+            <div class="filter-group date-range">
+                <label>Desde</label>
+                <input type="date" [(ngModel)]="filtroFechaInicio" (change)="applyFilters()" class="filter-input" />
+                <label>Hasta</label>
+                <input type="date" [(ngModel)]="filtroFechaFin" (change)="applyFilters()" class="filter-input" />
+            </div>
+
+            <div class="filter-group price-range">
+                <label>Precio mínimo</label>
+                <input type="number" [(ngModel)]="filtroPrecioMin" (input)="applyFilters()" class="filter-input"
+                    placeholder="$0" />
+                <label>Precio máximo</label>
+                <input type="number" [(ngModel)]="filtroPrecioMax" (input)="applyFilters()" class="filter-input"
+                    placeholder="$∞" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado -->
+    <div class="quotes-list">
+        <div *ngIf="loading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando cotizaciones...</p>
+        </div>
+
+        <div *ngIf="!loading && filteredQuotes().length === 0" class="empty-state">
+            <div class="empty-icon">📄</div>
+            <h3>No hay cotizaciones</h3>
+            <p>Prueba ajustando los filtros de búsqueda.</p>
+        </div>
+
+        <div class="cards-grid" *ngIf="!loading && filteredQuotes().length > 0">
+            <div *ngFor="let q of filteredQuotes(); let i = index" class="quote-card"
+                [style.animation-delay]="(i * 0.03) + 's'">
+                <div class="card-header">
+                    <div class="client-info">
+                        <span class="client-avatar">{{ (q.client_name || '?').charAt(0).toUpperCase() }}</span>
+                        <div>
+                            <div class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</div>
+                            <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+                        </div>
+                    </div>
+                    <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="detail-item">
+                        <span class="detail-label">Vendedor</span>
+                        <span class="detail-value">{{ q.seller_name || 'N/A' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Plazo</span>
+                        <span class="detail-value">{{ q.termmonths }} meses</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Fecha</span>
+                        <span class="detail-value">{{ q.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-view" (click)="abrirModal(q)">Ver detalle completo →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ MODAL DE COTIZACIÓN -->
+<div class="modal-overlay" *ngIf="showModal" (click)="cerrarModalFondo($event)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Botón cerrar -->
+        <button class="modal-close" (click)="cerrarModal()" title="Cerrar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+        </button>
+
+        <!-- Contenido -->
+        <div class="modal-body">
+            <app-quote-breakdown [calculation]="selectedQuote()" [mostrarGuardar]="false" (saveQuote)="cerrarModal()" />
+        </div>
     </div>
 </div>

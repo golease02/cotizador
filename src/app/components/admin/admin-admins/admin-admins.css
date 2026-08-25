@@ -42,11 +42,6 @@
     margin-bottom: 1.5rem;
 }
 
-.search-group {
-    position: relative;
-    max-width: 400px;
-}
-
 .search-input {
     width: 100%;
     padding: 0.6rem 0.8rem 0.6rem 2.4rem;
@@ -55,6 +50,7 @@
     font-size: 0.9rem;
     transition: 0.2s;
     background: #f8fafc;
+    box-sizing: border-box;
 }
 
 .search-input:focus {
@@ -62,15 +58,6 @@
     border-color: #20b038;
     background: white;
     box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.15);
-}
-
-.search-icon {
-    position: absolute;
-    left: 0.8rem;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0.5;
-    pointer-events: none;
 }
 
 .table-wrapper {
@@ -130,11 +117,6 @@ tr:hover td {
     color: #dc2626;
 }
 
-.email-cell {
-    font-size: 0.8rem;
-    color: #475569;
-}
-
 .action-buttons {
     display: flex;
     gap: 0.3rem;
@@ -158,11 +140,6 @@ tr:hover td {
     background: #f1f5f9;
 }
 
-.btn-icon svg {
-    width: 16px;
-    height: 16px;
-}
-
 .btn-edit:hover {
     color: #3b82f6;
 }
@@ -176,6 +153,7 @@ tr:hover td {
     background: #fee2e2;
 }
 
+/* ===== MODALES ===== */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -191,9 +169,15 @@ tr:hover td {
     background: white;
     padding: 2rem;
     border-radius: 16px;
-    max-width: 420px;
-    width: 90%;
+    max-width: 500px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.form-modal {
+    max-width: 500px;
 }
 
 .modal-content h3 {
@@ -202,29 +186,21 @@ tr:hover td {
     font-size: 1.3rem;
 }
 
-.modal-content p {
-    color: #475569;
-    margin: 0.5rem 0 1.5rem 0;
-}
-
 .modal-actions {
     display: flex;
     gap: 0.8rem;
     justify-content: flex-end;
-}
-
-.modal-actions button {
-    padding: 0.5rem 1.2rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.2s;
+    margin-top: 1.2rem;
 }
 
 .btn-cancel {
     background: #e2e8f0;
     color: #334155;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
 .btn-cancel:hover {
@@ -232,24 +208,75 @@ tr:hover td {
 }
 
 .btn-confirm {
-    background: #ef4444;
+    background: #15803d;
     color: white;
+    border: none;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-.btn-confirm:hover {
-    background: #dc2626;
+.btn-confirm:disabled {
+    opacity: 0.6;
 }
 
-.btn-confirm:active {
-    transform: scale(0.96);
+.success {
+    color: #15803d;
+    background: #f0fdf4;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.error {
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 0.8rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.form-group input:disabled {
+    background: #f1f5f9;
+}
+
+.form-group small {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.2rem;
 }
 
 @media (max-width: 768px) {
-    .search-group {
+    .search-input {
         max-width: 100%;
     }
 
-    .action-buttons {
-        flex-wrap: nowrap;
+    .modal-content {
+        padding: 1rem;
+        max-width: 100%;
     }
 }

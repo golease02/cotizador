@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
+import { BehaviorSubject } from 'rxjs';
 import { StatePlateOption, STATE_PLATES_CATALOG, QuoteCalculationResult } from '../models/leasing.model';
 
 export interface VehicleCatalogItem {
@@ -28,6 +29,14 @@ export class SupabaseService {
   private currentUserSignal = signal<User | null>(null);
   private currentProfileSignal = signal<Profile | null>(null);
   private savedQuotesSignal = signal<QuoteCalculationResult[]>([]);
+
+  private refreshProfileSubject = new BehaviorSubject<void>(undefined);
+  public refreshProfile$ = this.refreshProfileSubject.asObservable();
+
+  // ✅ Método para emitir el evento de refresco
+  public triggerProfileRefresh(): void {
+    this.refreshProfileSubject.next();
+  }
 
   public readonly currentUser = this.currentUserSignal.asReadonly();
   public readonly currentProfile = this.currentProfileSignal.asReadonly();
@@ -116,13 +125,23 @@ export class SupabaseService {
   }
 
   public async getProfileById(userId: string): Promise<{ data: any; error: any }> {
+    console.log('🔍 getProfileById llamado con ID:', userId);
     const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
+    console.log('📦 Resultado getProfileById:', { data, error });
     return { data, error };
   }
+
+  // Dentro de SupabaseService
+  public async deleteUserFromAuth(userId: string): Promise<{ error: any }> {
+    const { error } = await this.supabase.rpc('delete_user', { user_id: userId });
+    return { error };
+  }
+
+
 
   // ==================== CATÁLOGOS ====================
 

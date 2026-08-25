@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -15,17 +15,19 @@ export class AdminAdminFormComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   isEditMode = false;
   adminId: string | null = null;
   loading = false;
   errorMessage = '';
+  successMessage = '';
 
   admin = {
     seller_number: '',
     full_name: '',
     password: '',
-    role: 'admin'
+    active: true
   };
 
   async ngOnInit() {
@@ -33,76 +35,131 @@ export class AdminAdminFormComponent implements OnInit {
     if (this.adminId) {
       this.isEditMode = true;
       await this.loadAdmin();
+    } else {
+      this.isEditMode = false;
+      this.loading = false;
     }
   }
 
   async loadAdmin() {
     this.loading = true;
-    const { data, error } = await this.supabase.getProfileById(this.adminId!);
-    if (error) {
-      this.errorMessage = 'Error al cargar administrador';
-      console.error(error);
-    } else if (data) {
+    this.errorMessage = '';
+    try {
+      const { data, error } = await this.supabase.getProfileById(this.adminId!);
+      if (error || !data) {
+        this.errorMessage = 'Error al cargar administrador';
+        this.loading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+      if (data.role !== 'admin') {
+        this.errorMessage = 'El usuario no es administrador';
+        this.loading = false;
+        this.cdr.detectChanges();
+        return;
+      }
       this.admin = {
         seller_number: data.seller_number || '',
         full_name: data.full_name || '',
         password: '',
-        role: data.role || 'admin'
+        active: data.active !== false
       };
+      this.loading = false;
+      this.cdr.detectChanges();
+    } catch (err) {
+      this.errorMessage = 'Error inesperado al cargar administrador';
+      this.loading = false;
+      this.cdr.detectChanges();
     }
-    this.loading = false;
   }
 
   async onSubmit() {
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
-    if (this.isEditMode) {
-      const { error } = await this.supabase.updateProfile(this.adminId!, {
-        full_name: this.admin.full_name,
-        seller_number: this.admin.seller_number,
-        role: 'admin'
-      });
-      if (error) {
-        this.errorMessage = 'Error al actualizar administrador: ' + error.message;
-        this.loading = false;
-        return;
-      }
-    } else {
-      const email = `admin_${this.admin.seller_number}@golease.com`;
-      const { error: authError } = await this.supabase.signUp(
-        email,
-        this.admin.password || '12345678',
-        this.admin.full_name
-      );
-      if (authError) {
-        this.errorMessage = 'Error al crear usuario: ' + authError.message;
-        this.loading = false;
-        return;
-      }
-
-      const user = this.supabase.currentUser();
-      if (!user) {
-        this.errorMessage = 'No se pudo obtener el usuario';
-        this.loading = false;
-        return;
-      }
-
-      const { error: profileError } = await this.supabase.updateProfile(user.id, {
-        seller_number: this.admin.seller_number,
-        full_name: this.admin.full_name,
-        role: 'admin'
-      });
-      if (profileError) {
-        this.errorMessage = 'Error al guardar perfil: ' + profileError.message;
-        this.loading = false;
-        return;
-      }
+    if (!this.admin.seller_number || !this.admin.full_name) {
+      this.errorMessage = 'Número y nombre son obligatorios';
+      this.loading = false;
+      return;
     }
 
-    this.loading = false;
-    this.router.navigate(['/admin/admins']);
+    try {
+      // Guardar sesión del administrador actual para restaurar después
+      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
+
+      if (this.isEditMode) {
+        // Actualizar administrador (sin cambio de contraseña)
+        const { error } = await this.supabase.updateProfile(this.adminId!, {
+          full_name: this.admin.full_name,
+          seller_number: this.admin.seller_number,
+          active: this.admin.active,
+          role: 'admin'
+        });
+        if (error) {
+          this.errorMessage = 'Error al actualizar: ' + error.message;
+          this.loading = false;
+          return;
+        }
+        this.successMessage = '✅ Administrador actualizado correctamente';
+        setTimeout(() => this.router.navigate(['/admin/admins']), 1500);
+      } else {
+        // Crear nuevo administrador
+        const email = `admin_${this.admin.seller_number}@golease.com`;
+        const { error: authError } = await this.supabase.signUp(
+          email,
+          this.admin.password || '12345678',
+          this.admin.full_name
+        );
+        if (authError) {
+          this.errorMessage = 'Error al crear usuario: ' + authError.message;
+          this.loading = false;
+          return;
+        }
+
+        const user = this.supabase.currentUser();
+        if (!user) {
+          this.errorMessage = 'No se pudo obtener el usuario';
+          this.loading = false;
+          return;
+        }
+
+        const { error: profileError } = await this.supabase.updateProfile(user.id, {
+          seller_number: this.admin.seller_number,
+          full_name: this.admin.full_name,
+          active: true,
+          role: 'admin'
+        });
+        if (profileError) {
+          this.errorMessage = 'Error al guardar perfil: ' + profileError.message;
+          this.loading = false;
+          return;
+        }
+
+        // Restaurar sesión del administrador
+        if (adminSession) {
+          await this.supabase.client.auth.setSession({
+            access_token: adminSession.access_token,
+            refresh_token: adminSession.refresh_token
+          });
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const adminUser = this.supabase.currentUser();
+          if (adminUser) {
+            await this.supabase.loadProfile(adminUser.id);
+          }
+          // Notificar al header que debe refrescar
+          this.supabase.triggerProfileRefresh();
+          this.cdr.detectChanges();
+        }
+
+        this.successMessage = '✅ Administrador creado correctamente';
+        setTimeout(() => this.router.navigate(['/admin/admins']), 1500);
+      }
+    } catch (err: any) {
+      this.errorMessage = 'Error inesperado: ' + (err.message || '');
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 }
-
-

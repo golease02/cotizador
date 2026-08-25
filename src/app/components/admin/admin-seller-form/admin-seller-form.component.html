@@ -1,64 +1,92 @@
-<div class="form-container">
-    <div class="page-header">
-        <h2>{{ isEditMode ? 'Editar Vendedor' : 'Nuevo Vendedor' }}</h2>
-        <a routerLink="/admin/sellers" class="btn-secondary">← Volver</a>
+<div class="auth-container">
+    <div class="auth-card register-card">
+        <div class="auth-header">
+            <h2>{{ isEditMode ? 'Editar Vendedor' : 'Nuevo Vendedor' }}</h2>
+            <p>{{ isEditMode ? 'Modifica los datos del vendedor' : 'Ingresa los datos para crear un nuevo vendedor' }}
+            </p>
+        </div>
+
+        <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+        <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+        <form (ngSubmit)="onSubmit()">
+            <!-- Número de celular -->
+            <div class="form-group">
+                <label>Número de celular *</label>
+                <input type="text" [(ngModel)]="seller.seller_number" name="seller_number" required
+                    [disabled]="isEditMode" placeholder="Ej. 5512345678" />
+            </div>
+
+            <!-- Nombre completo -->
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" [(ngModel)]="seller.full_name" name="full_name" required placeholder="Juan Pérez" />
+            </div>
+
+            <!-- Contraseña (solo en creación) -->
+            <div class="form-group" *ngIf="!isEditMode">
+                <label>Contraseña *</label>
+                <input type="password" [(ngModel)]="seller.password" name="password" required
+                    placeholder="Mínimo 6 caracteres" />
+            </div>
+
+            <!-- Marca (Agencia) con opción "Otro" -->
+            <div class="form-group">
+                <label>Marca (Agencia) *</label>
+                <select [(ngModel)]="seller.agency_brand" name="agency_brand" required>
+                    <option value="">Selecciona una marca</option>
+                    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+                    <option value="Otro">Otro</option>
+                </select>
+                <input *ngIf="seller.agency_brand === 'Otro'" type="text" [(ngModel)]="seller.other_brand"
+                    placeholder="Escribe la marca" name="other_brand" style="margin-top: 0.5rem;" />
+            </div>
+
+            <!-- Mapa -->
+            <div class="form-group">
+                <label>Ubicación de Sucursal *</label>
+                <div #mapContainer class="map-container"></div>
+                <div *ngIf="selectedCoords" class="coords-info">
+                    <span class="coord-label">📍 Dirección:</span>
+                    <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
+                </div>
+                <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de tu sucursal</p>
+            </div>
+
+            <!-- Buscador de direcciones -->
+            <div class="form-group">
+                <label>Buscar sucursal en el mapa</label>
+                <div class="search-group">
+                    <input type="text" [(ngModel)]="manualAddress" name="manualAddress"
+                        placeholder="Ej. Toyota Querétaro" (keydown)="onSearchKeydown($event)" class="search-input" />
+                    <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                    </button>
+                </div>
+                <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
+            </div>
+
+            <!-- Estado (solo en edición) -->
+            <div class="form-group" *ngIf="isEditMode">
+                <label>Estado</label>
+                <select [(ngModel)]="seller.active" name="active">
+                    <option [value]="true">Activo</option>
+                    <option [value]="false">Inactivo</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loading">
+                {{ isEditMode ? 'Actualizar Vendedor' : 'Crear Vendedor' }}
+            </button>
+        </form>
+
+        <p class="auth-link">
+            <a routerLink="/admin/sellers">← Volver al listado de vendedores</a>
+        </p>
     </div>
-
-    <!-- Mensajes -->
-    <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
-    <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
-
-    <div *ngIf="loading" class="loading">Cargando...</div>
-
-    <form (ngSubmit)="onSubmit()" *ngIf="!loading">
-        <div class="form-group">
-            <label>Número de Vendedor *</label>
-            <input type="text" [(ngModel)]="seller.seller_number" name="seller_number" required [disabled]="isEditMode"
-                placeholder="Ej. 001" />
-        </div>
-
-        <div class="form-group">
-            <label>Nombre Completo *</label>
-            <input type="text" [(ngModel)]="seller.full_name" name="full_name" required placeholder="Juan Pérez" />
-        </div>
-
-        <div class="form-group" *ngIf="!isEditMode">
-            <label>Contraseña *</label>
-            <input type="password" [(ngModel)]="seller.password" name="password" required
-                placeholder="Mínimo 6 caracteres" />
-        </div>
-
-        <div class="form-group" *ngIf="isEditMode">
-            <label>Correo</label>
-            <input type="email" [(ngModel)]="seller.email" name="email" disabled />
-        </div>
-
-        <div class="form-group">
-            <label>Agencia (Marca) *</label>
-            <select [(ngModel)]="seller.agency_brand" name="agency_brand" required>
-                <option value="">Selecciona una marca</option>
-                <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Ubicación de Sucursal *</label>
-            <select [(ngModel)]="seller.agency_location" name="agency_location" required>
-                <option value="">Selecciona una ubicación</option>
-                <option *ngFor="let loc of locations" [value]="loc">{{ loc }}</option>
-            </select>
-        </div>
-
-        <div class="form-group" *ngIf="isEditMode">
-            <label>Estado</label>
-            <select [(ngModel)]="seller.active" name="active">
-                <option [value]="true">Activo</option>
-                <option [value]="false">Inactivo</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-primary" [disabled]="loading">
-            {{ isEditMode ? 'Actualizar Vendedor' : 'Crear Vendedor' }}
-        </button>
-    </form>
 </div>

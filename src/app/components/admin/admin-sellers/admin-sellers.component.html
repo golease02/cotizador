@@ -1,9 +1,7 @@
 <div class="sellers-container">
     <div class="page-header">
         <h2>Vendedores</h2>
-        <button class="btn-primary" (click)="openNewSeller()">
-            + Nuevo Vendedor
-        </button>
+        <button class="btn-primary" (click)="openNewSeller()">+ Nuevo Vendedor</button>
     </div>
 
     <div class="search-bar">
@@ -41,16 +39,12 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-icon btn-edit" (click)="openEditSeller(seller)" title="Editar">
-                                ✏️
-                            </button>
+                            <button class="btn-icon btn-edit" (click)="openEditSeller(seller)"
+                                title="Editar">✏️</button>
                             <button class="btn-icon btn-toggle" (click)="toggleSellerStatus(seller.id)"
-                                title="Cambiar estado">
-                                🔄
-                            </button>
-                            <button class="btn-icon btn-delete" (click)="deleteSeller(seller.id)" title="Eliminar">
-                                🗑️
-                            </button>
+                                title="Cambiar estado">🔄</button>
+                            <button class="btn-icon btn-delete" (click)="deleteSeller(seller.id)"
+                                title="Eliminar">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -62,12 +56,22 @@
     </div>
 </div>
 
-<!-- MODAL DE CONFIRMACIÓN -->
+<!-- MODAL DE CONFIRMACIÓN (con advertencia de cotizaciones) -->
 <div class="modal-overlay" *ngIf="showConfirmModal" (click)="cancelModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
         <h3>Confirmar acción</h3>
-        <p *ngIf="confirmAction === 'delete'">¿Eliminar este vendedor? Esta acción no se puede deshacer.</p>
-        <p *ngIf="confirmAction === 'toggle'">¿Cambiar estado de este vendedor?</p>
+        <p *ngIf="confirmAction === 'delete'">
+            ¿Estás seguro de que deseas eliminar a <strong>{{ getSellerName() }}</strong>?
+            <br>
+            <span style="color: #dc2626; font-weight: 600;">
+                ⚠️ Esta acción eliminará todas sus cotizaciones ({{ getSellerQuoteCount() }} cotizaciones).
+            </span>
+            <br>
+            Esta operación no se puede deshacer.
+        </p>
+        <p *ngIf="confirmAction === 'toggle'">
+            ¿Cambiar estado de <strong>{{ getSellerName() }}</strong>?
+        </p>
         <div class="modal-actions">
             <button class="btn-cancel" (click)="cancelModal()">Cancelar</button>
             <button class="btn-confirm" (click)="confirmActionHandler()">
@@ -77,7 +81,7 @@
     </div>
 </div>
 
-<!-- MODAL DE FORMULARIO (CREAR/EDITAR) -->
+<!-- MODAL DE FORMULARIO CON MAPA -->
 <div class="modal-overlay" *ngIf="showFormModal" (click)="closeFormModal()">
     <div class="modal-content form-modal" (click)="$event.stopPropagation()">
         <h3>{{ isEditMode ? 'Editar Vendedor' : 'Nuevo Vendedor' }}</h3>
@@ -88,32 +92,69 @@
         <div *ngIf="formLoading" class="loading">Cargando...</div>
 
         <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
+            <!-- Número -->
             <div class="form-group">
-                <label>Número *</label>
-                <input type="text" [(ngModel)]="sellerForm.seller_number" name="num" required [disabled]="isEditMode" />
+                <label>Número de celular *</label>
+                <input type="text" [(ngModel)]="sellerForm.seller_number" name="seller_number" required
+                    [disabled]="isEditMode" placeholder="Ej. 5512345678" />
             </div>
+
+            <!-- Nombre -->
             <div class="form-group">
-                <label>Nombre *</label>
-                <input type="text" [(ngModel)]="sellerForm.full_name" name="name" required />
+                <label>Nombre Completo *</label>
+                <input type="text" [(ngModel)]="sellerForm.full_name" name="full_name" required
+                    placeholder="Juan Pérez" />
             </div>
+
+            <!-- Contraseña (solo creación) -->
             <div class="form-group" *ngIf="!isEditMode">
                 <label>Contraseña *</label>
-                <input type="password" [(ngModel)]="sellerForm.password" name="pass" required />
+                <input type="password" [(ngModel)]="sellerForm.password" name="password" required
+                    placeholder="Mínimo 6 caracteres" />
             </div>
+
+            <!-- Marca con "Otro" -->
             <div class="form-group">
-                <label>Agencia</label>
-                <select [(ngModel)]="sellerForm.agency_brand" name="brand">
-                    <option value="">Selecciona</option>
-                    <option *ngFor="let b of brands" [value]="b">{{ b }}</option>
+                <label>Marca (Agencia) *</label>
+                <select [(ngModel)]="sellerForm.agency_brand" name="agency_brand" required>
+                    <option value="">Selecciona una marca</option>
+                    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+                    <option value="Otro">Otro</option>
                 </select>
+                <input *ngIf="sellerForm.agency_brand === 'Otro'" type="text" [(ngModel)]="sellerForm.other_brand"
+                    placeholder="Escribe la marca" name="other_brand" style="margin-top: 0.5rem;" />
             </div>
+
+            <!-- Mapa -->
             <div class="form-group">
-                <label>Ubicación</label>
-                <select [(ngModel)]="sellerForm.agency_location" name="loc">
-                    <option value="">Selecciona</option>
-                    <option *ngFor="let l of locations" [value]="l">{{ l }}</option>
-                </select>
+                <label>Ubicación de Sucursal *</label>
+                <div #mapContainer class="map-container"></div>
+                <div *ngIf="selectedCoords" class="coords-info">
+                    <span class="coord-label">📍 Dirección:</span>
+                    <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
+                </div>
+                <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de la sucursal</p>
             </div>
+
+            <!-- Buscador -->
+            <div class="form-group">
+                <label>Buscar sucursal en el mapa</label>
+                <div class="search-group">
+                    <input type="text" [(ngModel)]="manualAddress" name="manualAddress"
+                        placeholder="Ej. Toyota Querétaro" (keydown)="onSearchKeydown($event)" class="search-input" />
+                    <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                    </button>
+                </div>
+                <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
+            </div>
+
+            <!-- Estado (solo edición) -->
             <div class="form-group" *ngIf="isEditMode">
                 <label>Estado</label>
                 <select [(ngModel)]="sellerForm.active" name="active">
@@ -121,6 +162,7 @@
                     <option [value]="false">Inactivo</option>
                 </select>
             </div>
+
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" (click)="closeFormModal()">Cancelar</button>
                 <button type="submit" class="btn-confirm" [disabled]="formLoading">
