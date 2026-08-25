@@ -1,331 +1,232 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { SupabaseService } from '../../../services/supabase.service';
+import * as L from 'leaflet';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  template: `
-    <div class="auth-container">
-      <div class="auth-card">
-        <div class="auth-header">
-          <h2>Registrarse</h2>
-          <p>Ingresa tus datos para comenzar a cotizar</p>
-        </div>
-
-        <form (ngSubmit)="onRegister()">
-          <!-- Número de celular -->
-          <div class="form-group">
-            <label>Número de celular *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="phoneNumber" 
-              name="phoneNumber" 
-              required 
-              placeholder="Ej. 5512345678"
-            />
-          </div>
-
-          <!-- Nombre completo -->
-          <div class="form-group">
-            <label>Nombre Completo *</label>
-            <input 
-              type="text" 
-              [(ngModel)]="fullName" 
-              name="fullName" 
-              required 
-              placeholder="Juan Pérez"
-            />
-          </div>
-
-          <!-- Contraseña -->
-          <div class="form-group">
-            <label>Contraseña *</label>
-            <input 
-              type="password" 
-              [(ngModel)]="password" 
-              name="password" 
-              required 
-              placeholder="••••••••"
-            />
-          </div>
-
-          <!-- Marca (Agencia) -->
-          <div class="form-group">
-            <label>Marca (Agencia) *</label>
-            <select [(ngModel)]="agencyBrand" name="agencyBrand" required>
-              <option value="">Selecciona una marca</option>
-              <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-              <option value="Otro">Otro</option>
-            </select>
-            <input 
-              *ngIf="agencyBrand === 'Otro'" 
-              type="text" 
-              [(ngModel)]="otherBrand" 
-              placeholder="Escribe la marca" 
-              name="otherBrand" 
-              style="margin-top: 0.5rem;"
-            />
-          </div>
-
-          <!-- Ubicación de Sucursal -->
-          <div class="form-group">
-            <label>Ubicación de Sucursal *</label>
-            <select [(ngModel)]="agencyLocation" name="agencyLocation" required>
-              <option value="">Selecciona una ubicación</option>
-              <option *ngFor="let loc of locations" [value]="loc">{{ loc }}</option>
-              <option value="Otro">Otro</option>
-            </select>
-            <input 
-              *ngIf="agencyLocation === 'Otro'" 
-              type="text" 
-              [(ngModel)]="otherLocation" 
-              placeholder="Escribe la ubicación" 
-              name="otherLocation" 
-              style="margin-top: 0.5rem;"
-            />
-          </div>
-
-          <button type="submit" class="btn-primary">Registrarse</button>
-        </form>
-
-        <p class="auth-link">
-          ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
-        </p>
-        <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .auth-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 80vh;
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-      padding: 1rem;
-    }
-    .auth-card {
-      background: white;
-      padding: 2.5rem 2rem;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-      width: 100%;
-      max-width: 420px;
-    }
-    .auth-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .auth-header h2 {
-      font-family: 'Fjalla One', sans-serif;
-      font-size: 1.8rem;
-      color: #0f172a;
-      margin: 0 0 0.3rem;
-    }
-    .auth-header p {
-      color: #64748b;
-      font-size: 0.9rem;
-      margin: 0;
-    }
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #334155;
-      margin-bottom: 0.3rem;
-    }
-    .form-group input, .form-group select {
-      width: 100%;
-      padding: 0.7rem 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-size: 1rem;
-      transition: border 0.2s;
-      box-sizing: border-box;
-      background: white;
-    }
-    .form-group input:focus, .form-group select:focus {
-      outline: none;
-      border-color: #20b038;
-      box-shadow: 0 0 0 3px rgba(32,176,56,0.1);
-    }
-    .btn-primary {
-      width: 100%;
-      padding: 0.8rem;
-      background: linear-gradient(135deg, #15803d, #20b038);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #166534, #1a8a3a);
-    }
-    .auth-link {
-      text-align: center;
-      margin-top: 1.2rem;
-      font-size: 0.9rem;
-      color: #64748b;
-    }
-    .auth-link a {
-      color: #15803d;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .auth-link a:hover {
-      text-decoration: underline;
-    }
-    .error {
-      color: #dc2626;
-      text-align: center;
-      margin-top: 0.8rem;
-      font-size: 0.9rem;
-    }
-  `]
+  templateUrl: './register.html',
+  styleUrls: ['./register.css']
 })
-export class RegisterComponent {
+export class RegisterComponent implements AfterViewInit {
   private supabase = inject(SupabaseService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
+  @ViewChild('mapContainer') mapContainer!: ElementRef;
 
   phoneNumber = '';
   fullName = '';
   password = '';
   agencyBrand = '';
   otherBrand = '';
-  agencyLocation = '';
-  otherLocation = ''; // ✅ Nuevo campo para ubicación manual
+  manualAddress = '';
   errorMessage = '';
+  selectedCoords: { lat: number; lng: number } | null = null;
+  addressText = '';
+  isSearching = false;
 
-  // ✅ Lista ampliada de marcas (agencias) presentes en Querétaro
+  private map!: L.Map;
+  private marker!: L.Marker;
+
   brands = [
-    'HINO',
-    'TOYOTA',
-    'NISSAN',
-    'BYD',
-    'FORD',
-    'AUDI',
-    'VOLKSWAGEN',
-    'CHEVROLET',
-    'HONDA',
-    'MAZDA',
-    'HYUNDAI',
-    'KIA',
-    'MITSUBISHI',
-    'SUZUKI',
-    'RENAULT',
-    'PEUGEOT',
-    'BMW',
-    'MERCEDES-BENZ',
-    'JEEP',
-    'DODGE',
-    'RAM',
-    'SUBARU',
-    'JAGUAR',
-    'LAND ROVER',
-    'VOLVO',
-    'PORSCHE',
-    'MINI',
-    'FIAT',
-    'ALFA ROMEO',
-    'MASERATI',
-    'LEXUS',
-    'INFINITI',
-    'ACURA'
+    'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
+    'VOLKSWAGEN', 'CHEVROLET', 'HONDA', 'MAZDA', 'HYUNDAI', 'KIA',
+    'MITSUBISHI', 'SUZUKI', 'RENAULT', 'PEUGEOT', 'BMW', 'MERCEDES-BENZ',
+    'JEEP', 'DODGE', 'RAM', 'SUBARU', 'JAGUAR', 'LAND ROVER',
+    'VOLVO', 'PORSCHE', 'MINI', 'FIAT', 'ALFA ROMEO', 'MASERATI',
+    'LEXUS', 'INFINITI', 'ACURA'
   ];
 
-  // ✅ Ubicaciones de sucursales en Querétaro (zonas y concesionarios conocidos)
-  locations = [
-    'Centro Histórico',
-    'Juriquilla',
-    'El Marqués',
-    'Plaza de Toros',
-    'Zaklo',
-    'Paseo Querétaro',
-    'Antea',
-    'Ciudad del Sol',
-    'Corregidora',
-    'Santa Rosa Jáuregui',
-    'San José Iturbide',
-    'Pedro Escobedo',
-    'Colón',
-    'Tequisquiapan',
-    'San Juan del Río',
-    'Amealco',
-    'Cadereyta',
-    'Ezequiel Montes',
-    'Huimilpan',
-    'Ampliación Paseos del Sol',
-    'Zona Industrial',
-    'Blvd. Bernardo Quintana',
-    'Av. Constituyentes',
-    'Av. 5 de Febrero',
-    'Plaza La Victoria',
-    'El Refugio',
-    'Zibatá',
-    'Lomas de Juriquilla',
-    'Residencial España',
-    'La Pradera'
-  ];
+  ngAfterViewInit() {
+    this.initMap();
+  }
 
-  async onRegister() {
-    // Validar campos obligatorios
-    if (!this.phoneNumber || !this.fullName || !this.password || !this.agencyBrand || !this.agencyLocation) {
-      this.errorMessage = 'Todos los campos son obligatorios';
+  initMap() {
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    });
+
+    const queretaroCoords: L.LatLngExpression = [20.5921, -100.3947];
+
+    this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
+
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      this.setMarkerAndReverseGeocode(lat, lng);
+    });
+
+    this.marker.on('dragend', () => {
+      const pos = this.marker.getLatLng();
+      this.setMarkerAndReverseGeocode(pos.lat, pos.lng);
+    });
+  }
+
+  async setMarkerAndReverseGeocode(lat: number, lng: number) {
+    this.marker.setLatLng([lat, lng]);
+    this.selectedCoords = { lat, lng };
+    await this.updateAddress(lat, lng);
+  }
+
+  async updateAddress(lat: number, lng: number) {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
+      if (data && data.display_name) {
+        this.addressText = data.display_name;
+        this.manualAddress = data.display_name;
+      } else {
+        this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        this.manualAddress = this.addressText;
+      }
+    } catch (error) {
+      this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      this.manualAddress = this.addressText;
+    }
+    this.cdr.detectChanges();
+  }
+
+  async searchLocation() {
+    const query = this.manualAddress.trim();
+    if (!query) {
+      this.errorMessage = 'Escribe una dirección para buscar';
       return;
     }
 
-    // Si seleccionó "Otro" en marca, usar el valor escrito
+    this.isSearching = true;
+    this.errorMessage = '';
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const result = data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+
+        this.map.setView([lat, lng], 16);
+        this.marker.setLatLng([lat, lng]);
+        this.selectedCoords = { lat, lng };
+        this.addressText = result.display_name || `${lat}, ${lng}`;
+        this.manualAddress = this.addressText;
+        this.cdr.detectChanges();
+      } else {
+        this.errorMessage = 'No se encontró la dirección. Intenta con otra búsqueda.';
+      }
+    } catch (error) {
+      console.error('Error en geocodificación:', error);
+      this.errorMessage = 'Error al buscar la dirección. Intenta de nuevo.';
+    } finally {
+      this.isSearching = false;
+    }
+  }
+
+  onSearchKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.searchLocation();
+    }
+  }
+
+  async onRegister() {
+    console.log('🚀 Iniciando registro...');
+
+    // 1. Validar campos obligatorios
+    if (!this.phoneNumber || !this.fullName || !this.password || !this.agencyBrand) {
+      this.errorMessage = 'Todos los campos son obligatorios';
+      console.warn('❌ Campos faltantes:', { phone: !!this.phoneNumber, name: !!this.fullName, pass: !!this.password, brand: !!this.agencyBrand });
+      return;
+    }
+
+    // 2. Validar ubicación
+    let finalLocation = '';
+    if (this.selectedCoords) {
+      finalLocation = this.addressText || `${this.selectedCoords.lat}, ${this.selectedCoords.lng}`;
+      console.log('📍 Usando coordenadas:', this.selectedCoords);
+    } else if (this.manualAddress.trim()) {
+      finalLocation = this.manualAddress.trim();
+      console.log('📍 Usando dirección manual:', finalLocation);
+    } else {
+      this.errorMessage = 'Selecciona una ubicación en el mapa o escribe una dirección y presiona "Buscar"';
+      console.warn('❌ Sin ubicación seleccionada');
+      return;
+    }
+
+    // 3. Marca final
     const finalBrand = this.agencyBrand === 'Otro' ? this.otherBrand : this.agencyBrand;
     if (!finalBrand) {
       this.errorMessage = 'Debes escribir el nombre de la marca';
       return;
     }
 
-    // Si seleccionó "Otro" en ubicación, usar el valor escrito
-    const finalLocation = this.agencyLocation === 'Otro' ? this.otherLocation : this.agencyLocation;
-    if (!finalLocation) {
-      this.errorMessage = 'Debes escribir la ubicación de la sucursal';
-      return;
-    }
-
+    // 4. Crear email
     const email = `vendedor_${this.phoneNumber}@golease.com`;
+    console.log('📧 Email generado:', email);
 
-    const { error: authError } = await this.supabase.signUp(email, this.password, this.fullName);
-    if (authError) {
-      console.error('Error de autenticación:', authError);
-      this.errorMessage = authError.message || 'Error al registrarse';
-      return;
+    try {
+      // 5. Registrar en Supabase Auth
+      console.log('🔐 Registrando en Supabase Auth...');
+      const { error: authError } = await this.supabase.signUp(email, this.password, this.fullName);
+      if (authError) {
+        console.error('❌ Error en Auth:', authError);
+        this.errorMessage = authError.message || 'Error al registrarse';
+        return;
+      }
+
+      // 6. Obtener usuario
+      const user = this.supabase.currentUser();
+      if (!user) {
+        console.error('❌ Usuario no encontrado después del registro');
+        this.errorMessage = 'No se pudo obtener el usuario después del registro';
+        return;
+      }
+      console.log('✅ Usuario creado:', user.id);
+
+      // 7. Guardar perfil
+      console.log('💾 Guardando perfil...');
+      const profileData: any = {
+        seller_number: this.phoneNumber,
+        full_name: this.fullName,
+        agency_brand: finalBrand,
+        agency_location: finalLocation
+      };
+
+      if (this.selectedCoords) {
+        profileData.latitude = this.selectedCoords.lat;
+        profileData.longitude = this.selectedCoords.lng;
+      }
+
+      const { error: profileError } = await this.supabase.updateProfile(user.id, profileData);
+
+      if (profileError) {
+        console.error('❌ Error al guardar perfil:', profileError);
+        this.errorMessage = `Error al guardar datos: ${profileError.message || 'desconocido'}`;
+        return;
+      }
+
+      console.log('✅ Registro completado exitosamente');
+      // 8. Redirigir
+      await this.router.navigate(['/']);
+    } catch (error: any) {
+      console.error('❌ Error inesperado:', error);
+      this.errorMessage = error.message || 'Error inesperado. Intenta de nuevo.';
     }
-
-    const user = this.supabase.currentUser();
-    if (!user) {
-      this.errorMessage = 'No se pudo obtener el usuario después del registro';
-      return;
-    }
-
-    const { error: profileError } = await this.supabase.updateProfile(user.id, {
-      seller_number: this.phoneNumber,
-      full_name: this.fullName,
-      agency_brand: finalBrand,
-      agency_location: finalLocation // ✅ Se guarda la ubicación (manual o seleccionada)
-    });
-
-    if (profileError) {
-      console.error('Error detallado al actualizar perfil:', profileError);
-      this.errorMessage = `Error al guardar datos adicionales: ${profileError.message || 'desconocido'}`;
-      return;
-    }
-
-    this.router.navigate(['/']);
   }
 }

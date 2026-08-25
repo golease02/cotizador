@@ -6,14 +6,16 @@ export const adminGuard = async () => {
   const supabase = inject(SupabaseService);
   const router = inject(Router);
 
-  let intentos = 0;
-  while (!supabase.currentProfile() && intentos < 10) {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    intentos++;
+  // Cargar perfil si no está disponible
+  let profile = supabase.currentProfile();
+  if (!profile) {
+    const user = supabase.currentUser();
+    if (user) {
+      profile = await supabase.loadProfile(user.id);
+    }
   }
 
-  const profile = supabase.currentProfile();
-  console.log('🔍 AdminGuard - Perfil:', profile);
+  console.log('🔍 adminGuard - Perfil:', profile);
 
   if (profile?.role === 'admin') {
     return true;

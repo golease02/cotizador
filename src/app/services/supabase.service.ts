@@ -33,7 +33,6 @@ export class SupabaseService {
   public readonly currentProfile = this.currentProfileSignal.asReadonly();
   public readonly savedQuotes = this.savedQuotesSignal.asReadonly();
 
-  // ✅ GETTER PARA EXPONER EL CLIENTE DE SUPABASE
   public get client() {
     return this.supabase;
   }
@@ -87,17 +86,42 @@ export class SupabaseService {
     localStorage.removeItem('golease_quotes');
   }
 
-  private async loadProfile(userId: string): Promise<void> {
+  /**
+   * Carga el perfil de un usuario y lo guarda en la señal.
+   * Devuelve el perfil cargado para que pueda ser usado directamente.
+   */
+  public async loadProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     if (!error && data) {
       this.currentProfileSignal.set(data as Profile);
+      return data as Profile;
     } else {
       console.warn('No se encontró perfil para el usuario:', userId);
+      return null;
     }
+  }
+
+  /**
+   * Fuerza la recarga del perfil del usuario actualmente autenticado.
+   * Útil después de un cambio de rol o para refrescar datos.
+   */
+  public async refreshProfile(): Promise<Profile | null> {
+    const user = this.currentUserSignal();
+    if (!user) return null;
+    return this.loadProfile(user.id);
+  }
+
+  public async getProfileById(userId: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    return { data, error };
   }
 
   // ==================== CATÁLOGOS ====================
@@ -127,7 +151,6 @@ export class SupabaseService {
 
   // ==================== COTIZACIONES ====================
 
-  // ✅ MODIFICADO: acepta quoteId opcional y devuelve { id, error }
   public async saveQuote(quote: QuoteCalculationResult, quoteId?: number): Promise<{ id: number | null; error: any }> {
     const user = this.currentUserSignal();
     if (!user) {
@@ -153,7 +176,6 @@ export class SupabaseService {
     };
 
     if (quoteId) {
-      // Actualizar cotización existente
       const { error } = await this.supabase
         .from('quotes')
         .update(quoteData)
@@ -168,7 +190,6 @@ export class SupabaseService {
       this.saveLocalQuote(quote);
       return { id: quoteId, error: null };
     } else {
-      // Insertar nueva cotización
       const { data, error } = await this.supabase
         .from('quotes')
         .insert([quoteData])
@@ -256,7 +277,6 @@ export class SupabaseService {
 
   // ==================== UTILIDADES ====================
 
-  // Obtener cotizaciones de un vendedor (solo datos del input)
   public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {
     const { data, error } = await this.supabase
       .from('quotes')
@@ -293,15 +313,6 @@ export class SupabaseService {
     return { data: profile, error: null };
   }
 
-  public async getProfileById(userId: string): Promise<{ data: any; error: any }> {
-    const { data, error } = await this.supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    return { data, error };
-  }
-
   public async getAdmins(): Promise<{ data: any; error: any }> {
     const { data, error } = await this.supabase
       .from('profiles')
@@ -328,7 +339,8 @@ export class SupabaseService {
           .eq('seller_id', profile.id);
         return {
           ...profile,
-          quote_count: count || 0
+          quote_count: count || 0,
+          active: profile.active !== undefined ? profile.active : true
         };
       })
     );

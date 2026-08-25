@@ -20,6 +20,7 @@ export class AdminSellerFormComponent implements OnInit {
   sellerId: string | null = null;
   loading = false;
   errorMessage = '';
+  successMessage = '';
 
   seller = {
     seller_number: '',
@@ -28,14 +29,9 @@ export class AdminSellerFormComponent implements OnInit {
     password: '',
     agency_brand: '',
     agency_location: '',
-    role: 'seller',
     active: true
   };
 
-  roles = [
-    { value: 'admin', label: 'Administrador' },
-    { value: 'seller', label: 'Vendedor' }
-  ];
   brands = ['HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI'];
   locations = [
     'Centro Histórico',
@@ -58,37 +54,42 @@ export class AdminSellerFormComponent implements OnInit {
 
   async loadSeller() {
     this.loading = true;
+    this.errorMessage = '';
     const { data, error } = await this.supabase.getProfileById(this.sellerId!);
     if (error) {
-      this.errorMessage = 'Error al cargar usuario';
-      console.error(error);
-    } else if (data) {
-      this.seller = {
-        seller_number: data.seller_number || '',
-        full_name: data.full_name || '',
-        email: data.email || '',
-        password: '',
-        agency_brand: data.agency_brand || '',
-        agency_location: data.agency_location || '',
-        role: data.role || 'seller',
-        active: data.active !== false
-      };
+      console.error('Error loading seller:', error);
+      this.errorMessage = 'Error al cargar vendedor: ' + (error.message || '');
+      this.loading = false;
+      return;
     }
+    if (!data) {
+      this.errorMessage = 'Vendedor no encontrado';
+      this.loading = false;
+      return;
+    }
+    this.seller = {
+      seller_number: data.seller_number || '',
+      full_name: data.full_name || '',
+      email: data.email || '',
+      password: '',
+      agency_brand: data.agency_brand || '',
+      agency_location: data.agency_location || '',
+      active: data.active !== false
+    };
     this.loading = false;
   }
 
   async onSubmit() {
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
     if (this.isEditMode) {
-      // Actualizar perfil existente
       const { error } = await this.supabase.updateProfile(this.sellerId!, {
         full_name: this.seller.full_name,
         agency_brand: this.seller.agency_brand,
         agency_location: this.seller.agency_location,
         seller_number: this.seller.seller_number,
-        role: this.seller.role,
         active: this.seller.active
       });
       if (error) {
@@ -96,17 +97,13 @@ export class AdminSellerFormComponent implements OnInit {
         this.loading = false;
         return;
       }
+      this.successMessage = '✅ Vendedor actualizado correctamente';
+      setTimeout(() => this.router.navigate(['/admin/sellers']), 1500);
     } else {
-      // Crear nuevo usuario (registro)
-      if (!this.seller.password || this.seller.password.length < 6) {
-        this.errorMessage = 'La contraseña debe tener al menos 6 caracteres';
-        this.loading = false;
-        return;
-      }
       const email = `vendedor_${this.seller.seller_number}@golease.com`;
       const { error: authError } = await this.supabase.signUp(
         email,
-        this.seller.password,
+        this.seller.password || '12345678',
         this.seller.full_name
       );
       if (authError) {
@@ -127,17 +124,18 @@ export class AdminSellerFormComponent implements OnInit {
         full_name: this.seller.full_name,
         agency_brand: this.seller.agency_brand,
         agency_location: this.seller.agency_location,
-        role: this.seller.role,
-        active: this.seller.active
+        active: true,
+        role: 'seller'
       });
       if (profileError) {
         this.errorMessage = 'Error al guardar perfil: ' + profileError.message;
         this.loading = false;
         return;
       }
+      this.successMessage = '✅ Vendedor creado correctamente';
+      setTimeout(() => this.router.navigate(['/admin/sellers']), 1500);
     }
 
     this.loading = false;
-    this.router.navigate(['/admin/sellers']);
   }
 }
