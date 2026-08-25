@@ -31,13 +31,36 @@ export class AdminQuotesComponent implements OnInit {
   filtroFechaFin: string = '';
   filtroPrecioMin: number | null = null;
   filtroPrecioMax: number | null = null;
+  filtroColor: string = 'todos';
 
-  // Vendedores (con teléfono)
+  // Vendedores
   vendedores: any[] = [];
 
-  // Modal
+  // Modal de cotización
   showModal = false;
   selectedQuote = signal<QuoteCalculationResult | null>(null);
+
+  // Notas
+  showNotasModal = false;
+  notasCotizacion: any[] = [];
+  notaText = '';
+  notaEditando: any = null;
+  notaLoading = false;
+  notaError = '';
+  selectedQuoteId: string | null = null;
+
+  // Colores
+  colores = ['verde', 'amarillo', 'rojo'];
+  colorLabels: Record<string, string> = {
+    verde: 'Revisada',
+    amarillo: 'Pendiente',
+    rojo: 'Urgente'
+  };
+
+  // Tooltip
+  showTooltip = false;
+  tooltipContent = '';
+  tooltipPosition = { x: 0, y: 0 };
 
   async ngOnInit() {
     await this.loadQuotes();
@@ -50,6 +73,20 @@ export class AdminQuotesComponent implements OnInit {
     if (error) {
       console.error('Error loading quotes:', error);
     } else {
+      // Actualizar colores automáticamente
+      for (const q of data) {
+        const dias = this.getDiasSinActualizar(q);
+        let colorCalculado = 'verde';
+        if (dias > 7) colorCalculado = 'rojo';
+        else if (dias > 2) colorCalculado = 'amarillo';
+        if (q.color !== colorCalculado) {
+          await this.supabase.client
+            .from('quotes')
+            .update({ color: colorCalculado, ultima_actualizacion: new Date().toISOString() })
+            .eq('id', q.id);
+          q.color = colorCalculado;
+        }
+      }
       this.quotes.set(data || []);
       this.applyFilters();
     }
@@ -112,6 +149,10 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => q.pricenet <= this.filtroPrecioMax!);
     }
 
+    if (this.filtroColor !== 'todos') {
+      filtered = filtered.filter(q => q.color === this.filtroColor);
+    }
+
     this.filteredQuotes.set(filtered);
     this.cdr.detectChanges();
   }
@@ -120,8 +161,206 @@ export class AdminQuotesComponent implements OnInit {
     this.applyFilters();
   }
 
-  // ✅ Abrir modal con la cotización
+  // ===================== NOTAS =====================
+
+  async abrirNotas(quote: any) {
+    await this.marcarComoRevisado(quote.id);
+    this.selectedQuoteId = quote.id;
+    this.showNotasModal = true;
+    this.notaText = '';
+    this.notaEditando = null;
+    this.notaError = '';
+    await this.cargarNotasQuote(quote.id);
+  }
+
+  async cargarNotasQuote(quoteId: string) {
+    this.notaLoading = true;
+    try {
+      const { data, error } = await this.supabase.client
+        .from('notas')
+        .select('*')
+        .eq('entidad_tipo', 'quote')
+        .eq('entidad_id', quoteId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error cargando notas de cotización:', error);
+        this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
+      } else {
+        this.notasCotizacion = data || [];
+        this.notaError = '';
+      }
+    } catch (err: any) {
+      this.notaError = 'Error al cargar notas: ' + (err.message || 'desconocido');
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  async guardarNotaQuote() {
+    if (!this.notaText.trim()) return;
+    this.notaLoading = true;
+    this.notaError = '';
+
+    const user = this.supabase.currentUser();
+    const payload = {
+      entidad_tipo: 'quote',
+      entidad_id: this.selectedQuoteId,
+      texto: this.notaText.trim(),
+      creado_por: user?.id || null,
+      created_at: new Date().toISOString()
+    };
+
+    let error = null;
+    if (this.notaEditando) {
+      const { error: updateError } = await this.supabase.client
+        .from('notas')
+        .update({ texto: this.notaText.trim() })
+        .eq('id', this.notaEditando.id);
+      error = updateError;
+    } else {
+      const { error: insertError } = await this.supabase.client
+        .from('notas')
+        .insert([payload]);
+      error = insertError;
+    }
+
+    if (error) {
+      console.error('Error guardando nota:', error);
+      this.notaError = 'Error al guardar nota';
+    } else {
+      this.notaText = '';
+      this.notaEditando = null;
+      await this.cargarNotasQuote(this.selectedQuoteId!);
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  editarNotaQuote(nota: any) {
+    this.notaEditando = nota;
+    this.notaText = nota.texto;
+  }
+
+  async eliminarNotaQuote(notaId: string) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    this.notaLoading = true;
+    const { error } = await this.supabase.client
+      .from('notas')
+      .delete()
+      .eq('id', notaId);
+    if (error) {
+      console.error('Error eliminando nota:', error);
+      this.notaError = 'Error al eliminar nota';
+    } else {
+      await this.cargarNotasQuote(this.selectedQuoteId!);
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  cerrarNotasQuote() {
+    this.showNotasModal = false;
+    this.notasCotizacion = [];
+    this.notaText = '';
+    this.notaEditando = null;
+    this.notaError = '';
+    this.selectedQuoteId = null;
+  }
+
+  // ===================== COLOR Y SEGUIMIENTO =====================
+
+  async marcarComoRevisado(quoteId: string) {
+    await this.supabase.client
+      .from('quotes')
+      .update({ color: 'verde', ultima_actualizacion: new Date().toISOString() })
+      .eq('id', quoteId);
+    // Actualizar localmente
+    const updatedQuotes = this.quotes().map(q => {
+      if (q.id === quoteId) {
+        q.color = 'verde';
+        q.ultima_actualizacion = new Date().toISOString();
+      }
+      return q;
+    });
+    this.quotes.set(updatedQuotes);
+    this.applyFilters();
+  }
+
+  async cambiarColor(quote: any, color: string) {
+    const { error } = await this.supabase.client
+      .from('quotes')
+      .update({ color: color, ultima_actualizacion: new Date().toISOString() })
+      .eq('id', quote.id);
+    if (error) {
+      console.error('Error actualizando color:', error);
+      alert('Error al cambiar color');
+    } else {
+      const updatedQuotes = this.quotes().map(q => {
+        if (q.id === quote.id) {
+          q.color = color;
+          q.ultima_actualizacion = new Date().toISOString();
+        }
+        return q;
+      });
+      this.quotes.set(updatedQuotes);
+      this.applyFilters();
+    }
+  }
+
+  getDiasSinActualizar(quote: any): number {
+    const fecha = new Date(quote.ultima_actualizacion || quote.created_at);
+    const ahora = new Date();
+    const diff = Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  }
+
+  getColorClase(quote: any): string {
+    const color = quote.color || 'verde';
+    return `color-${color}`;
+  }
+
+  // ===================== TOOLTIP (hover) =====================
+
+  onMouseEnter(event: MouseEvent, quote: any) {
+    // Obtener notas de esta cotización
+    this.supabase.client
+      .from('notas')
+      .select('texto, created_at')
+      .eq('entidad_tipo', 'quote')
+      .eq('entidad_id', quote.id)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const notasText = data.map(n => `• ${n.texto}`).join('\n');
+          this.tooltipContent = notasText || 'Sin notas';
+        } else {
+          this.tooltipContent = 'Sin notas';
+        }
+        this.showTooltip = true;
+        // Posicionar tooltip
+        let x = event.clientX + 12;
+        let y = event.clientY + 12;
+        if (x + 280 > window.innerWidth) {
+          x = event.clientX - 290;
+        }
+        if (y + 120 > window.innerHeight) {
+          y = event.clientY - 120;
+        }
+        this.tooltipPosition = { x, y };
+        this.cdr.detectChanges();
+      });
+  }
+
+  onMouseLeave() {
+    this.showTooltip = false;
+    this.tooltipContent = '';
+    this.cdr.detectChanges();
+  }
+
+  // ===================== MODAL DE COTIZACIÓN =====================
+
   async abrirModal(quote: any) {
+    await this.marcarComoRevisado(quote.id);
     const input: VehicleQuoteInput = {
       clientName: quote.client_name || '',
       brand: quote.brand,
@@ -138,22 +377,22 @@ export class AdminQuotesComponent implements OnInit {
     const result = this.calculator.calculateQuote(input);
     this.selectedQuote.set(result);
     this.showModal = true;
-    document.body.style.overflow = 'hidden'; // Bloquear scroll
+    document.body.style.overflow = 'hidden';
   }
 
-  // ✅ Cerrar modal
   cerrarModal() {
     this.showModal = false;
     this.selectedQuote.set(null);
     document.body.style.overflow = '';
   }
 
-  // ✅ Cerrar al hacer clic en el fondo
   cerrarModalFondo(event: MouseEvent) {
     if (event.target === event.currentTarget) {
       this.cerrarModal();
     }
   }
+
+  // ===================== UTILIDADES =====================
 
   getPeriodoLabel(periodo: string): string {
     const map: Record<string, string> = {

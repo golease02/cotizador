@@ -39,6 +39,7 @@
                     </td>
                     <td>
                         <div class="action-buttons">
+                            <button class="btn-icon btn-note" (click)="abrirNotas(seller)" title="Notas">📝</button>
                             <button class="btn-icon btn-edit" (click)="openEditSeller(seller)"
                                 title="Editar">✏️</button>
                             <button class="btn-icon btn-toggle" (click)="toggleSellerStatus(seller.id)"
@@ -56,7 +57,7 @@
     </div>
 </div>
 
-<!-- MODAL DE CONFIRMACIÓN (con advertencia de cotizaciones) -->
+<!-- MODAL DE CONFIRMACIÓN -->
 <div class="modal-overlay" *ngIf="showConfirmModal" (click)="cancelModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
         <h3>Confirmar acción</h3>
@@ -92,28 +93,24 @@
         <div *ngIf="formLoading" class="loading">Cargando...</div>
 
         <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
-            <!-- Número -->
             <div class="form-group">
                 <label>Número de celular *</label>
                 <input type="text" [(ngModel)]="sellerForm.seller_number" name="seller_number" required
                     [disabled]="isEditMode" placeholder="Ej. 5512345678" />
             </div>
 
-            <!-- Nombre -->
             <div class="form-group">
                 <label>Nombre Completo *</label>
                 <input type="text" [(ngModel)]="sellerForm.full_name" name="full_name" required
                     placeholder="Juan Pérez" />
             </div>
 
-            <!-- Contraseña (solo creación) -->
             <div class="form-group" *ngIf="!isEditMode">
                 <label>Contraseña *</label>
                 <input type="password" [(ngModel)]="sellerForm.password" name="password" required
                     placeholder="Mínimo 6 caracteres" />
             </div>
 
-            <!-- Marca con "Otro" -->
             <div class="form-group">
                 <label>Marca (Agencia) *</label>
                 <select [(ngModel)]="sellerForm.agency_brand" name="agency_brand" required>
@@ -125,7 +122,6 @@
                     placeholder="Escribe la marca" name="other_brand" style="margin-top: 0.5rem;" />
             </div>
 
-            <!-- Mapa -->
             <div class="form-group">
                 <label>Ubicación de Sucursal *</label>
                 <div #mapContainer class="map-container"></div>
@@ -136,7 +132,6 @@
                 <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de la sucursal</p>
             </div>
 
-            <!-- Buscador -->
             <div class="form-group">
                 <label>Buscar sucursal en el mapa</label>
                 <div class="search-group">
@@ -154,7 +149,6 @@
                 <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
             </div>
 
-            <!-- Estado (solo edición) -->
             <div class="form-group" *ngIf="isEditMode">
                 <label>Estado</label>
                 <select [(ngModel)]="sellerForm.active" name="active">
@@ -170,5 +164,38 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- MODAL DE NOTAS PARA VENDEDOR -->
+<div class="modal-overlay" *ngIf="showNotasModal" (click)="cerrarNotas()">
+    <div class="modal-content notas-modal" (click)="$event.stopPropagation()">
+        <h3>Notas de Vendedor</h3>
+        <div *ngIf="notaError" class="error">{{ notaError }}</div>
+
+        <div class="notas-list">
+            <div *ngIf="notaLoading" class="loading">Cargando...</div>
+            <div *ngFor="let n of notasVendedor" class="nota-item">
+                <div class="nota-texto">{{ n.texto }}</div>
+                <div class="nota-fecha">{{ n.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
+                <div class="nota-acciones">
+                    <button class="btn-icon btn-edit" (click)="editarNota(n)">✏️</button>
+                    <button class="btn-icon btn-delete" (click)="eliminarNota(n.id)">🗑️</button>
+                </div>
+            </div>
+            <div *ngIf="!notaLoading && notasVendedor.length === 0" class="empty-state">Sin notas</div>
+        </div>
+
+        <div class="nota-editor">
+            <textarea [(ngModel)]="notaText" placeholder="Escribe una nota..." class="nota-textarea"></textarea>
+            <button class="btn-primary" (click)="guardarNota()" [disabled]="!notaText.trim() || notaLoading">
+                {{ notaEditando ? 'Actualizar' : 'Agregar' }}
+            </button>
+            <button class="btn-secondary" (click)="notaEditando = null; notaText = ''">Cancelar</button>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" (click)="cerrarNotas()">Cerrar</button>
+        </div>
     </div>
 </div>

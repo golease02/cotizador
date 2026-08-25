@@ -294,6 +294,61 @@ export class SupabaseService {
     }
   }
 
+  // ==================== NOTAS ====================
+
+  public async getNotes(entityType: 'seller' | 'quote', entityId: string): Promise<{ data: any; error: any }> {
+    const { data, error } = await this.supabase
+      .from('notes')
+      .select('*, profiles!created_by(full_name)')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('created_at', { ascending: false });
+    return { data, error };
+  }
+
+  public async createNote(entityType: 'seller' | 'quote', entityId: string, content: string): Promise<{ error: any }> {
+    const user = this.currentUserSignal();
+    if (!user) return { error: { message: 'No hay usuario autenticado' } };
+    const { error } = await this.supabase
+      .from('notes')
+      .insert([{
+        entity_type: entityType,
+        entity_id: entityId,
+        content,
+        created_by: user.id
+      }]);
+    return { error };
+  }
+
+  public async updateNote(noteId: string, content: string): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('notes')
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq('id', noteId);
+    return { error };
+  }
+
+  public async deleteNote(noteId: string): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId);
+    return { error };
+  }
+
+  // ==================== ESTADO DE COTIZACIÓN ====================
+
+  public async updateQuoteStatus(quoteId: string, color: string | null): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('quotes')
+      .update({
+        status_color: color,
+        last_reviewed_at: new Date().toISOString()
+      })
+      .eq('id', quoteId);
+    return { error };
+  }
+
   // ==================== UTILIDADES ====================
 
   public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {

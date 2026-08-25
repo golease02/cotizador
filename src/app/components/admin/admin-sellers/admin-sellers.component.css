@@ -378,4 +378,470 @@ tr:hover td {
     .map-container {
         height: 200px;
     }
+
+    /* ============================================
+   NOTAS MODAL (compartido)
+   ============================================ */
+    .notas-modal {
+        max-width: 500px;
+    }
+
+    .notas-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 0.8rem;
+    }
+
+    .nota-item {
+        background: #f8fafc;
+        padding: 0.6rem;
+        border-radius: 8px;
+        margin-bottom: 0.4rem;
+        border-left: 4px solid #20b038;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nota-texto {
+        flex: 1;
+        font-size: 0.9rem;
+    }
+
+    .nota-fecha {
+        font-size: 0.7rem;
+        color: #94a3b8;
+    }
+
+    .nota-acciones {
+        display: flex;
+        gap: 0.2rem;
+    }
+
+    .nota-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .nota-textarea {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        resize: vertical;
+        min-height: 60px;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #334155;
+        border: none;
+        padding: 0.4rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    /* ============================================
+   INDICADORES DE COLOR EN TARJETAS
+   ============================================ */
+    /* ============================================
+   MODAL DE NOTAS - ESTILO MODERNO
+   ============================================ */
+    .notas-modal {
+        max-width: 540px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+        background: #ffffff;
+    }
+
+    .notas-modal h3 {
+        font-family: 'Fjalla One', sans-serif;
+        font-size: 1.4rem;
+        color: #0f172a;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .notas-modal h3::before {
+        content: "📝";
+        font-size: 1.2rem;
+    }
+
+    .notas-list {
+        max-height: 300px;
+        overflow-y: auto;
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .notas-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .notas-list::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    .notas-list::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 4px;
+    }
+
+    .nota-item {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        margin-bottom: 0.6rem;
+        border-left: 4px solid #20b038;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background 0.2s;
+    }
+
+    .nota-item:hover {
+        background: #f1f5f9;
+    }
+
+    .nota-texto {
+        flex: 1;
+        font-size: 0.95rem;
+        color: #0f172a;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    .nota-fecha {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        white-space: nowrap;
+        background: #e2e8f0;
+        padding: 0.1rem 0.5rem;
+        border-radius: 12px;
+    }
+
+    .nota-acciones {
+        display: flex;
+        gap: 0.2rem;
+    }
+
+    .nota-acciones .btn-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 0.8rem;
+        border-radius: 6px;
+    }
+
+    .nota-acciones .btn-icon:hover {
+        background: #e2e8f0;
+    }
+
+    .nota-acciones .btn-edit:hover {
+        color: #3b82f6;
+    }
+
+    .nota-acciones .btn-delete:hover {
+        color: #ef4444;
+        background: #fee2e2;
+    }
+
+    .nota-editor {
+        margin-top: 1rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+    }
+
+    .nota-textarea {
+        width: 100%;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.7rem 0.9rem;
+        font-size: 0.9rem;
+        resize: vertical;
+        min-height: 70px;
+        font-family: inherit;
+        transition: border 0.2s, box-shadow 0.2s;
+        background: white;
+    }
+
+    .nota-textarea:focus {
+        outline: none;
+        border-color: #20b038;
+        box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.1);
+    }
+
+    .nota-editor-actions {
+        display: flex;
+        gap: 0.6rem;
+        margin-top: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .nota-editor-actions .btn-primary {
+        background: linear-gradient(135deg, #15803d, #20b038);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .nota-editor-actions .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(32, 176, 56, 0.25);
+    }
+
+    .nota-editor-actions .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .nota-editor-actions .btn-secondary {
+        background: #e2e8f0;
+        color: #334155;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .nota-editor-actions .btn-secondary:hover {
+        background: #cbd5e1;
+    }
+
+    .notas-modal .modal-actions {
+        margin-top: 1.2rem;
+        justify-content: flex-end;
+    }
+
+    .notas-modal .btn-cancel {
+        background: #e2e8f0;
+        color: #334155;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .notas-modal .btn-cancel:hover {
+        background: #cbd5e1;
+    }
+
+    /* ============================================
+   TARJETAS DE COTIZACIONES CON COLOR DE BORDE
+   ============================================ */
+    .quote-card {
+        border-left: 6px solid #94a3b8;
+        /* color por defecto */
+        transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: visible;
+    }
+
+    /* Estado Verde - Seguimiento */
+    .quote-card.color-verde {
+        border-left-color: #22c55e;
+    }
+
+    .quote-card.color-verde .status-badge {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    /* Estado Amarillo - Pendiente */
+    .quote-card.color-amarillo {
+        border-left-color: #f59e0b;
+    }
+
+    .quote-card.color-amarillo .status-badge {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    /* Estado Rojo - Urgente */
+    .quote-card.color-rojo {
+        border-left-color: #ef4444;
+    }
+
+    .quote-card.color-rojo .status-badge {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    /* Etiqueta de estado en la tarjeta */
+    .status-badge {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.15rem 0.6rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-left: 0.5rem;
+        background: #e2e8f0;
+        color: #475569;
+        border: none;
+    }
+
+    .quote-card .card-header .client-info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .quote-card .card-header .client-info .client-avatar {
+        margin-right: 0.2rem;
+    }
+
+    .quote-card .card-header .client-info .status-badge {
+        margin-left: 0.3rem;
+    }
+
+    /* Selector de color en el pie de tarjeta */
+    .color-selector {
+        display: flex;
+        gap: 0.2rem;
+        align-items: center;
+        margin-right: 0.3rem;
+    }
+
+    .color-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 2px;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+
+    .color-btn:hover {
+        transform: scale(1.2);
+    }
+
+    .color-btn.active {
+        outline: 2px solid #0f172a;
+        outline-offset: 2px;
+    }
+
+    .color-dot {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+    }
+
+    .color-dot.dot-verde {
+        background: #22c55e;
+    }
+
+    .color-dot.dot-amarillo {
+        background: #f59e0b;
+    }
+
+    .color-dot.dot-rojo {
+        background: #ef4444;
+    }
+
+    /* Botón de nota en tarjeta */
+    .btn-note {
+        background: transparent;
+        border: none;
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 0 0.3rem;
+        transition: 0.2s;
+    }
+
+    .btn-note:hover {
+        transform: scale(1.2);
+    }
+
+    /* Botón ver detalle en tarjeta */
+    .btn-view {
+        background: transparent;
+        border: none;
+        color: #15803d;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        transition: 0.2s;
+    }
+
+    .btn-view:hover {
+        background: #f0fdf4;
+        border-radius: 6px;
+    }
+
+    /* ============================================
+   MODAL DE NOTAS - RESPONSIVE
+   ============================================ */
+    @media (max-width: 600px) {
+        .notas-modal {
+            max-width: 95%;
+            padding: 1.2rem;
+        }
+
+        .nota-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.3rem;
+        }
+
+        .nota-acciones {
+            justify-content: flex-end;
+        }
+
+        .nota-editor-actions {
+            flex-direction: column;
+        }
+
+        .nota-editor-actions .btn-primary,
+        .nota-editor-actions .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* ============================================
+   INDICADOR DE COLOR EN LA TARJETA (barra superior)
+   ============================================ */
+    .card-color-indicator {
+        width: 100%;
+        height: 4px;
+        border-radius: 4px 4px 0 0;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-color-indicator.color-verde {
+        background: #22c55e;
+    }
+
+    .card-color-indicator.color-amarillo {
+        background: #f59e0b;
+    }
+
+    .card-color-indicator.color-rojo {
+        background: #ef4444;
+    }
+
 }

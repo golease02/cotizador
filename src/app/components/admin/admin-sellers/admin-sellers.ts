@@ -45,6 +45,13 @@ export class AdminSellersComponent implements OnInit {
     active: true
   };
 
+  showNotasModal = false;
+  notasVendedor: any[] = [];
+  notaText = '';
+  notaEditando: any = null;
+  notaLoading = false;
+  notaError = '';
+
   // Mapa
   manualAddress = '';
   selectedCoords: { lat: number; lng: number } | null = null;
@@ -78,6 +85,113 @@ export class AdminSellersComponent implements OnInit {
   async ngOnInit() {
     await this.loadSellers();
   }
+
+  async abrirNotas(seller: any) {
+    this.selectedSellerId = seller.id;
+    this.showNotasModal = true;
+    this.notaText = '';
+    this.notaEditando = null;
+    this.notaError = '';
+    await this.cargarNotas(seller.id);
+  }
+
+  async cargarNotas(sellerId: string) {
+    this.notaLoading = true;
+    try {
+      const { data, error } = await this.supabase.client
+        .from('notas')
+        .select('*')
+        .eq('entidad_tipo', 'seller')
+        .eq('entidad_id', sellerId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Error cargando notas de vendedor:', error);
+        this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
+      } else {
+        this.notasVendedor = data || [];
+        this.notaError = '';
+      }
+    } catch (err: any) {
+      this.notaError = 'Error al cargar notas: ' + (err.message || 'desconocido');
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  async guardarNota() {
+    if (!this.notaText.trim()) return;
+    this.notaLoading = true;
+    this.notaError = '';
+
+    const user = this.supabase.currentUser();
+    const payload = {
+      entidad_tipo: 'seller',
+      entidad_id: this.selectedSellerId,
+      texto: this.notaText.trim(),
+      creado_por: user?.id || null,
+      created_at: new Date().toISOString()
+    };
+
+    let error = null;
+    if (this.notaEditando) {
+      // Editar nota existente
+      const { error: updateError } = await this.supabase.client
+        .from('notas')
+        .update({ texto: this.notaText.trim() })
+        .eq('id', this.notaEditando.id);
+      error = updateError;
+    } else {
+      // Nueva nota
+      const { error: insertError } = await this.supabase.client
+        .from('notas')
+        .insert([payload]);
+      error = insertError;
+    }
+
+    if (error) {
+      console.error('Error guardando nota:', error);
+      this.notaError = 'Error al guardar nota';
+    } else {
+      this.notaText = '';
+      this.notaEditando = null;
+      await this.cargarNotas(this.selectedSellerId!);
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  editarNota(nota: any) {
+    this.notaEditando = nota;
+    this.notaText = nota.texto;
+  }
+
+  async eliminarNota(notaId: string) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    this.notaLoading = true;
+    const { error } = await this.supabase.client
+      .from('notas')
+      .delete()
+      .eq('id', notaId);
+    if (error) {
+      console.error('Error eliminando nota:', error);
+      this.notaError = 'Error al eliminar nota';
+    } else {
+      await this.cargarNotas(this.selectedSellerId!);
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  cerrarNotas() {
+    this.showNotasModal = false;
+    this.notasVendedor = [];
+    this.notaText = '';
+    this.notaEditando = null;
+    this.notaError = '';
+    this.selectedSellerId = null;
+  }
+
+
 
   // ===================== LISTADO =====================
 

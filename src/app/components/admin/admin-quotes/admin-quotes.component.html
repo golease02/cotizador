@@ -12,9 +12,8 @@
         <div class="filters-row row-1">
             <div class="filter-group search-group">
                 <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
-                    placeholder="🔍 Buscar por cliente, vehículo o vendedor..." class="filter-input" />
+                    placeholder="Buscar por cliente, vehículo o vendedor..." class="filter-input" />
             </div>
-
             <div class="filter-group">
                 <label>Vendedor</label>
                 <select [(ngModel)]="filtroVendedor" (change)="applyFilters()" class="filter-select">
@@ -24,7 +23,6 @@
                     </option>
                 </select>
             </div>
-
             <div class="filter-group">
                 <label>Período</label>
                 <select [(ngModel)]="filtroPeriodo" (change)="applyFilters()" class="filter-select">
@@ -32,6 +30,15 @@
                     <option value="7dias">Últimos 7 días</option>
                     <option value="30dias">Últimos 30 días</option>
                     <option value="90dias">Últimos 90 días</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Estado</label>
+                <select [(ngModel)]="filtroColor" (change)="applyFilters()" class="filter-select">
+                    <option value="todos">Todos</option>
+                    <option value="verde">Revisada</option>
+                    <option value="amarillo">Pendiente</option>
+                    <option value="rojo">Urgente</option>
                 </select>
             </div>
         </div>
@@ -43,7 +50,6 @@
                 <label>Hasta</label>
                 <input type="date" [(ngModel)]="filtroFechaFin" (change)="applyFilters()" class="filter-input" />
             </div>
-
             <div class="filter-group price-range">
                 <label>Precio mínimo</label>
                 <input type="number" [(ngModel)]="filtroPrecioMin" (input)="applyFilters()" class="filter-input"
@@ -69,19 +75,30 @@
         </div>
 
         <div class="cards-grid" *ngIf="!loading && filteredQuotes().length > 0">
-            <div *ngFor="let q of filteredQuotes(); let i = index" class="quote-card"
-                [style.animation-delay]="(i * 0.03) + 's'">
-                <div class="card-header">
-                    <div class="client-info">
-                        <span class="client-avatar">{{ (q.client_name || '?').charAt(0).toUpperCase() }}</span>
-                        <div>
-                            <div class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</div>
-                            <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+            <div *ngFor="let q of filteredQuotes(); let i = index" class="quote-card" [class]="getColorClase(q)"
+                [style.animation-delay]="(i * 0.03) + 's'" (mouseenter)="onMouseEnter($event, q)"
+                (mouseleave)="onMouseLeave()">
+                <div class="card-color-indicator" [class]="getColorClase(q)"></div>
+
+                <div class="card-body-grid">
+                    <div class="card-left">
+                        <div class="client-info">
+                            <span class="client-avatar">{{ (q.client_name || '?').charAt(0).toUpperCase() }}</span>
+                            <div>
+                                <div class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</div>
+                                <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+                            </div>
                         </div>
                     </div>
-                    <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+                    <div class="card-right">
+                        <span class="price-tag">{{ q.pricenet | currency : 'MXN' : 'symbol' : '1.0-0' }}</span>
+                        <span class="status-badge" [class]="getColorClase(q)">
+                            {{ q.color === 'verde' ? 'Revisada' : q.color === 'amarillo' ? 'Pendiente' : 'Urgente' }}
+                        </span>
+                    </div>
                 </div>
-                <div class="card-body">
+
+                <div class="card-details">
                     <div class="detail-item">
                         <span class="detail-label">Vendedor</span>
                         <span class="detail-value">{{ q.seller_name || 'N/A' }}</span>
@@ -91,30 +108,103 @@
                         <span class="detail-value">{{ q.termmonths }} meses</span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">Fecha</span>
-                        <span class="detail-value">{{ q.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                        <span class="detail-label">Fecha de creación</span>
+                        <span class="detail-value">{{ q.created_at | date : 'dd/MM/yyyy' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Días sin actividad</span>
+                        <span class="detail-value"
+                            [style.color]="getDiasSinActualizar(q) > 7 ? '#dc2626' : getDiasSinActualizar(q) > 2 ? '#f59e0b' : '#15803d'">
+                            {{ getDiasSinActualizar(q) }} días
+                        </span>
                     </div>
                 </div>
+
                 <div class="card-footer">
-                    <button class="btn-view" (click)="abrirModal(q)">Ver detalle completo →</button>
+                    <div class="color-selector">
+                        <button class="color-btn" *ngFor="let c of colores" [class.active]="q.color === c"
+                            (click)="cambiarColor(q, c)" title="{{ colorLabels[c] }}">
+                            <span class="color-dot" [class]="'dot-' + c"></span>
+                        </button>
+                    </div>
+                    <button class="btn-note" (click)="abrirNotas(q)">Notas</button>
+                    <button class="btn-view" (click)="abrirModal(q)">Ver detalle →</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ✅ MODAL DE COTIZACIÓN -->
+<!-- Tooltip de notas al hacer hover -->
+<div class="tooltip-container" *ngIf="showTooltip" [style.left.px]="tooltipPosition.x"
+    [style.top.px]="tooltipPosition.y">
+    <div class="tooltip-content">
+        <strong>Notas</strong>
+        <pre>{{ tooltipContent }}</pre>
+    </div>
+</div>
+
+<!-- MODAL DE NOTAS -->
+<div class="modal-overlay" *ngIf="showNotasModal" (click)="cerrarNotasQuote()">
+    <div class="modal-content notas-modal" (click)="$event.stopPropagation()">
+        <div class="notas-header">
+            <div class="notas-header-icon">📝</div>
+            <div>
+                <h3>Notas de Cotización</h3>
+                <p class="notas-subtitle">Agrega, edita o elimina notas para dar seguimiento</p>
+            </div>
+        </div>
+
+        <div *ngIf="notaError" class="error">{{ notaError }}</div>
+
+        <div class="notas-list">
+            <div *ngIf="notaLoading" class="notas-loading">
+                <div class="spinner-small"></div>
+                <span>Cargando notas...</span>
+            </div>
+            <div *ngFor="let n of notasCotizacion" class="nota-item">
+                <div class="nota-texto">{{ n.texto }}</div>
+                <div class="nota-meta">
+                    <span class="nota-fecha">{{ n.created_at | date : 'dd/MM/yyyy HH:mm' }}</span>
+                    <div class="nota-acciones">
+                        <button class="btn-icon btn-edit" (click)="editarNotaQuote(n)" title="Editar nota">✏️</button>
+                        <button class="btn-icon btn-delete" (click)="eliminarNotaQuote(n.id)"
+                            title="Eliminar nota">🗑️</button>
+                    </div>
+                </div>
+            </div>
+            <div *ngIf="!notaLoading && notasCotizacion.length === 0" class="notas-empty">
+                <span class="empty-icon-small">📭</span>
+                <p>No hay notas para esta cotización</p>
+            </div>
+        </div>
+
+        <div class="nota-editor">
+            <textarea [(ngModel)]="notaText" placeholder="Escribe una nota..." class="nota-textarea"
+                rows="2"></textarea>
+            <div class="nota-editor-actions">
+                <button class="btn-primary" (click)="guardarNotaQuote()" [disabled]="!notaText.trim() || notaLoading">
+                    {{ notaEditando ? 'Actualizar' : 'Agregar' }}
+                </button>
+                <button class="btn-secondary" (click)="notaEditando = null; notaText = ''">Cancelar</button>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" (click)="cerrarNotasQuote()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE COTIZACIÓN -->
 <div class="modal-overlay" *ngIf="showModal" (click)="cerrarModalFondo($event)">
     <div class="modal-container" (click)="$event.stopPropagation()">
-        <!-- Botón cerrar -->
         <button class="modal-close" (click)="cerrarModal()" title="Cerrar">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
         </button>
-
-        <!-- Contenido -->
         <div class="modal-body">
             <app-quote-breakdown [calculation]="selectedQuote()" [mostrarGuardar]="false" (saveQuote)="cerrarModal()" />
         </div>
