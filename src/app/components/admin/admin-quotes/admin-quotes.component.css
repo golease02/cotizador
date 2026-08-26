@@ -980,3 +980,486 @@
         align-items: stretch;
     }
 }
+
+/* Dirección visual compartida con los módulos de administración */
+.quotes-panel {
+    position: relative;
+    max-width: 1400px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.quotes-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 38%;
+    height: 190px;
+    background: linear-gradient(135deg, rgba(32, 176, 56, 0.14), rgba(16, 37, 31, 0.07));
+    clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
+.quotes-panel .panel-header {
+    position: relative;
+    z-index: 1;
+    min-height: 164px;
+    align-items: flex-end;
+    margin: 0 0 1.25rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid rgba(139, 226, 140, 0.22);
+    border-radius: 16px;
+    background: linear-gradient(115deg, #10251f 0%, #173c2e 68%, #1f6840 100%);
+    box-shadow: 0 16px 30px rgba(16, 37, 31, 0.16);
+}
+
+.quotes-panel .header-left {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.quotes-panel .header-left h1 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.quotes-panel .header-left::before {
+    content: 'Control comercial';
+    color: #8be28c;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.quotes-panel .badge {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(139, 226, 140, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #d5f0dc;
+    font-size: 0.72rem;
+}
+
+.quotes-panel .filters-section {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.quotes-panel .filters-row {
+    gap: 0.8rem;
+}
+
+.quotes-panel .filter-group {
+    padding: 0.35rem 0.55rem;
+    border: 1px solid #eef2f6;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.quotes-panel .search-group {
+    min-height: 42px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.quotes-panel .filter-input,
+.quotes-panel .filter-select {
+    min-height: 36px;
+    border-color: #dbe4ec;
+    color: #334155;
+}
+
+.quotes-panel .search-group .filter-input {
+    padding-left: 1rem;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+.quotes-panel .cards-grid {
+    position: relative;
+    z-index: 1;
+    gap: 1.15rem;
+}
+
+.quotes-panel .quote-card {
+    border-radius: 13px;
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.quotes-panel .quote-card:hover {
+    border-color: #8bd39a;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.1);
+}
+
+.quotes-panel .client-avatar {
+    border-radius: 11px;
+    background: #eaf8ee;
+    color: #15803d;
+}
+
+.quotes-panel .detail-label {
+    color: #94a3b8;
+}
+
+.quotes-panel .card-footer {
+    gap: 0.35rem;
+}
+
+.quotes-panel .btn-fijar,
+.quotes-panel .btn-note,
+.quotes-panel .btn-view {
+    min-height: 34px;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 0.76rem;
+    background: #ffffff;
+}
+
+.quotes-panel .btn-fijar:hover,
+.quotes-panel .btn-note:hover,
+.quotes-panel .btn-view:hover {
+    border-color: #8bd39a;
+    background: #f0fdf4;
+}
+
+.quotes-panel .tooltip-container {
+    border: 1px solid #dcebe0;
+    border-radius: 10px;
+    background: #10251f;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+}
+
+.quotes-panel .empty-state {
+    min-height: 220px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .quotes-panel .panel-header {
+        min-height: 0;
+        align-items: stretch;
+        padding: 1.25rem;
+    }
+
+    .quotes-panel .header-left h1 {
+        font-size: 1.7rem;
+    }
+
+    .quotes-panel .filter-group {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+}
+
+.quotes-panel .quote-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.quotes-panel .quote-summary .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 26px;
+}
+
+.quotes-panel .quote-summary .badge strong {
+    font-size: 0.85rem;
+    color: #ffffff;
+}
+
+.quotes-panel .quote-summary .badge-recent {
+    border-color: rgba(147, 197, 253, 0.3);
+    color: #bfdbfe;
+}
+
+.quotes-panel .quote-summary .badge-reviewed {
+    border-color: rgba(139, 226, 140, 0.35);
+    color: #b7efbd;
+}
+
+.quotes-panel .quote-summary .badge-pending {
+    border-color: rgba(253, 186, 116, 0.35);
+    color: #fed7aa;
+}
+
+.quotes-panel .quote-summary .badge-urgent {
+    border-color: rgba(252, 165, 165, 0.35);
+    color: #fecaca;
+}
+
+.quotes-panel .notas-modal {
+    width: min(100% - 2rem, 560px);
+    max-width: 560px;
+    padding: 1.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
+}
+
+.quotes-panel .notas-header {
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.quotes-panel .notas-header-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: #eaf8ee;
+    color: #15803d;
+}
+
+.quotes-panel .notas-header-icon svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.quotes-panel .notas-subtitle {
+    margin-top: 0.2rem;
+    line-height: 1.35;
+}
+
+.quotes-panel .notas-list {
+    max-height: 250px;
+    margin: 1rem 0;
+    padding: 0 0.2rem 0.1rem 0;
+}
+
+.quotes-panel .nota-item {
+    margin-bottom: 0.6rem;
+    padding: 0.85rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #20b038;
+    border-radius: 10px;
+    background: #fbfefb;
+}
+
+.quotes-panel .nota-item:hover {
+    background: #f0fdf4;
+}
+
+.quotes-panel .nota-textarea {
+    min-height: 84px;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font: inherit;
+    line-height: 1.4;
+}
+
+.quotes-panel .nota-editor {
+    margin-top: 0;
+    padding: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.quotes-panel .nota-editor-actions {
+    align-items: center;
+}
+
+.quotes-panel .nota-editor-actions .btn-primary,
+.quotes-panel .nota-editor-actions .btn-secondary,
+.quotes-panel .modal-actions .btn-cancel {
+    min-height: 38px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.quotes-panel .nota-editor-actions .btn-primary {
+    background: #15803d;
+}
+
+.quotes-panel .nota-editor-actions .btn-secondary,
+.quotes-panel .modal-actions .btn-cancel {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+}
+
+.quotes-panel .nota-acciones .btn-icon svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+@media (max-width: 600px) {
+    .quotes-panel .notas-modal {
+        width: calc(100% - 1.5rem);
+        padding: 1.15rem;
+    }
+
+    .quotes-panel .nota-editor-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quotes-panel .nota-editor-actions .btn-primary,
+    .quotes-panel .nota-editor-actions .btn-secondary,
+    .quotes-panel .modal-actions .btn-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.notas-modal {
+    width: min(560px, calc(100% - 2rem));
+    max-width: 560px;
+    padding: 1.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
+}
+
+.notas-modal .notas-header {
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.notas-modal .notas-header-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: #eaf8ee;
+    color: #15803d;
+}
+
+.notas-modal .notas-header-icon svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.notas-modal .notas-list {
+    max-height: 250px;
+    margin: 1rem 0;
+    padding: 0 0.2rem 0.1rem 0;
+}
+
+.notas-modal .nota-item {
+    margin-bottom: 0.6rem;
+    padding: 0.85rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #20b038;
+    border-radius: 10px;
+    background: #fbfefb;
+}
+
+.notas-modal .nota-item:hover {
+    background: #f0fdf4;
+}
+
+.notas-modal .nota-textarea {
+    min-height: 84px;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font: inherit;
+    line-height: 1.4;
+}
+
+.notas-modal .nota-editor {
+    margin-top: 0;
+    padding: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.notas-modal .nota-editor-actions {
+    align-items: center;
+}
+
+.notas-modal .nota-editor-actions .btn-primary,
+.notas-modal .nota-editor-actions .btn-secondary,
+.notas-modal .modal-actions .btn-cancel {
+    min-height: 38px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.notas-modal .nota-editor-actions .btn-primary {
+    background: #15803d;
+}
+
+.notas-modal .nota-editor-actions .btn-secondary,
+.notas-modal .modal-actions .btn-cancel {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+}
+
+.notas-modal .nota-acciones .btn-icon svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+@media (max-width: 600px) {
+    .notas-modal {
+        width: calc(100% - 1.5rem);
+        padding: 1.15rem;
+    }
+
+    .notas-modal .nota-editor-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .notas-modal .nota-editor-actions .btn-primary,
+    .notas-modal .nota-editor-actions .btn-secondary,
+    .notas-modal .modal-actions .btn-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+}

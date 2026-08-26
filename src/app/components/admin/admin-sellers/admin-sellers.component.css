@@ -380,270 +380,8 @@ tr:hover td {
     }
 
     /* ============================================
-   NOTAS MODAL (compartido)
-   ============================================ */
-    .notas-modal {
-        max-width: 500px;
-    }
-
-    .notas-list {
-        max-height: 200px;
-        overflow-y: auto;
-        margin-bottom: 0.8rem;
-    }
-
-    .nota-item {
-        background: #f8fafc;
-        padding: 0.6rem;
-        border-radius: 8px;
-        margin-bottom: 0.4rem;
-        border-left: 4px solid #20b038;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .nota-texto {
-        flex: 1;
-        font-size: 0.9rem;
-    }
-
-    .nota-fecha {
-        font-size: 0.7rem;
-        color: #94a3b8;
-    }
-
-    .nota-acciones {
-        display: flex;
-        gap: 0.2rem;
-    }
-
-    .nota-editor {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .nota-textarea {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        resize: vertical;
-        min-height: 60px;
-    }
-
-    .btn-secondary {
-        background: #e2e8f0;
-        color: #334155;
-        border: none;
-        padding: 0.4rem 1rem;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    /* ============================================
    INDICADORES DE COLOR EN TARJETAS
    ============================================ */
-    /* ============================================
-   MODAL DE NOTAS - ESTILO MODERNO
-   ============================================ */
-    .notas-modal {
-        max-width: 540px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
-        background: #ffffff;
-    }
-
-    .notas-modal h3 {
-        font-family: 'Fjalla One', sans-serif;
-        font-size: 1.4rem;
-        color: #0f172a;
-        margin: 0 0 1rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .notas-modal h3::before {
-        content: "📝";
-        font-size: 1.2rem;
-    }
-
-    .notas-list {
-        max-height: 300px;
-        overflow-y: auto;
-        margin: 0 -0.5rem;
-        padding: 0 0.5rem;
-    }
-
-    .notas-list::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .notas-list::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 4px;
-    }
-
-    .notas-list::-webkit-scrollbar-thumb {
-        background: #94a3b8;
-        border-radius: 4px;
-    }
-
-    .nota-item {
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 0.8rem 1rem;
-        margin-bottom: 0.6rem;
-        border-left: 4px solid #20b038;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.5rem;
-        transition: background 0.2s;
-    }
-
-    .nota-item:hover {
-        background: #f1f5f9;
-    }
-
-    .nota-texto {
-        flex: 1;
-        font-size: 0.95rem;
-        color: #0f172a;
-        line-height: 1.4;
-        word-break: break-word;
-    }
-
-    .nota-fecha {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        white-space: nowrap;
-        background: #e2e8f0;
-        padding: 0.1rem 0.5rem;
-        border-radius: 12px;
-    }
-
-    .nota-acciones {
-        display: flex;
-        gap: 0.2rem;
-    }
-
-    .nota-acciones .btn-icon {
-        width: 26px;
-        height: 26px;
-        font-size: 0.8rem;
-        border-radius: 6px;
-    }
-
-    .nota-acciones .btn-icon:hover {
-        background: #e2e8f0;
-    }
-
-    .nota-acciones .btn-edit:hover {
-        color: #3b82f6;
-    }
-
-    .nota-acciones .btn-delete:hover {
-        color: #ef4444;
-        background: #fee2e2;
-    }
-
-    .nota-editor {
-        margin-top: 1rem;
-        background: #f8fafc;
-        border-radius: 12px;
-        padding: 1rem;
-    }
-
-    .nota-textarea {
-        width: 100%;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 0.7rem 0.9rem;
-        font-size: 0.9rem;
-        resize: vertical;
-        min-height: 70px;
-        font-family: inherit;
-        transition: border 0.2s, box-shadow 0.2s;
-        background: white;
-    }
-
-    .nota-textarea:focus {
-        outline: none;
-        border-color: #20b038;
-        box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.1);
-    }
-
-    .nota-editor-actions {
-        display: flex;
-        gap: 0.6rem;
-        margin-top: 0.6rem;
-        flex-wrap: wrap;
-    }
-
-    .nota-editor-actions .btn-primary {
-        background: linear-gradient(135deg, #15803d, #20b038);
-        color: white;
-        border: none;
-        padding: 0.5rem 1.2rem;
-        border-radius: 30px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .nota-editor-actions .btn-primary:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(32, 176, 56, 0.25);
-    }
-
-    .nota-editor-actions .btn-primary:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-    .nota-editor-actions .btn-secondary {
-        background: #e2e8f0;
-        color: #334155;
-        border: none;
-        padding: 0.5rem 1.2rem;
-        border-radius: 30px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .nota-editor-actions .btn-secondary:hover {
-        background: #cbd5e1;
-    }
-
-    .notas-modal .modal-actions {
-        margin-top: 1.2rem;
-        justify-content: flex-end;
-    }
-
-    .notas-modal .btn-cancel {
-        background: #e2e8f0;
-        color: #334155;
-        border: none;
-        padding: 0.5rem 1.5rem;
-        border-radius: 30px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .notas-modal .btn-cancel:hover {
-        background: #cbd5e1;
-    }
-
     /* ============================================
    TARJETAS DE COTIZACIONES CON COLOR DE BORDE
    ============================================ */
@@ -844,4 +582,623 @@ tr:hover td {
         background: #ef4444;
     }
 
+}
+
+/* Refinamiento visual compartido con el listado de administradores */
+.sellers-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.sellers-container .page-header {
+    padding-bottom: 1.15rem;
+    border-bottom: 1px solid #eef2f6;
+}
+
+.sellers-container .page-header h2 {
+    font-size: 1.8rem;
+    letter-spacing: 0.3px;
+}
+
+.sellers-container .btn-primary,
+.admins-container .btn-primary {
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(32, 176, 56, 0.18);
+}
+
+.sellers-container .btn-primary:focus-visible,
+.admins-container .btn-primary:focus-visible,
+.sellers-container .btn-icon:focus-visible,
+.admins-container .btn-icon:focus-visible,
+.sellers-container .btn-cancel:focus-visible,
+.sellers-container .btn-confirm:focus-visible,
+.admins-container .btn-cancel:focus-visible,
+.admins-container .btn-confirm:focus-visible {
+    outline: 2px solid #20b038;
+    outline-offset: 2px;
+}
+
+.sellers-container .search-bar,
+.admins-container .search-bar {
+    position: relative;
+    margin: 1.25rem 0;
+}
+
+.sellers-container .search-bar::before,
+.admins-container .search-bar::before {
+    content: '⌕';
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    z-index: 1;
+    color: #94a3b8;
+    font-size: 1.25rem;
+    line-height: 1;
+    transform: translateY(-52%);
+    pointer-events: none;
+}
+
+.sellers-container .search-input,
+.admins-container .search-input {
+    min-height: 44px;
+    border-color: #dbe4ec;
+    background: #f8fafc;
+}
+
+.sellers-container .table-wrapper,
+.admins-container .table-wrapper {
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+    overflow: auto;
+}
+
+.sellers-container table,
+.admins-container table {
+    min-width: 860px;
+}
+
+.sellers-container th,
+.admins-container th {
+    padding: 0.85rem 1rem;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.72rem;
+    letter-spacing: 0.55px;
+    text-transform: uppercase;
+}
+
+.sellers-container td,
+.admins-container td {
+    padding: 0.95rem 1rem;
+    color: #334155;
+    border-bottom-color: #edf2f5;
+}
+
+.sellers-container tbody tr:last-child td,
+.admins-container tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.sellers-container tbody tr:hover td,
+.admins-container tbody tr:hover td {
+    background: #f8fcf9;
+}
+
+.sellers-container .status-badge,
+.admins-container .status-badge {
+    padding: 0.32rem 0.7rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+}
+
+.sellers-container .btn-icon,
+.admins-container .btn-icon {
+    width: 34px;
+    height: 34px;
+    border: 1px solid transparent;
+    background: #f8fafc;
+}
+
+.sellers-container .btn-icon:hover,
+.admins-container .btn-icon:hover {
+    border-color: #dbe4ec;
+    background: #ffffff;
+    transform: translateY(-1px);
+}
+
+.sellers-container .modal-content,
+.admins-container .modal-content {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+@media (max-width: 768px) {
+    .sellers-container,
+    .admins-container {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .sellers-container .page-header,
+    .admins-container .page-header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .sellers-container .btn-primary,
+    .admins-container .btn-primary {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Dirección visual del panel */
+.sellers-container {
+    position: relative;
+    overflow: hidden;
+    background: #f8fafc;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.sellers-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 38%;
+    height: 190px;
+    background: linear-gradient(135deg, rgba(32, 176, 56, 0.14), rgba(16, 37, 31, 0.07));
+    clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
+.sellers-container .page-header {
+    position: relative;
+    z-index: 1;
+    min-height: 164px;
+    align-items: flex-end;
+    margin: 0 0 1.25rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid rgba(139, 226, 140, 0.22);
+    border-radius: 16px;
+    background: linear-gradient(115deg, #10251f 0%, #173c2e 68%, #1f6840 100%);
+    box-shadow: 0 16px 30px rgba(16, 37, 31, 0.16);
+}
+
+.sellers-container .page-heading h2,
+.admins-container .page-heading h2 {
+    margin: 0.25rem 0 0.35rem;
+    color: #ffffff;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.sellers-container .page-heading p,
+.admins-container .page-heading p {
+    max-width: 420px;
+    margin: 0;
+    color: #bdd6c7;
+    font-size: 0.88rem;
+}
+
+.page-kicker {
+    color: #8be28c;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.sellers-container .btn-primary,
+.admins-container .btn-primary {
+    position: relative;
+    z-index: 2;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border-radius: 9px;
+    background: #8be28c;
+    color: #10251f;
+    box-shadow: none;
+    white-space: nowrap;
+}
+
+.sellers-container .btn-primary:hover,
+.admins-container .btn-primary:hover {
+    background: #b1f0b1;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.button-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-right: 0.25rem;
+    border: 1px solid rgba(16, 37, 31, 0.25);
+    border-radius: 50%;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.sellers-container .search-bar,
+.admins-container .search-bar {
+    margin: 0 0 1.25rem;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.sellers-container .table-wrapper,
+.admins-container .table-wrapper {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 768px) {
+    .sellers-container .page-header,
+    .admins-container .page-header {
+        min-height: 0;
+        align-items: stretch;
+        padding: 1.25rem;
+    }
+
+    .sellers-container .page-heading h2,
+    .admins-container .page-heading h2 {
+        font-size: 1.7rem;
+    }
+}
+
+/* Acciones y modales */
+.sellers-container .btn-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.sellers-container .modal-content,
+.admins-container .modal-content {
+    padding: 1.75rem;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2);
+}
+
+.modal-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.modal-heading h3 {
+    margin: 0.15rem 0 0;
+    color: #0f172a;
+    font-size: 1.35rem;
+}
+
+.modal-eyebrow {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+}
+
+.modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 12px;
+}
+
+.modal-icon svg,
+.warning-copy svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.modal-heading-warning .modal-icon {
+    background: #fff4e5;
+    color: #d97706;
+}
+
+.modal-heading-notes .modal-icon {
+    background: #eaf8ee;
+    color: #15803d;
+}
+
+.modal-content > p {
+    color: #64748b;
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.warning-copy {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin: 0.7rem 0;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #fed7aa;
+    border-radius: 9px;
+    background: #fff7ed;
+    color: #b45309;
+    font-weight: 600;
+}
+
+.warning-copy svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.sellers-container .btn-confirm,
+.admins-container .btn-confirm {
+    min-width: 104px;
+    background: #15803d;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.sellers-container .btn-confirm:hover,
+.admins-container .btn-confirm:hover {
+    background: #166534;
+    transform: translateY(-1px);
+}
+
+.sellers-container .modal-actions,
+.admins-container .modal-actions {
+    padding-top: 0.8rem;
+    border-top: 1px solid #eef2f6;
+}
+
+.seller-name-cell {
+    position: relative;
+    min-width: 180px;
+}
+
+.seller-name {
+    display: inline-block;
+    color: #0f172a;
+    font-weight: 700;
+    cursor: help;
+}
+
+.seller-notes-tooltip {
+    position: fixed;
+    z-index: 2000;
+    width: 280px;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #dcebe0;
+    border-radius: 10px;
+    background: #10251f;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+    pointer-events: none;
+}
+
+.seller-notes-tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    color: #8be28c;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.seller-notes-tooltip-header svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.seller-notes-tooltip-body {
+    max-height: 130px;
+    padding-top: 0.6rem;
+    overflow: hidden;
+    color: #e4f2e8;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    white-space: pre-line;
+}
+
+/* El modal vive fuera de .sellers-container: estas reglas deben ser directas. */
+.notas-modal {
+    width: min(560px, calc(100% - 2rem));
+    max-width: 560px;
+    padding: 1.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.24);
+}
+
+.notas-modal h3::before {
+    content: none;
+}
+
+.notas-modal .notas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-height: 250px;
+    margin: 0 0 1rem;
+    padding: 0 0.2rem 0.1rem 0;
+    overflow-y: auto;
+}
+
+.notas-modal .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 92px;
+    margin: 0;
+    padding: 1rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #64748b;
+    font-style: normal;
+}
+
+.notas-modal .nota-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.45rem 0.8rem;
+    margin: 0;
+    padding: 0.85rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #20b038;
+    border-radius: 10px;
+    background: #fbfefb;
+}
+
+.notas-modal .nota-texto {
+    min-width: 0;
+    color: #334155;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.notas-modal .nota-fecha {
+    grid-column: 1;
+    grid-row: 2;
+    width: fit-content;
+    padding: 0.18rem 0.45rem;
+    border-radius: 5px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 0.68rem;
+}
+
+.notas-modal .nota-acciones {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+    display: flex;
+    gap: 0.3rem;
+}
+
+.notas-modal .nota-editor {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.6rem;
+    align-items: center;
+    margin-top: 0;
+    padding: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.notas-modal .nota-textarea {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 84px;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    line-height: 1.4;
+    resize: vertical;
+}
+
+.notas-modal .nota-textarea:focus {
+    outline: none;
+    border-color: #20b038;
+    box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.12);
+}
+
+.notas-modal .nota-editor .btn-primary,
+.notas-modal .nota-editor .btn-secondary,
+.notas-modal .modal-actions .btn-cancel {
+    min-height: 38px;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.notas-modal .nota-editor .btn-primary {
+    width: auto;
+    border: 0;
+    background: #15803d;
+    color: #ffffff;
+}
+
+.notas-modal .nota-editor .btn-secondary,
+.notas-modal .modal-actions .btn-cancel {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+}
+
+.notas-modal .nota-editor .btn-primary:hover:not(:disabled),
+.notas-modal .nota-editor .btn-secondary:hover,
+.notas-modal .modal-actions .btn-cancel:hover {
+    background: #f1f5f9;
+}
+
+.notas-modal .nota-editor .btn-primary:hover:not(:disabled) {
+    background: #166534;
+    transform: translateY(-1px);
+}
+
+.notas-modal .modal-actions {
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef2f6;
+}
+
+@media (max-width: 600px) {
+    .notas-modal {
+        width: calc(100% - 1.5rem);
+        padding: 1.15rem;
+    }
+
+    .notas-modal .nota-editor {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .notas-modal .nota-editor .btn-primary,
+    .notas-modal .nota-editor .btn-secondary,
+    .notas-modal .modal-actions .btn-cancel {
+        width: 100%;
+    }
 }

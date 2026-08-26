@@ -320,6 +320,10 @@ export class AdminQuotesComponent implements OnInit {
     return `color-${color}`;
   }
 
+  countQuotesByColor(color: string): number {
+    return this.filteredQuotes().filter(quote => (quote.color || 'reciente') === color).length;
+  }
+
   getEtiqueta(quote: any): string {
     const labels: Record<string, string> = {
       reciente: 'Reciente',

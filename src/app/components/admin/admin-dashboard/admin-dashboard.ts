@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterModule } from '@angular/router';
+import { Router, RouterModule, RouterOutlet } from '@angular/router';
+import { SupabaseService } from '../../../services/supabase.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -9,4 +10,12 @@ import { RouterOutlet, RouterModule } from '@angular/router';
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
-export class AdminDashboardComponent { }
+export class AdminDashboardComponent {
+  public supabase = inject(SupabaseService);
+  private router = inject(Router);
+
+  async logout(): Promise<void> {
+    await this.supabase.signOut();
+    this.router.navigate(['/login']);
+  }
+}

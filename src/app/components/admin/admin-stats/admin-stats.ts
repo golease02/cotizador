@@ -15,18 +15,18 @@ export class AdminStatsComponent implements OnInit {
 
   today = new Date();
 
-  // Métricas principales
   totalQuotes = signal<number>(0);
   totalSellers = signal<number>(0);
   totalFijadas = signal<number>(0);
   totalUrgentes = signal<number>(0);
+  totalRecientes = signal<number>(0);
+  totalRevisadas = signal<number>(0);
+  totalPendientes = signal<number>(0);
+  attentionItems = signal<any[]>([]);
 
-  // Top vehículos
   topVehicles = signal<any[]>([]);
-  // Top vendedores
   topSellers = signal<any[]>([]);
 
-  // Cotizaciones destacadas
   fijadasQuotes = signal<any[]>([]);
   urgentesQuotes = signal<any[]>([]);
   recentQuotes = signal<any[]>([]);
@@ -63,6 +63,30 @@ export class AdminStatsComponent implements OnInit {
         .select('*', { count: 'exact', head: true })
         .eq('color', 'rojo');
       this.totalUrgentes.set(urgentesCount || 0);
+
+      const { count: recientesCount } = await this.supabase.client
+        .from('quotes')
+        .select('*', { count: 'exact', head: true })
+        .eq('color', 'reciente');
+      this.totalRecientes.set(recientesCount || 0);
+
+      const { count: revisadasCount } = await this.supabase.client
+        .from('quotes')
+        .select('*', { count: 'exact', head: true })
+        .eq('color', 'verde');
+      this.totalRevisadas.set(revisadasCount || 0);
+
+      const { count: pendientesCount } = await this.supabase.client
+        .from('quotes')
+        .select('*', { count: 'exact', head: true })
+        .eq('color', 'amarillo');
+      this.totalPendientes.set(pendientesCount || 0);
+
+      const { count: inactiveSellersCount } = await this.supabase.client
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'seller')
+        .eq('active', false);
 
       // --- Top vehículos ---
       const { data: vehiclesData } = await this.supabase.client
@@ -110,7 +134,7 @@ export class AdminStatsComponent implements OnInit {
         this.topSellers.set(sortedSellers);
       }
 
-      // --- Cotizaciones destacadas (con datos del vendedor) ---
+      // --- Cotizaciones destacadas (con recálculo de color) ---
       const getQuotes = async (filter: any) => {
         let query = this.supabase.client
           .from('quotes')
@@ -124,15 +148,64 @@ export class AdminStatsComponent implements OnInit {
           query = query.match(filter);
         }
         const { data } = await query;
-        return data ? data.map((q: any) => ({
-          ...q,
-          seller_name: q.profiles?.full_name || 'N/A'
-        })) : [];
+        if (!data) return [];
+
+        const result = [];
+        for (const q of data) {
+          const dias = this.getDiasSinActualizar(q);
+          let colorCalculado = 'reciente';
+          if (q.revisada) {
+            colorCalculado = 'verde';
+          } else {
+            if (dias > 7) colorCalculado = 'rojo';
+            else if (dias > 2) colorCalculado = 'amarillo';
+            else colorCalculado = 'reciente';
+          }
+
+          if (q.color !== colorCalculado) {
+            await this.supabase.client
+              .from('quotes')
+              .update({ color: colorCalculado, ultima_actualizacion: new Date().toISOString() })
+              .eq('id', q.id);
+            q.color = colorCalculado;
+          }
+
+          result.push({
+            ...q,
+            seller_name: q.profiles?.full_name || 'N/A',
+            color: colorCalculado
+          });
+        }
+        return result;
       };
 
       this.fijadasQuotes.set(await getQuotes({ fijada: true }));
       this.urgentesQuotes.set(await getQuotes({ color: 'rojo' }));
       this.recentQuotes.set(await getQuotes({}));
+
+      this.attentionItems.set([
+        ...(urgentesCount ? [{
+          type: 'urgent',
+          title: 'Cotizaciones urgentes',
+          detail: `${urgentesCount} cotización${urgentesCount === 1 ? '' : 'es'} sin seguimiento reciente.`,
+          link: '/admin/quotes',
+          action: 'Revisar cotizaciones'
+        }] : []),
+        ...(pendientesCount ? [{
+          type: 'pending',
+          title: 'Cotizaciones pendientes',
+          detail: `${pendientesCount} cotización${pendientesCount === 1 ? '' : 'es'} requiere${pendientesCount === 1 ? '' : 'n'} atención.`,
+          link: '/admin/quotes',
+          action: 'Ver pendientes'
+        }] : []),
+        ...(inactiveSellersCount ? [{
+          type: 'inactive',
+          title: 'Vendedores inactivos',
+          detail: `${inactiveSellersCount} perfil${inactiveSellersCount === 1 ? '' : 'es'} está${inactiveSellersCount === 1 ? '' : 'n'} inactivo${inactiveSellersCount === 1 ? '' : 's'}.`,
+          link: '/admin/sellers',
+          action: 'Gestionar equipo'
+        }] : [])
+      ]);
 
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
@@ -141,7 +214,33 @@ export class AdminStatsComponent implements OnInit {
     }
   }
 
-  // Métodos para gráficos de barras
+  // ===================== MÉTODOS AUXILIARES =====================
+
+  getDiasSinActualizar(quote: any): number {
+    const fecha = new Date(quote.ultima_actualizacion || quote.created_at);
+    const ahora = new Date();
+    return Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  getColorClase(quote: any): string {
+    return `color-${this.getEstado(quote)}`;
+  }
+
+  getEtiqueta(quote: any): string {
+    const labels: Record<string, string> = {
+      reciente: 'Reciente',
+      verde: 'Revisada',
+      amarillo: 'Pendiente',
+      rojo: 'Urgente'
+    };
+    return labels[this.getEstado(quote)];
+  }
+
+  private getEstado(quote: any): string {
+    const estadosValidos = ['reciente', 'verde', 'amarillo', 'rojo'];
+    return estadosValidos.includes(quote.color) ? quote.color : 'reciente';
+  }
+
   getMaxPercentage(count: number, items: any[]): number {
     if (!items || items.length === 0) return 0;
     const max = Math.max(...items.map(i => i.count));
@@ -156,19 +255,5 @@ export class AdminStatsComponent implements OnInit {
     if (ratio > 0.7) return '#22c55e';
     if (ratio > 0.4) return '#f59e0b';
     return '#3b82f6';
-  }
-
-  getColorClass(quote: any): string {
-    return `color-${quote.color || 'reciente'}`;
-  }
-
-  getEtiqueta(quote: any): string {
-    const labels: Record<string, string> = {
-      reciente: 'Reciente',
-      verde: 'Revisada',
-      amarillo: 'Pendiente',
-      rojo: 'Urgente'
-    };
-    return labels[quote.color] || 'Reciente';
   }
 }

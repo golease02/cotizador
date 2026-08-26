@@ -3,7 +3,13 @@
     <div class="panel-header">
         <div class="header-left">
             <h1>Todas las Cotizaciones</h1>
-            <span class="badge">{{ filteredQuotes().length }} registros</span>
+            <div class="quote-summary">
+                <span class="badge badge-total"><strong>{{ filteredQuotes().length }}</strong> registros</span>
+                <span class="badge badge-recent"><strong>{{ countQuotesByColor('reciente') }}</strong> recientes</span>
+                <span class="badge badge-reviewed"><strong>{{ countQuotesByColor('verde') }}</strong> revisadas</span>
+                <span class="badge badge-pending"><strong>{{ countQuotesByColor('amarillo') }}</strong> pendientes</span>
+                <span class="badge badge-urgent"><strong>{{ countQuotesByColor('rojo') }}</strong> urgentes</span>
+            </div>
         </div>
     </div>
 
@@ -147,7 +153,9 @@
 <div class="modal-overlay" *ngIf="showNotasModal" (click)="cerrarNotasQuote()">
     <div class="modal-content notas-modal" (click)="$event.stopPropagation()">
         <div class="notas-header">
-            <div class="notas-header-icon">📝</div>
+            <div class="notas-header-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
+            </div>
             <div>
                 <h3>Notas de Cotización</h3>
                 <p class="notas-subtitle">Agrega, edita o elimina notas para dar seguimiento</p>
@@ -166,9 +174,13 @@
                 <div class="nota-meta">
                     <span class="nota-fecha">{{ n.created_at | date : 'dd/MM/yyyy HH:mm' }}</span>
                     <div class="nota-acciones">
-                        <button class="btn-icon btn-edit" (click)="editarNotaQuote(n)" title="Editar nota">✏️</button>
+                        <button class="btn-icon btn-edit" (click)="editarNotaQuote(n)" title="Editar nota" aria-label="Editar nota">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                        </button>
                         <button class="btn-icon btn-delete" (click)="eliminarNotaQuote(n.id)"
-                            title="Eliminar nota">🗑️</button>
+                            title="Eliminar nota" aria-label="Eliminar nota">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -452,3 +452,257 @@
         padding: 1rem;
     }
 }
+
+/* Identidad visual compartida con el panel administrativo */
+.dashboard-cotizaciones {
+    position: relative;
+    max-width: 1400px;
+    margin: 1.5rem auto 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dashboard-cotizaciones::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 38%;
+    height: 190px;
+    background: linear-gradient(135deg, rgba(32, 176, 56, 0.14), rgba(16, 37, 31, 0.07));
+    clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%);
+    pointer-events: none;
+}
+
+.dashboard-cotizaciones .dashboard-header {
+    position: relative;
+    z-index: 1;
+    min-height: 164px;
+    align-items: flex-end;
+    margin: 0 0 1.25rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid rgba(139, 226, 140, 0.22);
+    border-radius: 16px;
+    background: linear-gradient(115deg, #10251f 0%, #173c2e 68%, #1f6840 100%);
+    box-shadow: 0 16px 30px rgba(16, 37, 31, 0.16);
+}
+
+.dashboard-cotizaciones .header-left {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.dashboard-cotizaciones .header-left::before {
+    content: 'Actividad comercial';
+    color: #8be28c;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.dashboard-cotizaciones .header-left h1 {
+    color: #ffffff;
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.dashboard-cotizaciones .counter {
+    padding: 0.3rem 0.7rem;
+    border: 1px solid rgba(139, 226, 140, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #d5f0dc;
+    font-size: 0.72rem;
+}
+
+.dashboard-cotizaciones .btn-primary {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border: 0;
+    border-radius: 9px;
+    background: #8be28c;
+    color: #10251f;
+    box-shadow: none;
+}
+
+.dashboard-cotizaciones .btn-primary:hover {
+    background: #b1f0b1;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.dashboard-cotizaciones .filters-panel {
+    position: relative;
+    z-index: 1;
+    align-items: stretch;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+    padding: 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-cotizaciones .search-box {
+    display: flex;
+    align-items: center;
+    min-height: 42px;
+}
+
+.dashboard-cotizaciones .search-input {
+    min-height: 42px;
+    border: 1px solid #dbe4ec;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+.dashboard-cotizaciones .search-input:focus {
+    background: #ffffff;
+    border-color: #20b038;
+}
+
+.dashboard-cotizaciones .period-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem;
+    border: 1px solid #eef2f6;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+.dashboard-cotizaciones .period-btn {
+    min-height: 34px;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 7px;
+}
+
+.dashboard-cotizaciones .period-btn.active {
+    background: #10251f;
+    border-color: #10251f;
+    color: #ffffff;
+}
+
+.dashboard-cotizaciones .content-area,
+.dashboard-cotizaciones .detail-view {
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-cotizaciones .cards-grid {
+    gap: 1.15rem;
+}
+
+.dashboard-cotizaciones .quote-card {
+    padding: 1.35rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.dashboard-cotizaciones .quote-card:hover {
+    border-color: #8bd39a;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.1);
+}
+
+.dashboard-cotizaciones .client-initial {
+    border-radius: 11px;
+    background: #eaf8ee;
+    color: #15803d;
+}
+
+.dashboard-cotizaciones .date-badge {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+}
+
+.dashboard-cotizaciones .card-body {
+    margin: 1rem 0 1.15rem;
+    padding: 0.9rem;
+    border: 1px solid #eef2f6;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+.dashboard-cotizaciones .client-name {
+    color: #10251f;
+}
+
+.dashboard-cotizaciones .vehicle-name {
+    color: #64748b;
+}
+
+.dashboard-cotizaciones .detail-label {
+    color: #94a3b8;
+}
+
+.dashboard-cotizaciones .detail-value {
+    color: #334155;
+}
+
+.dashboard-cotizaciones .card-footer {
+    padding-top: 0.9rem;
+    border-top-color: #eef2f6;
+}
+
+.dashboard-cotizaciones .btn-view-detail {
+    min-height: 36px;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #dcebe0;
+    border-radius: 7px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-weight: 700;
+}
+
+.dashboard-cotizaciones .btn-view-detail:hover {
+    background: #dcfce7;
+}
+
+.dashboard-cotizaciones .empty-state {
+    min-height: 240px;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.dashboard-cotizaciones .detail-content {
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+@media (max-width: 768px) {
+    .dashboard-cotizaciones .dashboard-header {
+        min-height: 0;
+        align-items: stretch;
+        padding: 1.25rem;
+    }
+
+    .dashboard-cotizaciones {
+        margin-top: 1rem;
+    }
+
+    .dashboard-cotizaciones .header-left h1 {
+        font-size: 1.7rem;
+    }
+
+    .dashboard-cotizaciones .period-selector {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .dashboard-cotizaciones .period-btn {
+        flex: 1 0 auto;
+        white-space: nowrap;
+    }
+
+    .dashboard-cotizaciones .card-body {
+        grid-template-columns: 1fr 1fr;
+    }
+}

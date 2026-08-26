@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
-import { SupabaseService } from './services/supabase.service';
 
 @Component({
   selector: 'app-root',
@@ -11,5 +10,9 @@ import { SupabaseService } from './services/supabase.service';
   styleUrl: './app.css',
 })
 export class App {
-  constructor(private supabase: SupabaseService) { }
+  constructor(private router: Router) { }
+
+  isAdminRoute(): boolean {
+    return this.router.url.startsWith('/admin');
+  }
 }

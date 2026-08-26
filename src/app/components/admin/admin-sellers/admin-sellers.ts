@@ -47,6 +47,9 @@ export class AdminSellersComponent implements OnInit {
 
   showNotasModal = false;
   notasVendedor: any[] = [];
+  showSellerTooltip = false;
+  sellerTooltipContent = '';
+  sellerTooltipPosition = { x: 0, y: 0 };
   notaText = '';
   notaEditando: any = null;
   notaLoading = false;
@@ -93,6 +96,32 @@ export class AdminSellersComponent implements OnInit {
     this.notaEditando = null;
     this.notaError = '';
     await this.cargarNotas(seller.id);
+  }
+
+  mostrarNotasTooltip(event: MouseEvent, seller: any) {
+    this.supabase.client
+      .from('notas')
+      .select('texto, created_at')
+      .eq('entidad_tipo', 'seller')
+      .eq('entidad_id', seller.id)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        const notes = !error && data ? data.map(note => `• ${note.texto}`).join('\n') : '';
+        this.sellerTooltipContent = notes || 'Sin notas';
+        this.showSellerTooltip = true;
+        let x = event.clientX + 14;
+        let y = event.clientY + 14;
+        if (x + 300 > window.innerWidth) x = event.clientX - 314;
+        if (y + 140 > window.innerHeight) y = event.clientY - 150;
+        this.sellerTooltipPosition = { x, y };
+        this.cdr.detectChanges();
+      });
+  }
+
+  ocultarNotasTooltip() {
+    this.showSellerTooltip = false;
+    this.sellerTooltipContent = '';
+    this.cdr.detectChanges();
   }
 
   async cargarNotas(sellerId: string) {

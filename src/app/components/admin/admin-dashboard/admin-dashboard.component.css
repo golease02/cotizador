@@ -1,14 +1,14 @@
 .admin-layout {
     display: flex;
     min-height: 100vh;
-    background: #f1f5f9;
+    background: #f4f6f8;
 }
 
 .admin-sidebar {
-    width: 264px;
-    background: #0f172a;
+    width: 272px;
+    background: #10251f;
     color: white;
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.9rem 1rem;
     position: sticky;
     top: 0;
     height: 100vh;
@@ -16,32 +16,49 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 10px 0 30px rgba(15, 23, 42, 0.08);
+    isolation: isolate;
+}
+
+.admin-sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.45;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(to bottom, black, transparent 85%);
 }
 
 .sidebar-header {
-    margin-bottom: 1.75rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.5rem;
+    padding: 0.25rem 0.45rem 1.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-logo {
     display: flex;
-    align-items: center;
     gap: 0.7rem;
 }
 
 .logo-mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #15803d, #20b038);
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #8be28c, #20b038);
+    color: #10251f;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: 'Fjalla One', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 0.5px;
+    font-size: 1.05rem;
+    letter-spacing: 0.4px;
     flex-shrink: 0;
+    box-shadow: 0 8px 18px rgba(32, 176, 56, 0.2);
 }
 
 .logo-text {
@@ -52,14 +69,14 @@
 
 .logo-title {
     font-family: 'Fjalla One', sans-serif;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     color: #ffffff;
     letter-spacing: 0.5px;
 }
 
 .logo-subtitle {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: #9db6ab;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -69,10 +86,10 @@
     display: block;
     font-size: 0.68rem;
     font-weight: 700;
-    color: #64748b;
+    color: #7fa394;
     text-transform: uppercase;
     letter-spacing: 0.6px;
-    margin: 1.1rem 0.75rem 0.4rem;
+    margin: 1.35rem 0.75rem 0.55rem;
 }
 
 .admin-sidebar nav ul {
@@ -82,20 +99,23 @@
 }
 
 .admin-sidebar nav li {
-    margin-bottom: 0.15rem;
+    margin-bottom: 0.3rem;
 }
 
 .admin-sidebar nav a {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    padding: 0.65rem 0.85rem;
-    color: #cbd5e1;
+    gap: 0.75rem;
+    min-height: 46px;
+    padding: 0.7rem 0.85rem;
+    color: #c6d8d0;
     text-decoration: none;
-    border-radius: 10px;
+    border: 1px solid transparent;
+    border-radius: 11px;
     font-size: 0.9rem;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .admin-sidebar nav a svg {
@@ -104,36 +124,145 @@
 }
 
 .admin-sidebar nav a:hover {
-    background: #1e293b;
+    background: rgba(255, 255, 255, 0.075);
+    border-color: rgba(255, 255, 255, 0.08);
     color: white;
+    transform: translateX(2px);
 }
 
 .admin-sidebar nav a.active {
-    background: linear-gradient(135deg, #15803d, #20b038);
+    position: relative;
+    background: linear-gradient(100deg, rgba(32, 176, 56, 0.3), rgba(32, 176, 56, 0.12));
+    border-color: rgba(139, 226, 140, 0.25);
     color: white;
-    box-shadow: 0 4px 12px rgba(32, 176, 56, 0.3);
+    box-shadow: inset 3px 0 0 #65d66e, 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.admin-sidebar nav a.active::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-radius: 50%;
+    background: #8be28c;
+    box-shadow: 0 0 0 4px rgba(139, 226, 140, 0.12);
 }
 
 .admin-sidebar nav a.active svg {
     opacity: 1;
 }
 
-.back-link {
+.sidebar-footer {
     margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.6rem;
+    margin-bottom: 0.7rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 11px;
+}
+
+.sidebar-user .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: #8be28c;
+    color: #10251f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+.sidebar-user .user-info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.sidebar-user .user-name {
+    overflow: hidden;
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-user .user-role {
+    color: #9db6ab;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 0.4rem;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #9db6ab;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+}
+
+.logout-btn:focus-visible {
+    outline: 2px solid #8be28c;
+    outline-offset: 2px;
+}
+
+.back-link {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding-top: 1rem;
-    color: #94a3b8;
+    justify-content: flex-start;
+    padding: 0.75rem 0.8rem;
+    border: 1px solid rgba(139, 226, 140, 0.28);
+    border-radius: 10px;
+    background: rgba(32, 176, 56, 0.14);
+    color: #ccebd2;
     text-decoration: none;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    transition: color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .back-link:hover {
     color: #ffffff;
+    background: rgba(32, 176, 56, 0.25);
+    border-color: rgba(139, 226, 140, 0.5);
+    transform: translateY(-1px);
+}
+
+.back-arrow {
+    margin-left: auto;
+}
+
+.admin-sidebar nav a:focus-visible,
+.back-link:focus-visible {
+    outline: 2px solid #8be28c;
+    outline-offset: 3px;
 }
 
 .admin-content {
@@ -153,7 +282,51 @@
         width: 100%;
         height: auto;
         position: relative;
-        padding: 1rem;
+        padding: 1rem 1rem 0.75rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+    }
+
+    .sidebar-header {
+        margin-bottom: 0.85rem;
+        padding-bottom: 0.9rem;
+    }
+
+    .admin-sidebar nav {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.1rem 0.1rem 0.45rem;
+    }
+
+    .nav-section-label {
+        display: none;
+    }
+
+    .admin-sidebar nav ul {
+        display: contents;
+    }
+
+    .admin-sidebar nav li {
+        flex: 0 0 auto;
+        margin: 0;
+    }
+
+    .admin-sidebar nav a {
+        min-height: 42px;
+        white-space: nowrap;
+        padding: 0.55rem 0.8rem;
+    }
+
+    .admin-sidebar nav a.active::after {
+        display: none;
+    }
+
+    .back-link {
+        margin-top: 0.55rem;
+    }
+
+    .sidebar-footer {
+        padding-top: 0.75rem;
     }
 
     .admin-content {

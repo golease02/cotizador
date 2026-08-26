@@ -1,178 +1,191 @@
 <div class="dashboard-container">
 
-    <!-- Encabezado -->
-    <div class="dashboard-header">
-        <div>
-            <h1>Dashboard</h1>
-            <span class="subtitle">Resumen general de la operación</span>
+  <!-- Encabezado -->
+  <div class="dashboard-header">
+    <div>
+      <h1>Dashboard</h1>
+      <span class="subtitle">Resumen general de la operación</span>
+    </div>
+    <span class="update-badge">Actualizado: {{ today | date:'dd/MM/yyyy HH:mm' }}</span>
+  </div>
+
+  <!-- Métricas -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon blue">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Cotizaciones</span>
+        <span class="metric-value">{{ totalQuotes() }}</span>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon green">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Vendedores</span>
+        <span class="metric-value">{{ totalSellers() }}</span>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon amber">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Fijadas</span>
+        <span class="metric-value">{{ totalFijadas() }}</span>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+      </div>
+      <div class="metric-info">
+        <span class="metric-label">Urgentes</span>
+        <span class="metric-value">{{ totalUrgentes() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="attention-panel" *ngIf="!loading()">
+    <div class="attention-header">
+      <div>
+        <span class="section-kicker">Centro de atención</span>
+        <h2>Prioridades operativas</h2>
+      </div>
+      <div class="attention-summary">
+        <span class="summary-stat summary-recent"><strong>{{ totalRecientes() }}</strong> recientes</span>
+        <span class="summary-stat summary-reviewed"><strong>{{ totalRevisadas() }}</strong> revisadas</span>
+        <span class="summary-stat summary-pending"><strong>{{ totalPendientes() }}</strong> pendientes</span>
+        <span class="attention-count">{{ attentionItems().length }} alertas</span>
+      </div>
+    </div>
+    <div class="attention-list" *ngIf="attentionItems().length > 0">
+      <div class="attention-item" *ngFor="let item of attentionItems()" [class]="'attention-' + item.type">
+        <span class="attention-indicator"></span>
+        <div class="attention-copy">
+          <strong>{{ item.title }}</strong>
+          <span>{{ item.detail }}</span>
         </div>
-        <span class="update-badge">Actualizado: {{ today | date:'dd/MM/yyyy HH:mm' }}</span>
+        <a [routerLink]="item.link" class="attention-action">{{ item.action }} <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="attention-clear" *ngIf="attentionItems().length === 0">
+      <span class="clear-icon" aria-hidden="true">&#10003;</span>
+      <span>No hay prioridades pendientes. La operación está al día.</span>
+    </div>
+  </section>
+
+  <!-- Gráficos -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Vehículos más cotizados</h3>
+      <div class="chart-body" *ngIf="!loading() && topVehicles().length > 0">
+        <div class="bar-item" *ngFor="let v of topVehicles()">
+          <span class="bar-label">{{ v.name }}</span>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="getMaxPercentage(v.count, topVehicles())" [style.background]="getBarColor(v.count, topVehicles())">
+              <span class="bar-count">{{ v.count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="!loading() && topVehicles().length === 0" class="empty-chart">Sin datos</div>
+      <div *ngIf="loading()" class="loading-placeholder">Cargando...</div>
+    </div>
+    <div class="chart-card">
+      <h3>Vendedores con más cotizaciones</h3>
+      <div class="chart-body" *ngIf="!loading() && topSellers().length > 0">
+        <div class="bar-item" *ngFor="let s of topSellers()">
+          <span class="bar-label">
+            <strong>{{ s.name }}</strong>
+            <span class="seller-location">{{ s.location }}</span>
+          </span>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="getMaxPercentage(s.count, topSellers())" [style.background]="getBarColor(s.count, topSellers())">
+              <span class="bar-count">{{ s.count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="!loading() && topSellers().length === 0" class="empty-chart">Sin datos</div>
+      <div *ngIf="loading()" class="loading-placeholder">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- Cotizaciones destacadas -->
+  <div class="quotes-sections">
+
+    <!-- Fijadas -->
+    <div class="quotes-column" *ngIf="!loading()">
+      <h3>Fijadas</h3>
+      <div class="quote-list">
+        <div *ngFor="let q of fijadasQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
+          <div class="card-color-indicator"></div>
+          <div class="card-header">
+            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+          <div class="card-footer">
+            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
+            <span class="status-badge">{{ getEtiqueta(q) }}</span>
+          </div>
+          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
+        </div>
+        <div *ngIf="fijadasQuotes().length === 0" class="empty-state">Sin cotizaciones fijadas</div>
+      </div>
     </div>
 
-    <!-- Tarjetas de métricas -->
-    <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="metric-icon blue">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-            </div>
-            <div class="metric-info">
-                <span class="metric-label">Cotizaciones</span>
-                <span class="metric-value">{{ totalQuotes() }}</span>
-            </div>
+    <!-- Urgentes -->
+    <div class="quotes-column" *ngIf="!loading()">
+      <h3>Urgentes</h3>
+      <div class="quote-list">
+        <div *ngFor="let q of urgentesQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
+          <div class="card-color-indicator"></div>
+          <div class="card-header">
+            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+          <div class="card-footer">
+            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
+            <span class="status-badge">{{ getEtiqueta(q) }}</span>
+          </div>
+          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
         </div>
-        <div class="metric-card">
-            <div class="metric-icon green">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-            </div>
-            <div class="metric-info">
-                <span class="metric-label">Vendedores</span>
-                <span class="metric-value">{{ totalSellers() }}</span>
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-icon amber">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path
-                        d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9" />
-                </svg>
-            </div>
-            <div class="metric-info">
-                <span class="metric-label">Fijadas</span>
-                <span class="metric-value">{{ totalFijadas() }}</span>
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-icon red">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M12 8v4" />
-                    <path d="M12 16h.01" />
-                </svg>
-            </div>
-            <div class="metric-info">
-                <span class="metric-label">Urgentes</span>
-                <span class="metric-value">{{ totalUrgentes() }}</span>
-            </div>
-        </div>
+        <div *ngIf="urgentesQuotes().length === 0" class="empty-state">Sin cotizaciones urgentes</div>
+      </div>
     </div>
 
-    <!-- Gráficos -->
-    <div class="charts-row">
-        <div class="chart-card">
-            <h3>Vehículos más cotizados</h3>
-            <div class="chart-body" *ngIf="!loading() && topVehicles().length > 0">
-                <div class="bar-item" *ngFor="let v of topVehicles()">
-                    <span class="bar-label">{{ v.name }}</span>
-                    <div class="bar-track">
-                        <div class="bar-fill" [style.width.%]="getMaxPercentage(v.count, topVehicles())"
-                            [style.background]="getBarColor(v.count, topVehicles())">
-                            <span class="bar-count">{{ v.count }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div *ngIf="!loading() && topVehicles().length === 0" class="empty-chart">Sin datos</div>
-            <div *ngIf="loading()" class="loading-placeholder">Cargando...</div>
+    <!-- Últimas cotizaciones -->
+    <div class="quotes-column" *ngIf="!loading()">
+      <h3>Últimas cotizaciones</h3>
+      <div class="quote-list">
+        <div *ngFor="let q of recentQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
+          <div class="card-color-indicator"></div>
+          <div class="card-header">
+            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+          <div class="card-footer">
+            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
+            <span class="status-badge">{{ getEtiqueta(q) }}</span>
+          </div>
+          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
         </div>
-        <div class="chart-card">
-            <h3>Vendedores con más cotizaciones</h3>
-            <div class="chart-body" *ngIf="!loading() && topSellers().length > 0">
-                <div class="bar-item" *ngFor="let s of topSellers()">
-                    <span class="bar-label">
-                        <strong>{{ s.name }}</strong>
-                        <span class="seller-location">{{ s.location }}</span>
-                    </span>
-                    <div class="bar-track">
-                        <div class="bar-fill" [style.width.%]="getMaxPercentage(s.count, topSellers())"
-                            [style.background]="getBarColor(s.count, topSellers())">
-                            <span class="bar-count">{{ s.count }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div *ngIf="!loading() && topSellers().length === 0" class="empty-chart">Sin datos</div>
-            <div *ngIf="loading()" class="loading-placeholder">Cargando...</div>
-        </div>
+        <div *ngIf="recentQuotes().length === 0" class="empty-state">Sin cotizaciones recientes</div>
+      </div>
     </div>
 
-    <!-- Cotizaciones destacadas con colores -->
-    <div class="quotes-sections">
-        <div class="quotes-column" *ngIf="!loading()">
-            <h3>Fijadas</h3>
-            <div class="quote-list">
-                <div *ngFor="let q of fijadasQuotes()" class="quote-item" [class]="'color-' + (q.color || 'reciente')">
-                    <div class="quote-header">
-                        <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
-                        <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
-                    </div>
-                    <div class="quote-vehicle">{{ q.brand }} {{ q.model }}</div>
-                    <div class="quote-meta">
-                        <span>Vendedor: {{ q.seller_name }}</span>
-                        <span class="badge" [class]="'color-' + (q.color || 'reciente')">
-                            {{ getEtiqueta(q) }}
-                        </span>
-                    </div>
-                    <a routerLink="/admin/quotes" class="view-link">Ver detalle</a>
-                </div>
-                <div *ngIf="fijadasQuotes().length === 0" class="empty-state">Sin cotizaciones fijadas</div>
-            </div>
-        </div>
+  </div>
 
-        <div class="quotes-column" *ngIf="!loading()">
-            <h3>Urgentes</h3>
-            <div class="quote-list">
-                <div *ngFor="let q of urgentesQuotes()" class="quote-item" [class]="'color-' + (q.color || 'reciente')">
-                    <div class="quote-header">
-                        <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
-                        <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
-                    </div>
-                    <div class="quote-vehicle">{{ q.brand }} {{ q.model }}</div>
-                    <div class="quote-meta">
-                        <span>Vendedor: {{ q.seller_name }}</span>
-                        <span class="badge" [class]="'color-' + (q.color || 'reciente')">
-                            {{ getEtiqueta(q) }}
-                        </span>
-                    </div>
-                    <a routerLink="/admin/quotes" class="view-link">Ver detalle</a>
-                </div>
-                <div *ngIf="urgentesQuotes().length === 0" class="empty-state">Sin cotizaciones urgentes</div>
-            </div>
-        </div>
+  <div *ngIf="loading()" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Cargando estadísticas...</p>
+  </div>
 
-        <div class="quotes-column" *ngIf="!loading()">
-            <h3>Últimas cotizaciones</h3>
-            <div class="quote-list">
-                <div *ngFor="let q of recentQuotes()" class="quote-item" [class]="'color-' + (q.color || 'reciente')">
-                    <div class="quote-header">
-                        <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
-                        <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
-                    </div>
-                    <div class="quote-vehicle">{{ q.brand }} {{ q.model }}</div>
-                    <div class="quote-meta">
-                        <span>Vendedor: {{ q.seller_name }}</span>
-                        <span class="badge" [class]="'color-' + (q.color || 'reciente')">
-                            {{ getEtiqueta(q) }}
-                        </span>
-                    </div>
-                    <a routerLink="/admin/quotes" class="view-link">Ver detalle</a>
-                </div>
-                <div *ngIf="recentQuotes().length === 0" class="empty-state">Sin cotizaciones recientes</div>
-            </div>
-        </div>
-    </div>
-
-    <div *ngIf="loading()" class="loading-overlay">
-        <div class="spinner"></div>
-        <p>Cargando estadísticas...</p>
-    </div>
 </div>
