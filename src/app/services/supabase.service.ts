@@ -28,9 +28,12 @@ export interface Profile {
 export class SupabaseService {
   private supabase: SupabaseClient;
 
-  private currentUserSignal = signal<User | null>(null);
+    private currentUserSignal = signal<User | null>(null);
   private currentProfileSignal = signal<Profile | null>(null);
   private savedQuotesSignal = signal<QuoteCalculationResult[]>([]);
+
+  // ✅ Catálogo de placas de estado — cacheado desde la base de datos
+  private statePlatesSignal = signal<StatePlateOption[]>([...STATE_PLATES_CATALOG]);
 
   private refreshProfileSubject = new BehaviorSubject<void>(undefined);
   public refreshProfile$ = this.refreshProfileSubject.asObservable();
@@ -48,13 +51,14 @@ export class SupabaseService {
     return this.supabase;
   }
 
-  constructor() {
+    constructor() {
     this.supabase = createClient(
       environment.supabaseUrl,
       environment.supabaseKey
     );
     this.loadSession();
     this.loadFromLocalStorage();
+    this.loadStatePlates();
   }
 
   private async loadSession(): Promise<void> {
@@ -163,8 +167,47 @@ export class SupabaseService {
 
   // ==================== CATÁLOGOS ====================
 
-  public getStatePlates(): StatePlateOption[] {
-    return STATE_PLATES_CATALOG;
+    public getStatePlates(): StatePlateOption[] {
+    return this.statePlatesSignal();
+  }
+
+  /**
+   * Carga el catálogo de placas de estado desde la base de datos y lo cachea.
+   * Actualiza STATE_PLATES_CATALOG in-place para que el FinancialCalculator
+   * (que importa la constante directamente) también tenga los datos de la BD.
+   * Garantiza que la opción 'pendiente' (costo $0, opción por defecto del
+   * cotizador) siempre esté presente.
+   */
+  public async loadStatePlates(): Promise<void> {
+    try {
+      const { data, error } = await this.supabase
+        .from('state_plates')
+        .select('id, name, costnet')
+        .order('name');
+
+      if (!error && data && data.length > 0) {
+        const plates: StatePlateOption[] = data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          costNet: Number(p.costnet) || 0,
+        }));
+
+        // ✅ Garantizar que 'pendiente' siempre exista (opción por defecto del cotizador)
+        const hasPendiente = plates.some((p) => p.id === 'pendiente');
+        if (!hasPendiente) {
+          const fallback = STATE_PLATES_CATALOG.find((p) => p.id === 'pendiente');
+          if (fallback) plates.push(fallback);
+        }
+
+        this.statePlatesSignal.set(plates);
+
+        // Actualizar la constante exportada in-place para el FinancialCalculator
+        STATE_PLATES_CATALOG.length = 0;
+        STATE_PLATES_CATALOG.push(...plates);
+      }
+    } catch (err) {
+      console.warn('No se pudieron cargar placas de estado desde la BD:', err);
+    }
   }
 
   public async getVehicleCatalog(): Promise<VehicleCatalogItem[]> {
@@ -495,7 +538,138 @@ export class SupabaseService {
     return this.currentProfileSignal()?.role === 'admin';
   }
 
-  public getCurrentSellerId(): string | null {
+    public getCurrentSellerId(): string | null {
     return this.currentUserSignal()?.id || null;
+  }
+
+  // ==================== CRUD: VEHÍCULOS ====================\
+
+  public async getAllVehicles(): Promise<{ data: VehicleCatalogItem[]; error: any }> {
+    const { data, error } = await this.supabase
+      .from('vehicles')
+      .select('*')
+      .order('brand', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching vehicles:', error);
+      return { data: [], error };
+    }
+    return {
+      data: data.map((item: any) => ({
+        id: item.id,
+        brand: item.brand,
+        model: item.model,
+        suggestedPriceNet: Number(item.suggestedpricenet) || 0,
+        isHybridOrElectric: Boolean(item.ishybridorelectric) || false,
+        year: Number(item.year) || new Date().getFullYear(),
+      })),
+      error: null,
+    };
+  }
+
+  public async createVehicle(vehicle: {
+    brand: string;
+    model: string;
+    year: number;
+    suggestedPriceNet: number;
+    isHybridOrElectric: boolean;
+  }): Promise<{ error: any }> {
+    const { error } = await this.supabase.from('vehicles').insert([{
+      id: crypto.randomUUID(),
+      brand: vehicle.brand,
+      model: vehicle.model,
+      suggestedpricenet: vehicle.suggestedPriceNet,
+      ishybridorelectric: vehicle.isHybridOrElectric,
+      year: vehicle.year,
+    }]);
+    return { error };
+  }
+
+  public async updateVehicle(
+    id: string,
+    vehicle: {
+      brand: string;
+      model: string;
+      year: number;
+      suggestedPriceNet: number;
+      isHybridOrElectric: boolean;
+    }
+  ): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('vehicles')
+      .update({
+        brand: vehicle.brand,
+        model: vehicle.model,
+        suggestedpricenet: vehicle.suggestedPriceNet,
+        ishybridorelectric: vehicle.isHybridOrElectric,
+        year: vehicle.year,
+      })
+      .eq('id', id);
+    return { error };
+  }
+
+  public async deleteVehicle(id: string): Promise<{ error: any }> {
+    const { error } = await this.supabase.from('vehicles').delete().eq('id', id);
+    return { error };
+  }
+
+  // ==================== CRUD: PLACAS DE ESTADO ====================\
+
+  public async getAllStatePlates(): Promise<{ data: StatePlateOption[]; error: any }> {
+    const { data, error } = await this.supabase
+      .from('state_plates')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching state plates:', error);
+      return { data: [], error };
+    }
+    return {
+      data: data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        costNet: Number(p.costnet) || 0,
+      })),
+      error: null,
+    };
+  }
+
+  public async createStatePlate(plate: {
+    name: string;
+    costnet: number;
+  }): Promise<{ error: any }> {
+    const { error } = await this.supabase.from('state_plates').insert([{
+      // El ID se genera automáticamente (UUID) para no pedirlo en el formulario
+      id: crypto.randomUUID(),
+      name: plate.name,
+      costnet: plate.costnet,
+    }]);
+    if (!error) {
+      await this.loadStatePlates();
+    }
+    return { error };
+  }
+
+  public async updateStatePlate(
+    id: string,
+    plate: { name: string; costnet: number }
+  ): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('state_plates')
+      .update(plate)
+      .eq('id', id);
+    if (!error) {
+      await this.loadStatePlates();
+    }
+    return { error };
+  }
+
+  public async deleteStatePlate(id: string): Promise<{ error: any }> {
+    const { error } = await this.supabase.from('state_plates').delete().eq('id', id);
+    if (!error) {
+      await this.loadStatePlates();
+    }
+    return { error };
   }
 }

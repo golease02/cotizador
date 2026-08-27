@@ -59,6 +59,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./components/admin/admin-quotes/admin-quotes').then(m => m.AdminQuotesComponent)
             },
             {
+                path: 'vehicles',
+                loadComponent: () => import('./components/admin/admin-vehicles/admin-vehicles').then(m => m.AdminVehiclesComponent)
+            },
+            {
+                path: 'plates',
+                loadComponent: () => import('./components/admin/admin-plates/admin-plates').then(m => m.AdminPlatesComponent)
+            },
+            {
                 path: 'sellers/new',
                 loadComponent: () => import('./components/admin/admin-seller-form/admin-seller-form').then(m => m.AdminSellerFormComponent)
             },

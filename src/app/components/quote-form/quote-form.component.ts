@@ -46,6 +46,7 @@ export class QuoteFormComponent implements OnInit {
       isInsuranceEstimated: [false],
     });
 
+    await this.supabaseService.loadStatePlates();
     this.statePlates = this.supabaseService.getStatePlates();
     this.presetVehicles = await this.supabaseService.getVehicleCatalog();
 
