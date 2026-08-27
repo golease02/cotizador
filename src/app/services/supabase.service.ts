@@ -16,6 +16,7 @@ export interface VehicleCatalogItem {
 export interface Profile {
   id: string;
   email: string;
+  recovery_email?: string;
   full_name: string;
   role: 'admin' | 'seller';
   active?: boolean;
@@ -402,6 +403,26 @@ export class SupabaseService {
     console.log('✅ Perfil encontrado:', profile);
 
     return { data: profile, error: null };
+  }
+
+  public async requestPasswordRecovery(
+    sellerNumber: string,
+    recoveryEmail: string
+  ): Promise<{ error: any }> {
+    const normalizedEmail = recoveryEmail.trim().toLowerCase();
+    const { data: accepted, error } = await this.supabase.rpc('request_password_recovery', {
+      seller_number_input: sellerNumber.trim(),
+      recovery_email_input: normalizedEmail
+    });
+
+    // Always issue the same client response to avoid revealing whether a number exists.
+    if (!error && accepted) {
+      await this.supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+    }
+
+    return { error };
   }
 
   public async getAdmins(): Promise<{ data: any; error: any }> {

@@ -11,6 +11,14 @@ export const routes: Routes = [
         path: 'register',
         loadComponent: () => import('./components/auth/register/register').then(m => m.RegisterComponent)
     },
+    {
+        path: 'recuperar-contrasena',
+        loadComponent: () => import('./components/auth/password-recovery/password-recovery').then(m => m.PasswordRecoveryComponent)
+    },
+    {
+        path: 'reset-password',
+        loadComponent: () => import('./components/auth/reset-password/reset-password').then(m => m.ResetPasswordComponent)
+    },
     // ✅ Ruta raíz → Mis Cotizaciones (página principal del vendedor)
     {
         path: '',
