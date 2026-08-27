@@ -17,9 +17,14 @@ export const adminGuard = async () => {
 
   console.log('🔍 adminGuard - Perfil:', profile);
 
-  if (profile?.role === 'admin') {
+  if (profile?.role === 'admin' && profile.active !== false) {
     return true;
   } else {
+    if (profile?.active === false) {
+      await supabase.signOut();
+      router.navigate(['/login']);
+      return false;
+    }
     router.navigate(['/']);
     return false;
   }

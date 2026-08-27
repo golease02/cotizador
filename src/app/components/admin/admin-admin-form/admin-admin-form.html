@@ -22,11 +22,12 @@
             <input type="text" [(ngModel)]="admin.full_name" name="full_name" required placeholder="Juan Pérez" />
         </div>
 
-        <!-- Contraseña solo en creación -->
-        <div class="form-group" *ngIf="!isEditMode">
-            <label>Contraseña *</label>
-            <input type="password" [(ngModel)]="admin.password" name="password" required
-                placeholder="Mínimo 6 caracteres" />
+        <!-- Contraseña -->
+        <div class="form-group">
+            <label>Contraseña {{ isEditMode ? '(opcional)' : '*' }}</label>
+            <input type="password" [(ngModel)]="admin.password" name="password" [required]="!isEditMode"
+                placeholder="Mínimo 6 caracteres" minlength="6" />
+            <small *ngIf="isEditMode">Déjala vacía para conservar la contraseña actual.</small>
         </div>
 
         <!-- Estado solo en edición -->

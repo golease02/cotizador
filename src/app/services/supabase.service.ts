@@ -18,6 +18,7 @@ export interface Profile {
   email: string;
   full_name: string;
   role: 'admin' | 'seller';
+  active?: boolean;
 }
 
 @Injectable({
@@ -59,7 +60,11 @@ export class SupabaseService {
     const { data: { session } } = await this.supabase.auth.getSession();
     if (session?.user) {
       this.currentUserSignal.set(session.user);
-      await this.loadProfile(session.user.id);
+      const profile = await this.loadProfile(session.user.id);
+      if (profile?.active === false) {
+        await this.signOut();
+        return;
+      }
       await this.loadQuotes();
     }
   }
@@ -81,7 +86,11 @@ export class SupabaseService {
     const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
       this.currentUserSignal.set(data.user);
-      await this.loadProfile(data.user.id);
+      const profile = await this.loadProfile(data.user.id);
+      if (profile?.active === false) {
+        await this.signOut();
+        return { error: { message: 'Tu cuenta está inactiva. Contacta a un administrador.' } };
+      }
       await this.loadQuotes();
     }
     return { error };
@@ -138,6 +147,14 @@ export class SupabaseService {
   // Dentro de SupabaseService
   public async deleteUserFromAuth(userId: string): Promise<{ error: any }> {
     const { error } = await this.supabase.rpc('delete_user', { user_id: userId });
+    return { error };
+  }
+
+  public async updateUserPassword(userId: string, password: string): Promise<{ error: any }> {
+    const { error } = await this.supabase.rpc('update_user_password', {
+      target_user_id: userId,
+      new_password: password
+    });
     return { error };
   }
 

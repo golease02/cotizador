@@ -83,6 +83,16 @@ export class AdminAdminFormComponent implements OnInit {
       this.loading = false;
       return;
     }
+    if (!this.isEditMode && this.admin.password.length < 6) {
+      this.errorMessage = 'La contraseña es obligatoria y debe tener al menos 6 caracteres';
+      this.loading = false;
+      return;
+    }
+    if (this.isEditMode && this.admin.password && this.admin.password.length < 6) {
+      this.errorMessage = 'La contraseña debe tener al menos 6 caracteres';
+      this.loading = false;
+      return;
+    }
 
     try {
       // Guardar sesión del administrador actual para restaurar después
@@ -94,12 +104,25 @@ export class AdminAdminFormComponent implements OnInit {
           full_name: this.admin.full_name,
           seller_number: this.admin.seller_number,
           active: this.admin.active,
-          role: 'admin'
+          role: 'admin',
+          agency_name: 'GoLease',
+          agency_location: 'Querétaro'
         });
         if (error) {
           this.errorMessage = 'Error al actualizar: ' + error.message;
           this.loading = false;
           return;
+        }
+        if (this.admin.password) {
+          const { error: passwordError } = await this.supabase.updateUserPassword(
+            this.adminId!,
+            this.admin.password
+          );
+          if (passwordError) {
+            this.errorMessage = 'Error al cambiar la contraseña: ' + passwordError.message;
+            this.loading = false;
+            return;
+          }
         }
         this.successMessage = '✅ Administrador actualizado correctamente';
         setTimeout(() => this.router.navigate(['/admin/admins']), 1500);
@@ -108,7 +131,7 @@ export class AdminAdminFormComponent implements OnInit {
         const email = `admin_${this.admin.seller_number}@golease.com`;
         const { error: authError } = await this.supabase.signUp(
           email,
-          this.admin.password || '12345678',
+          this.admin.password,
           this.admin.full_name
         );
         if (authError) {
@@ -128,7 +151,9 @@ export class AdminAdminFormComponent implements OnInit {
           seller_number: this.admin.seller_number,
           full_name: this.admin.full_name,
           active: true,
-          role: 'admin'
+          role: 'admin',
+          agency_name: 'GoLease',
+          agency_location: 'Querétaro'
         });
         if (profileError) {
           this.errorMessage = 'Error al guardar perfil: ' + profileError.message;

@@ -29,6 +29,12 @@ export const AuthGuard = async () => {
 
     console.log('🔍 AuthGuard - Perfil:', profile);
 
+    if (profile?.active === false) {
+        await supabase.signOut();
+        router.navigate(['/login']);
+        return false;
+    }
+
     // ✅ Permitir acceso a todas las rutas (el adminGuard se encargará de /admin)
     return true;
 };

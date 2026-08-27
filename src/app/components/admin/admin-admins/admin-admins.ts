@@ -30,7 +30,7 @@ export class AdminAdminsComponent implements OnInit {
   formError = '';
   formSuccess = '';
 
-  // Formulario (sin agencia ni ubicación)
+  // Formulario
   adminForm = {
     id: '',
     seller_number: '',
@@ -198,6 +198,16 @@ export class AdminAdminsComponent implements OnInit {
       this.formLoading = false;
       return;
     }
+    if (!this.isEditMode && this.adminForm.password.length < 6) {
+      this.formError = 'La contraseña es obligatoria y debe tener al menos 6 caracteres';
+      this.formLoading = false;
+      return;
+    }
+    if (this.isEditMode && this.adminForm.password && this.adminForm.password.length < 6) {
+      this.formError = 'La contraseña debe tener al menos 6 caracteres';
+      this.formLoading = false;
+      return;
+    }
 
     try {
       // Guardar sesión del administrador actual
@@ -205,17 +215,29 @@ export class AdminAdminsComponent implements OnInit {
       console.log('🔐 Sesión del admin guardada:', adminSession?.user?.email);
 
       if (this.isEditMode) {
-        // Actualizar administrador (sin agencia ni ubicación)
         const { error } = await this.supabase.updateProfile(this.adminForm.id, {
           full_name: this.adminForm.full_name,
           seller_number: this.adminForm.seller_number,
           active: this.adminForm.active,
-          role: 'admin'
+          role: 'admin',
+          agency_name: 'GoLease',
+          agency_location: 'Querétaro'
         });
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
           this.formLoading = false;
           return;
+        }
+        if (this.adminForm.password) {
+          const { error: passwordError } = await this.supabase.updateUserPassword(
+            this.adminForm.id,
+            this.adminForm.password
+          );
+          if (passwordError) {
+            this.formError = 'Error al cambiar la contraseña: ' + passwordError.message;
+            this.formLoading = false;
+            return;
+          }
         }
         this.formSuccess = '✅ Administrador actualizado correctamente';
       } else {
@@ -223,7 +245,7 @@ export class AdminAdminsComponent implements OnInit {
         const email = `admin_${this.adminForm.seller_number}@golease.com`;
         const { error: authError } = await this.supabase.signUp(
           email,
-          this.adminForm.password || '12345678',
+          this.adminForm.password,
           this.adminForm.full_name
         );
         if (authError) {
@@ -243,7 +265,9 @@ export class AdminAdminsComponent implements OnInit {
           seller_number: this.adminForm.seller_number,
           full_name: this.adminForm.full_name,
           active: true,
-          role: 'admin'
+          role: 'admin',
+          agency_name: 'GoLease',
+          agency_location: 'Querétaro'
         });
         if (profileError) {
           this.formError = 'Error al guardar perfil: ' + profileError.message;
