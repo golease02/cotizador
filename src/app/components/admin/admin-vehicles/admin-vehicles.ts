@@ -121,6 +121,25 @@ export class AdminVehiclesComponent implements OnInit {
     return [...set].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
+  get brandGroups(): { brand: string; vehicles: VehicleCatalogItem[] }[] {
+    const groups = new Map<string, VehicleCatalogItem[]>();
+    for (const vehicle of this.filteredVehicles()) {
+      const brand = (vehicle.brand || 'Sin marca').trim();
+      if (!groups.has(brand)) groups.set(brand, []);
+      groups.get(brand)!.push(vehicle);
+    }
+    return [...groups.entries()]
+      .sort(([brandA], [brandB]) => brandA.localeCompare(brandB, 'es'))
+      .map(([brand, vehicles]) => ({ brand, vehicles }));
+  }
+
+  scrollToBrand(brand: string): void {
+    document.getElementById(`brand-${brand.toLowerCase()}`)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+
   // Opciones únicas de año para el dropdown (orden descendente)
   get yearOptions(): number[] {
     const set = new Set<number>();

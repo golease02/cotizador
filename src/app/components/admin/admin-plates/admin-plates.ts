@@ -20,8 +20,7 @@ export class AdminPlatesComponent implements OnInit {
   filteredPlates = signal<StatePlateOption[]>([]);
   loading = true;
   searchTerm = '';
-  // Filtro por costo: 'all' | 'withCost' | 'pending'
-  costFilter: 'all' | 'withCost' | 'pending' = 'all';
+  costFilter: 'all' | 'withCost' = 'all';
 
   // Modales
   showConfirmModal = false;
@@ -55,7 +54,7 @@ export class AdminPlatesComponent implements OnInit {
       console.error('Error loading state plates:', error);
       this.loadError = 'No fue posible cargar las placas. ' + error.message;
     } else {
-      this.plates.set(data || []);
+      this.plates.set((data || []).filter(plate => plate.id !== 'pendiente'));
       this.applyFilters();
     }
     this.loading = false;
@@ -70,8 +69,6 @@ export class AdminPlatesComponent implements OnInit {
     }
     if (this.costFilter === 'withCost') {
       filtered = filtered.filter(p => p.costNet > 0);
-    } else if (this.costFilter === 'pending') {
-      filtered = filtered.filter(p => p.costNet <= 0);
     }
     this.filteredPlates.set(filtered);
     this.cdr.detectChanges();
