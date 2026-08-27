@@ -32,7 +32,8 @@ export class LoginComponent {
         return;
       }
 
-      const email = `vendedor_${this.phoneNumber}@golease.com`;
+      const emailPrefix = profile.role === 'admin' ? 'admin' : 'vendedor';
+      const email = `${emailPrefix}_${this.phoneNumber}@golease.com`;
       const { error } = await this.supabase.signIn(email, this.password);
       if (error) {
         this.errorMessage = error.message || 'Error al iniciar sesión.';

@@ -154,7 +154,7 @@ export class AdminStatsComponent implements OnInit {
         for (const q of data) {
           const dias = this.getDiasSinActualizar(q);
           let colorCalculado = 'reciente';
-          if (q.revisada) {
+          if (this.isQuoteReviewed(q)) {
             colorCalculado = 'verde';
           } else {
             if (dias > 7) colorCalculado = 'rojo';
@@ -165,7 +165,7 @@ export class AdminStatsComponent implements OnInit {
           if (q.color !== colorCalculado) {
             await this.supabase.client
               .from('quotes')
-              .update({ color: colorCalculado, ultima_actualizacion: new Date().toISOString() })
+              .update({ color: colorCalculado })
               .eq('id', q.id);
             q.color = colorCalculado;
           }
@@ -220,6 +220,10 @@ export class AdminStatsComponent implements OnInit {
     const fecha = new Date(quote.ultima_actualizacion || quote.created_at);
     const ahora = new Date();
     return Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  private isQuoteReviewed(quote: any): boolean {
+    return quote.revisada === true || quote.revisada === 'true' || quote.revisada === 1;
   }
 
   getColorClase(quote: any): string {

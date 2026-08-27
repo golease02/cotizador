@@ -211,7 +211,7 @@ export class SupabaseService {
     } else {
       const { data, error } = await this.supabase
         .from('quotes')
-        .insert([quoteData])
+        .insert([{ ...quoteData, revisada: false, color: 'reciente' }])
         .select('id');
 
       if (error) {

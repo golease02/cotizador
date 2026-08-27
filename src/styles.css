@@ -5,7 +5,7 @@
   --bg-secondary: #ffffff;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
-  
+
   --accent-green: #20b038;
   --accent-green-bright: #22c55e;
   --accent-green-dark: #15803d;
@@ -31,7 +31,7 @@
 body {
   font-family: var(--font-body);
   background-color: var(--bg-primary);
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(32, 176, 56, 0.06) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(226, 232, 240, 0.5) 0px, transparent 50%);
   background-attachment: fixed;
@@ -63,43 +63,3 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--accent-green);
 }
 
-/* Print Styles for PDF export */
-@media print {
-  body, html {
-    background: #ffffff !important;
-    background-image: none !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  
-  app-header, 
-  .sidebar-col, 
-  app-quote-options, 
-  .no-print, 
-  .document-action-bar,
-  .toast-notification {
-    display: none !important;
-  }
-
-  .main-content {
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .cotizador-grid {
-    display: block !important;
-  }
-
-  .results-col {
-    width: 100% !important;
-  }
-
-  .official-sheet {
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-}

@@ -54,10 +54,6 @@ export class QuoteBreakdownComponent {
     return found ? found.name : 'Alta de placas pendientes x cotizar';
   }
 
-  public onPrint(): void {
-    window.print();
-  }
-
   public async downloadPDF(): Promise<void> {
     this.isDownloading = true;
     try {

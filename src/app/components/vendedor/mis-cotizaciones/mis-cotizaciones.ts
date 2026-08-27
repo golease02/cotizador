@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SupabaseService } from '../../../services/supabase.service';
@@ -18,6 +18,7 @@ export class MisCotizacionesComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private calculator = inject(FinancialCalculatorService);
 
+  isAdmin = computed(() => this.supabase.isAdmin());
   cotizaciones = signal<any[]>([]);
   cotizacionesFiltradas = signal<any[]>([]);
   loading = signal(true);

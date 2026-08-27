@@ -77,7 +77,7 @@ export class AdminQuotesComponent implements OnInit {
       for (const q of data) {
         const dias = this.getDiasSinActualizar(q);
         let colorCalculado = 'reciente';
-        if (q.revisada) {
+        if (this.isQuoteReviewed(q)) {
           colorCalculado = 'verde';
         } else {
           if (dias > 7) colorCalculado = 'rojo';
@@ -87,7 +87,7 @@ export class AdminQuotesComponent implements OnInit {
         if (q.color !== colorCalculado) {
           await this.supabase.client
             .from('quotes')
-            .update({ color: colorCalculado, ultima_actualizacion: new Date().toISOString() })
+            .update({ color: colorCalculado })
             .eq('id', q.id);
           q.color = colorCalculado;
         }
@@ -288,19 +288,21 @@ export class AdminQuotesComponent implements OnInit {
   // ===================== COLOR Y SEGUIMIENTO =====================
 
   async marcarComoRevisado(quoteId: string) {
-    await this.supabase.client
+    const { error } = await this.supabase.client
       .from('quotes')
       .update({
         revisada: true,
-        color: 'verde',
-        ultima_actualizacion: new Date().toISOString()
+        color: 'verde'
       })
       .eq('id', quoteId);
+    if (error) {
+      console.error('Error al marcar cotización como revisada:', error);
+      return;
+    }
     const updatedQuotes = this.quotes().map(q => {
       if (q.id === quoteId) {
         q.revisada = true;
         q.color = 'verde';
-        q.ultima_actualizacion = new Date().toISOString();
       }
       return q;
     });
@@ -313,6 +315,10 @@ export class AdminQuotesComponent implements OnInit {
     const ahora = new Date();
     const diff = Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
     return diff;
+  }
+
+  private isQuoteReviewed(quote: any): boolean {
+    return quote.revisada === true || quote.revisada === 'true' || quote.revisada === 1;
   }
 
   getColorClase(quote: any): string {
