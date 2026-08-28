@@ -27,8 +27,6 @@ export const AuthGuard = async () => {
         }
     }
 
-    console.log('🔍 AuthGuard - Perfil:', profile);
-
     if (profile?.active === false) {
         await supabase.signOut();
         router.navigate(['/login']);

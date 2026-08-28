@@ -15,8 +15,6 @@ export const adminGuard = async () => {
     }
   }
 
-  console.log('🔍 adminGuard - Perfil:', profile);
-
   if (profile?.role === 'admin' && profile.active !== false) {
     return true;
   } else {
