@@ -50,10 +50,9 @@ export class AdminPlatesComponent implements OnInit {
     this.loadError = '';
     const { data, error } = await this.supabase.getAllStatePlates();
     if (error) {
-      console.error('Error loading state plates:', error);
       this.loadError = 'No fue posible cargar las placas. ' + error.message;
     } else {
-      // ✅ Filtrar 'pendiente' (protegida) y mapear correctamente
+      // Filtrar 'pendiente' (protegida) y mapear correctamente
       this.plates.set((data || []).filter(plate => plate.id !== 'pendiente'));
       this.applyFilters();
     }
@@ -125,7 +124,6 @@ export class AdminPlatesComponent implements OnInit {
 
   openEditPlate(plate: StatePlateOption) {
     if (!plate || !plate.id) {
-      console.error('Placa inválida:', plate);
       return;
     }
     this.isEditMode = true;
@@ -176,7 +174,6 @@ export class AdminPlatesComponent implements OnInit {
           costnet: this.plateForm.costnet,
         });
         if (error) {
-          console.error('❌ Error al actualizar:', error);
           this.formError = 'Error al actualizar: ' + error.message;
         } else {
           this.formSuccess = '✅ Placa actualizada correctamente';
@@ -188,7 +185,6 @@ export class AdminPlatesComponent implements OnInit {
           costnet: this.plateForm.costnet,
         });
         if (error) {
-          console.error('❌ Error al crear:', error);
           this.formError = 'Error al crear: ' + error.message;
         } else {
           this.formSuccess = '✅ Placa creada correctamente';
@@ -196,13 +192,11 @@ export class AdminPlatesComponent implements OnInit {
         }
       }
     } catch (err: any) {
-      console.error('❌ Error en submitForm:', err);
       this.formError = 'Error inesperado: ' + (err.message || '');
     } finally {
       this.formLoading = false;
       this.cdr.detectChanges();
       if (operationSucceeded) {
-        // ✅ Esperar un momento antes de recargar para permitir la propagación
         setTimeout(() => {
           this.showFormModal = false;
           this.loadPlates();

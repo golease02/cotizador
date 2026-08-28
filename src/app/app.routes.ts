@@ -65,22 +65,6 @@ export const routes: Routes = [
             {
                 path: 'plates',
                 loadComponent: () => import('./components/admin/admin-plates/admin-plates').then(m => m.AdminPlatesComponent)
-            },
-            {
-                path: 'sellers/new',
-                loadComponent: () => import('./components/admin/admin-seller-form/admin-seller-form').then(m => m.AdminSellerFormComponent)
-            },
-            {
-                path: 'sellers/edit/:id',
-                loadComponent: () => import('./components/admin/admin-seller-form/admin-seller-form').then(m => m.AdminSellerFormComponent)
-            },
-            {
-                path: 'admins/new',
-                loadComponent: () => import('./components/admin/admin-admin-form/admin-admin-form').then(m => m.AdminAdminFormComponent)
-            },
-            {
-                path: 'admins/edit/:id',
-                loadComponent: () => import('./components/admin/admin-admin-form/admin-admin-form').then(m => m.AdminAdminFormComponent)
             }
         ]
     },

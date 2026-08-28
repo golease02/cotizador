@@ -46,6 +46,7 @@ export class AdminSellersComponent implements OnInit {
     active: true
   };
 
+  // Notas
   showNotasModal = false;
   notasVendedor: any[] = [];
   showSellerTooltip = false;
@@ -64,7 +65,7 @@ export class AdminSellersComponent implements OnInit {
   private map!: L.Map;
   private marker!: L.Marker;
 
-  // Listas (igual que registro)
+  // Listas para selects
   brands = [
     'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
     'VOLKSWAGEN', 'CHEVROLET', 'HONDA', 'MAZDA', 'HYUNDAI', 'KIA',
@@ -74,163 +75,16 @@ export class AdminSellersComponent implements OnInit {
     'LEXUS', 'INFINITI', 'ACURA'
   ];
 
-  locations = [
-    'Centro Histórico', 'Juriquilla', 'El Marqués', 'Plaza de Toros',
-    'Zaklo', 'Paseo Querétaro', 'Antea', 'Ciudad del Sol',
-    'Corregidora', 'Santa Rosa Jáuregui', 'San José Iturbide',
-    'Pedro Escobedo', 'Colón', 'Tequisquiapan', 'San Juan del Río',
-    'Amealco', 'Cadereyta', 'Ezequiel Montes', 'Huimilpan',
-    'Ampliación Paseos del Sol', 'Zona Industrial', 'Blvd. Bernardo Quintana',
-    'Av. Constituyentes', 'Av. 5 de Febrero', 'Plaza La Victoria',
-    'El Refugio', 'Zibatá', 'Lomas de Juriquilla', 'Residencial España',
-    'La Pradera'
-  ];
-
   async ngOnInit() {
     await this.loadSellers();
   }
-
-  async abrirNotas(seller: any) {
-    this.selectedSellerId = seller.id;
-    this.showNotasModal = true;
-    this.notaText = '';
-    this.notaEditando = null;
-    this.notaError = '';
-    await this.cargarNotas(seller.id);
-  }
-
-  mostrarNotasTooltip(event: MouseEvent, seller: any) {
-    this.supabase.client
-      .from('notas')
-      .select('texto, created_at')
-      .eq('entidad_tipo', 'seller')
-      .eq('entidad_id', seller.id)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        const notes = !error && data ? data.map(note => `• ${note.texto}`).join('\n') : '';
-        this.sellerTooltipContent = notes || 'Sin notas';
-        this.showSellerTooltip = true;
-        let x = event.clientX + 14;
-        let y = event.clientY + 14;
-        if (x + 300 > window.innerWidth) x = event.clientX - 314;
-        if (y + 140 > window.innerHeight) y = event.clientY - 150;
-        this.sellerTooltipPosition = { x, y };
-        this.cdr.detectChanges();
-      });
-  }
-
-  ocultarNotasTooltip() {
-    this.showSellerTooltip = false;
-    this.sellerTooltipContent = '';
-    this.cdr.detectChanges();
-  }
-
-  async cargarNotas(sellerId: string) {
-    this.notaLoading = true;
-    try {
-      const { data, error } = await this.supabase.client
-        .from('notas')
-        .select('*')
-        .eq('entidad_tipo', 'seller')
-        .eq('entidad_id', sellerId)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error cargando notas de vendedor:', error);
-        this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
-      } else {
-        this.notasVendedor = data || [];
-        this.notaError = '';
-      }
-    } catch (err: any) {
-      this.notaError = 'Error al cargar notas: ' + (err.message || 'desconocido');
-    }
-    this.notaLoading = false;
-    this.cdr.detectChanges();
-  }
-
-  async guardarNota() {
-    if (!this.notaText.trim()) return;
-    this.notaLoading = true;
-    this.notaError = '';
-
-    const user = this.supabase.currentUser();
-    const payload = {
-      entidad_tipo: 'seller',
-      entidad_id: this.selectedSellerId,
-      texto: this.notaText.trim(),
-      creado_por: user?.id || null,
-      created_at: new Date().toISOString()
-    };
-
-    let error = null;
-    if (this.notaEditando) {
-      // Editar nota existente
-      const { error: updateError } = await this.supabase.client
-        .from('notas')
-        .update({ texto: this.notaText.trim() })
-        .eq('id', this.notaEditando.id);
-      error = updateError;
-    } else {
-      // Nueva nota
-      const { error: insertError } = await this.supabase.client
-        .from('notas')
-        .insert([payload]);
-      error = insertError;
-    }
-
-    if (error) {
-      console.error('Error guardando nota:', error);
-      this.notaError = 'Error al guardar nota';
-    } else {
-      this.notaText = '';
-      this.notaEditando = null;
-      await this.cargarNotas(this.selectedSellerId!);
-    }
-    this.notaLoading = false;
-    this.cdr.detectChanges();
-  }
-
-  editarNota(nota: any) {
-    this.notaEditando = nota;
-    this.notaText = nota.texto;
-  }
-
-  async eliminarNota(notaId: string) {
-    if (!confirm('¿Eliminar esta nota?')) return;
-    this.notaLoading = true;
-    const { error } = await this.supabase.client
-      .from('notas')
-      .delete()
-      .eq('id', notaId);
-    if (error) {
-      console.error('Error eliminando nota:', error);
-      this.notaError = 'Error al eliminar nota';
-    } else {
-      await this.cargarNotas(this.selectedSellerId!);
-    }
-    this.notaLoading = false;
-    this.cdr.detectChanges();
-  }
-
-  cerrarNotas() {
-    this.showNotasModal = false;
-    this.notasVendedor = [];
-    this.notaText = '';
-    this.notaEditando = null;
-    this.notaError = '';
-    this.selectedSellerId = null;
-  }
-
-
 
   // ===================== LISTADO =====================
 
   async loadSellers() {
     this.loading = true;
     const { data, error } = await this.supabase.getSellersWithQuoteCount();
-    if (error) {
-      console.error('Error loading sellers:', error);
-    } else {
+    if (!error) {
       this.sellers.set(data || []);
       this.applyFilters();
     }
@@ -290,7 +144,6 @@ export class AdminSellersComponent implements OnInit {
     this.loading = true;
 
     if (this.confirmAction === 'delete') {
-      // ✅ Usar la nueva función RPC que elimina de auth
       const { error } = await this.supabase.deleteUserFromAuth(this.selectedSellerId);
       if (error) {
         alert('Error al eliminar: ' + error.message);
@@ -327,8 +180,6 @@ export class AdminSellersComponent implements OnInit {
   initMap() {
     if (!this.mapContainer || this.map) return;
 
-    // Evita que Leaflet concatene el imagePath detectado (p.ej. http://localhost:4200/media/)
-    // delante de la URL de los iconos (causa de los errores 404).
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
@@ -463,7 +314,6 @@ export class AdminSellersComponent implements OnInit {
         return;
       }
 
-      // ✅ Asignar los datos del formulario
       this.sellerForm = {
         id: data.id,
         seller_number: data.seller_number || '',
@@ -475,16 +325,13 @@ export class AdminSellersComponent implements OnInit {
         active: data.active !== false
       };
 
-      // ✅ Guardar la dirección actual para el mapa
       this.manualAddress = data.agency_location || '';
       this.addressText = data.agency_location || '';
 
-      // ✅ Si hay coordenadas, centrar el mapa y colocar marcador
       if (data.latitude && data.longitude) {
         const lat = parseFloat(data.latitude);
         const lng = parseFloat(data.longitude);
         this.selectedCoords = { lat, lng };
-        // Inicializar mapa y luego centrar
         setTimeout(() => {
           this.initMap();
           if (this.map && this.marker) {
@@ -494,16 +341,12 @@ export class AdminSellersComponent implements OnInit {
           }
         }, 200);
       } else {
-        // Inicializar mapa sin coordenadas
         setTimeout(() => this.initMap(), 200);
       }
 
-      // ✅ Forzar detección de cambios para que el formulario se muestre
       this.formLoading = false;
       this.cdr.detectChanges();
-
-    } catch (err) {
-      console.error('Error al cargar vendedor para editar:', err);
+    } catch {
       this.formError = 'Error inesperado al cargar el vendedor';
       this.formLoading = false;
       this.cdr.detectChanges();
@@ -517,7 +360,6 @@ export class AdminSellersComponent implements OnInit {
     this.formError = '';
     this.formSuccess = '';
 
-    // Validar ubicación
     let finalLocation = '';
     if (this.selectedCoords) {
       finalLocation = this.addressText || `${this.selectedCoords.lat}, ${this.selectedCoords.lng}`;
@@ -539,7 +381,6 @@ export class AdminSellersComponent implements OnInit {
     }
 
     try {
-      // Guardar sesión del administrador
       const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
 
       if (this.isEditMode) {
@@ -594,7 +435,6 @@ export class AdminSellersComponent implements OnInit {
           return;
         }
 
-        // ✅ Restaurar sesión del administrador
         if (adminSession) {
           await this.supabase.client.auth.setSession({
             access_token: adminSession.access_token,
@@ -605,21 +445,16 @@ export class AdminSellersComponent implements OnInit {
           if (adminUser) {
             await this.supabase.loadProfile(adminUser.id);
           }
-          // ✅ Notificar al header que debe refrescar el perfil
           this.supabase.triggerProfileRefresh();
           this.cdr.detectChanges();
         }
 
         this.formSuccess = '✅ Vendedor creado correctamente';
-
-
-        // ✅ Forzar recarga de la página para actualizar el header
         setTimeout(() => {
           window.location.reload();
         }, 1500);
       }
     } catch (err: any) {
-      console.error('Error en submitForm:', err);
       this.formError = 'Error inesperado: ' + (err.message || '');
     } finally {
       this.formLoading = false;
@@ -630,6 +465,7 @@ export class AdminSellersComponent implements OnInit {
       }, 1500);
     }
   }
+
   closeFormModal() {
     this.showFormModal = false;
     if (this.map) {
@@ -639,6 +475,138 @@ export class AdminSellersComponent implements OnInit {
     }
     this.cdr.detectChanges();
   }
+
+  // ===================== NOTAS =====================
+
+  async abrirNotas(seller: any) {
+    this.selectedSellerId = seller.id;
+    this.showNotasModal = true;
+    this.notaText = '';
+    this.notaEditando = null;
+    this.notaError = '';
+    await this.cargarNotas(seller.id);
+  }
+
+  async cargarNotas(sellerId: string) {
+    this.notaLoading = true;
+    try {
+      const { data, error } = await this.supabase.client
+        .from('notas')
+        .select('*')
+        .eq('entidad_tipo', 'seller')
+        .eq('entidad_id', sellerId)
+        .order('created_at', { ascending: false });
+      if (error) {
+        this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
+      } else {
+        this.notasVendedor = data || [];
+        this.notaError = '';
+      }
+    } catch (err: any) {
+      this.notaError = 'Error al cargar notas: ' + (err.message || 'desconocido');
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  async guardarNota() {
+    if (!this.notaText.trim()) return;
+    this.notaLoading = true;
+    this.notaError = '';
+
+    const user = this.supabase.currentUser();
+    const payload = {
+      entidad_tipo: 'seller',
+      entidad_id: this.selectedSellerId,
+      texto: this.notaText.trim(),
+      creado_por: user?.id || null,
+      created_at: new Date().toISOString()
+    };
+
+    let error = null;
+    if (this.notaEditando) {
+      const { error: updateError } = await this.supabase.client
+        .from('notas')
+        .update({ texto: this.notaText.trim() })
+        .eq('id', this.notaEditando.id);
+      error = updateError;
+    } else {
+      const { error: insertError } = await this.supabase.client
+        .from('notas')
+        .insert([payload]);
+      error = insertError;
+    }
+
+    if (error) {
+      this.notaError = 'Error al guardar nota';
+    } else {
+      this.notaText = '';
+      this.notaEditando = null;
+      await this.cargarNotas(this.selectedSellerId!);
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  editarNota(nota: any) {
+    this.notaEditando = nota;
+    this.notaText = nota.texto;
+  }
+
+  async eliminarNota(notaId: string) {
+    if (!confirm('¿Eliminar esta nota?')) return;
+    this.notaLoading = true;
+    const { error } = await this.supabase.client
+      .from('notas')
+      .delete()
+      .eq('id', notaId);
+    if (error) {
+      this.notaError = 'Error al eliminar nota';
+    } else {
+      await this.cargarNotas(this.selectedSellerId!);
+    }
+    this.notaLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  cerrarNotas() {
+    this.showNotasModal = false;
+    this.notasVendedor = [];
+    this.notaText = '';
+    this.notaEditando = null;
+    this.notaError = '';
+    this.selectedSellerId = null;
+  }
+
+  // ===================== TOOLTIP =====================
+
+  mostrarNotasTooltip(event: MouseEvent, seller: any) {
+    this.supabase.client
+      .from('notas')
+      .select('texto, created_at')
+      .eq('entidad_tipo', 'seller')
+      .eq('entidad_id', seller.id)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        const notes = !error && data ? data.map(note => `• ${note.texto}`).join('\n') : '';
+        this.sellerTooltipContent = notes || 'Sin notas';
+        this.showSellerTooltip = true;
+        let x = event.clientX + 14;
+        let y = event.clientY + 14;
+        if (x + 300 > window.innerWidth) x = event.clientX - 314;
+        if (y + 140 > window.innerHeight) y = event.clientY - 150;
+        this.sellerTooltipPosition = { x, y };
+        this.cdr.detectChanges();
+      });
+  }
+
+  ocultarNotasTooltip() {
+    this.showSellerTooltip = false;
+    this.sellerTooltipContent = '';
+    this.cdr.detectChanges();
+  }
+
+  // ===================== HELPERS =====================
 
   getInitials(name: string): string {
     const clean = (name || '').trim().replace(/\s+/g, ' ');

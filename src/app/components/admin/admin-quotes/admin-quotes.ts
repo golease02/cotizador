@@ -49,14 +49,6 @@ export class AdminQuotesComponent implements OnInit {
   notaError = '';
   selectedQuoteId: string | null = null;
 
-  // Colores (solo para etiquetas automáticas)
-  colorLabels: Record<string, string> = {
-    reciente: 'Reciente',
-    verde: 'Revisada',
-    amarillo: 'Pendiente',
-    rojo: 'Urgente'
-  };
-
   // Tooltip
   showTooltip = false;
   tooltipContent = '';
@@ -67,13 +59,12 @@ export class AdminQuotesComponent implements OnInit {
     await this.loadVendedores();
   }
 
+  // ===================== LISTADO =====================
+
   async loadQuotes() {
     this.loading = true;
     const { data, error } = await this.supabase.getAllQuotesWithSeller();
-    if (error) {
-      console.error('Error loading quotes:', error);
-    } else {
-      // Actualizar colores automáticamente según días y revisión
+    if (!error) {
       for (const q of data) {
         const dias = this.getDiasSinActualizar(q);
         let colorCalculado = 'reciente';
@@ -113,7 +104,6 @@ export class AdminQuotesComponent implements OnInit {
   applyFilters() {
     let filtered = this.quotes();
 
-    // Búsqueda
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(q =>
@@ -124,12 +114,10 @@ export class AdminQuotesComponent implements OnInit {
       );
     }
 
-    // Vendedor
     if (this.filtroVendedor !== 'todos') {
       filtered = filtered.filter(q => q.seller_id === this.filtroVendedor);
     }
 
-    // Período
     if (this.filtroPeriodo !== 'todos') {
       const ahora = new Date();
       const limite = new Date();
@@ -139,7 +127,6 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => new Date(q.created_at) >= limite);
     }
 
-    // Fechas
     if (this.filtroFechaInicio) {
       const inicio = new Date(this.filtroFechaInicio);
       inicio.setHours(0, 0, 0);
@@ -151,7 +138,6 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => new Date(q.created_at) <= fin);
     }
 
-    // Precios
     if (this.filtroPrecioMin !== null && this.filtroPrecioMin > 0) {
       filtered = filtered.filter(q => q.pricenet >= this.filtroPrecioMin!);
     }
@@ -159,12 +145,10 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => q.pricenet <= this.filtroPrecioMax!);
     }
 
-    // Color
     if (this.filtroColor !== 'todos') {
       filtered = filtered.filter(q => q.color === this.filtroColor);
     }
 
-    // ✅ Ordenar: primero fijadas, luego por fecha de creación descendente
     filtered.sort((a, b) => {
       if (a.fijada && !b.fijada) return -1;
       if (!a.fijada && b.fijada) return 1;
@@ -173,10 +157,6 @@ export class AdminQuotesComponent implements OnInit {
 
     this.filteredQuotes.set(filtered);
     this.cdr.detectChanges();
-  }
-
-  onFilterChange() {
-    this.applyFilters();
   }
 
   // ===================== NOTAS =====================
@@ -201,7 +181,6 @@ export class AdminQuotesComponent implements OnInit {
         .eq('entidad_id', quoteId)
         .order('created_at', { ascending: false });
       if (error) {
-        console.error('Error cargando notas de cotización:', error);
         this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
       } else {
         this.notasCotizacion = data || [];
@@ -243,7 +222,6 @@ export class AdminQuotesComponent implements OnInit {
     }
 
     if (error) {
-      console.error('Error guardando nota:', error);
       this.notaError = 'Error al guardar nota';
     } else {
       this.notaText = '';
@@ -267,7 +245,6 @@ export class AdminQuotesComponent implements OnInit {
       .delete()
       .eq('id', notaId);
     if (error) {
-      console.error('Error eliminando nota:', error);
       this.notaError = 'Error al eliminar nota';
     } else {
       await this.cargarNotasQuote(this.selectedQuoteId!);
@@ -295,10 +272,7 @@ export class AdminQuotesComponent implements OnInit {
         color: 'verde'
       })
       .eq('id', quoteId);
-    if (error) {
-      console.error('Error al marcar cotización como revisada:', error);
-      return;
-    }
+    if (error) return;
     const updatedQuotes = this.quotes().map(q => {
       if (q.id === quoteId) {
         q.revisada = true;
@@ -349,7 +323,6 @@ export class AdminQuotesComponent implements OnInit {
       .update({ fijada: nuevoEstado })
       .eq('id', quote.id);
     if (error) {
-      console.error('Error al fijar cotización:', error);
       alert('Error al fijar cotización');
     } else {
       const updatedQuotes = this.quotes().map(q => {
@@ -425,29 +398,4 @@ export class AdminQuotesComponent implements OnInit {
   cerrarModalFondo(event: MouseEvent) {
     if (event.target === event.currentTarget) this.cerrarModal();
   }
-
-  // ===================== UTILIDADES =====================
-
-  getPeriodoLabel(periodo: string): string {
-    const map: Record<string, string> = {
-      'todos': 'Todos',
-      '7dias': 'Últimos 7 días',
-      '30dias': 'Últimos 30 días',
-      '90dias': 'Últimos 90 días'
-    };
-    return map[periodo] || periodo;
-  }
-
-  getVendedorNombre(id: string): string {
-    const v = this.vendedores.find(v => v.id === id);
-    return v ? v.full_name : 'Todos';
-  }
-
-  getVendedorTelefono(id: string): string {
-    const v = this.vendedores.find(v => v.id === id);
-    return v ? v.seller_number : '';
-  }
-
-
 }
-

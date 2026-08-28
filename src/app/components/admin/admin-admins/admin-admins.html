@@ -23,9 +23,7 @@
         <table class="users-table">
             <thead><tr><th>Administrador</th><th>Identificación</th><th>Estado</th><th class="actions-column">Acciones</th></tr></thead>
             <tbody>
-                <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="selectedAdminCardId === admin.id"
-                    (click)="selectAdmin(admin.id)" tabindex="0" [attr.aria-selected]="selectedAdminCardId === admin.id"
-                    (keydown.enter)="selectAdmin(admin.id)" (keydown.space)="selectAdmin(admin.id); $event.preventDefault()">
+                <tr *ngFor="let admin of filteredAdmins()">
                     <td class="user-cell"><span class="admin-avatar" aria-hidden="true">{{ getInitials(admin.full_name) }}</span><strong>{{ admin.full_name }}</strong></td>
                     <td>{{ admin.seller_number || '-' }}</td>
                     <td><span class="status-badge" [class]="getStatusClass(admin.active ?? true)">{{ getStatusLabel(admin.active ?? true) }}</span></td>

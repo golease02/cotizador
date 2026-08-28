@@ -19,11 +19,8 @@ export class AdminVehiclesComponent implements OnInit {
   filteredVehicles = signal<VehicleCatalogItem[]>([]);
   loading = true;
   searchTerm = '';
-  // Filtros: 'all' | marca seleccionada
   brandFilter: string = 'all';
-  // Filtro de año: 'all' | año seleccionado
   yearFilter: string = 'all';
-  // Filtro de tipo: 'all' | 'hybrid' | 'combustion'
   typeFilter: 'all' | 'hybrid' | 'combustion' = 'all';
 
   // Modales
@@ -57,7 +54,6 @@ export class AdminVehiclesComponent implements OnInit {
     this.loadError = '';
     const { data, error } = await this.supabase.getAllVehicles();
     if (error) {
-      console.error('Error loading vehicles:', error);
       this.loadError = 'No fue posible cargar los vehículos. ' + error.message;
     } else {
       this.vehicles.set(data || []);
@@ -103,7 +99,6 @@ export class AdminVehiclesComponent implements OnInit {
     this.applyFilters();
   }
 
-  // Indica si hay algún filtro/búsqueda activa para mostrar el botón "Limpiar filtros"
   get hasActiveFilters(): boolean {
     return this.searchTerm.trim() !== '' ||
       this.brandFilter !== 'all' ||
@@ -111,7 +106,6 @@ export class AdminVehiclesComponent implements OnInit {
       this.typeFilter !== 'all';
   }
 
-  // Opciones únicas de marca para el dropdown (ordenadas alfabéticamente)
   get brandOptions(): string[] {
     const set = new Set<string>();
     for (const v of this.vehicles()) {
@@ -140,7 +134,6 @@ export class AdminVehiclesComponent implements OnInit {
     });
   }
 
-  // Opciones únicas de año para el dropdown (orden descendente)
   get yearOptions(): number[] {
     const set = new Set<number>();
     for (const v of this.vehicles()) {
@@ -208,7 +201,7 @@ export class AdminVehiclesComponent implements OnInit {
     this.formSuccess = '';
     this.showFormModal = true;
     this.cdr.detectChanges();
-    }
+  }
 
   closeFormModal() {
     this.showFormModal = false;
@@ -269,7 +262,6 @@ export class AdminVehiclesComponent implements OnInit {
         }
       }
     } catch (err: any) {
-      console.error('Error en submitForm:', err);
       this.formError = 'Error inesperado: ' + (err.message || '');
     } finally {
       this.formLoading = false;

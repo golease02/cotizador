@@ -208,7 +208,7 @@ export class AdminStatsComponent implements OnInit {
       ]);
 
     } catch (error) {
-      console.error('Error cargando estadísticas:', error);
+      // Error silencioso: no se muestra en consola
     } finally {
       this.loading.set(false);
     }

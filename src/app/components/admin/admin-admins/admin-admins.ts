@@ -24,7 +24,6 @@ export class AdminAdminsComponent implements OnInit {
   showConfirmModal = false;
   confirmAction: 'delete' | 'toggle' | null = null;
   selectedAdminId: string | null = null;
-  selectedAdminCardId: string | null = null;
   showFormModal = false;
   isEditMode = false;
   formLoading = false;
@@ -49,9 +48,7 @@ export class AdminAdminsComponent implements OnInit {
   async loadAdmins() {
     this.loading = true;
     const { data, error } = await this.supabase.getAdmins();
-    if (error) {
-      console.error('Error loading admins:', error);
-    } else {
+    if (!error) {
       this.admins.set(data || []);
       this.applyFilters();
     }
@@ -74,10 +71,6 @@ export class AdminAdminsComponent implements OnInit {
 
   onSearch() {
     this.applyFilters();
-  }
-
-  selectAdmin(adminId: string): void {
-    this.selectedAdminCardId = adminId;
   }
 
   // ===================== MODAL DE CONFIRMACIÓN =====================
@@ -160,15 +153,8 @@ export class AdminAdminsComponent implements OnInit {
 
     try {
       const { data, error } = await this.supabase.getProfileById(admin.id);
-      if (error || !data) {
+      if (error || !data || data.role !== 'admin') {
         this.formError = 'Error al cargar datos del administrador';
-        this.formLoading = false;
-        this.cdr.detectChanges();
-        return;
-      }
-
-      if (data.role !== 'admin') {
-        this.formError = 'El usuario no es administrador';
         this.formLoading = false;
         this.cdr.detectChanges();
         return;
@@ -184,14 +170,14 @@ export class AdminAdminsComponent implements OnInit {
 
       this.formLoading = false;
       this.cdr.detectChanges();
-    } catch (err) {
+    } catch {
       this.formError = 'Error inesperado al cargar el administrador';
       this.formLoading = false;
       this.cdr.detectChanges();
     }
   }
 
-  // ===================== GUARDAR (CREAR/EDITAR) - IDÉNTICO A VENDEDORES =====================
+  // ===================== GUARDAR (CREAR/EDITAR) =====================
 
   async submitForm() {
     this.formLoading = true;
@@ -217,7 +203,6 @@ export class AdminAdminsComponent implements OnInit {
     try {
       // Guardar sesión del administrador actual
       const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
-      console.log('🔐 Sesión del admin guardada:', adminSession?.user?.email);
 
       if (this.isEditMode) {
         const { error } = await this.supabase.updateProfile(this.adminForm.id, {
@@ -280,7 +265,7 @@ export class AdminAdminsComponent implements OnInit {
           return;
         }
 
-        // ✅ Restaurar sesión del administrador original
+        // Restaurar sesión del administrador original
         if (adminSession) {
           await this.supabase.client.auth.setSession({
             access_token: adminSession.access_token,
@@ -291,20 +276,18 @@ export class AdminAdminsComponent implements OnInit {
           if (adminUser) {
             await this.supabase.loadProfile(adminUser.id);
           }
-          // Notificar al header que debe refrescar el perfil
           this.supabase.triggerProfileRefresh();
           this.cdr.detectChanges();
         }
 
         this.formSuccess = '✅ Administrador creado correctamente';
 
-        // ✅ Forzar recarga de la página para actualizar el header (igual que en vendedores)
+        // Forzar recarga de la página para actualizar el header
         setTimeout(() => {
           window.location.reload();
         }, 1500);
       }
     } catch (err: any) {
-      console.error('Error en submitForm:', err);
       this.formError = 'Error inesperado: ' + (err.message || '');
     } finally {
       this.formLoading = false;
@@ -320,6 +303,8 @@ export class AdminAdminsComponent implements OnInit {
     this.showFormModal = false;
     this.cdr.detectChanges();
   }
+
+  // ===================== HELPERS =====================
 
   getInitials(name: string): string {
     const clean = (name || '').trim().replace(/\s+/g, ' ');
