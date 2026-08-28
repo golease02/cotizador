@@ -322,10 +322,13 @@ export class AdminSellersComponent implements OnInit {
   initMap() {
     if (!this.mapContainer || this.map) return;
 
+    // Evita que Leaflet concatene el imagePath detectado (p.ej. http://localhost:4200/media/)
+    // delante de la URL de los iconos (causa de los errores 404).
+    delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+      iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+      iconUrl: '/leaflet/marker-icon.png',
+      shadowUrl: '/leaflet/marker-shadow.png',
     });
 
     const queretaroCoords: L.LatLngExpression = [20.5921, -100.3947];
