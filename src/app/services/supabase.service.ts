@@ -625,6 +625,7 @@ export class SupabaseService {
       console.error('Error fetching state plates:', error);
       return { data: [], error };
     }
+    // ✅ Mapeo correcto de costnet a costNet
     return {
       data: data.map((p: any) => ({
         id: p.id,
@@ -635,29 +636,25 @@ export class SupabaseService {
     };
   }
 
-  public async createStatePlate(plate: {
-    name: string;
-    costnet: number;
-  }): Promise<{ error: any }> {
+  public async createStatePlate(plate: { name: string; costnet: number }): Promise<{ error: any }> {
     const { error } = await this.supabase.from('state_plates').insert([{
-      // El ID se genera automáticamente (UUID) para no pedirlo en el formulario
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID(), // Generar UUID automáticamente
       name: plate.name,
       costnet: plate.costnet,
     }]);
     if (!error) {
-      await this.loadStatePlates();
+      await this.loadStatePlates(); // Actualizar caché local
     }
     return { error };
   }
 
-  public async updateStatePlate(
-    id: string,
-    plate: { name: string; costnet: number }
-  ): Promise<{ error: any }> {
+  public async updateStatePlate(id: string, plate: { name: string; costnet: number }): Promise<{ error: any }> {
     const { error } = await this.supabase
       .from('state_plates')
-      .update(plate)
+      .update({
+        name: plate.name,
+        costnet: plate.costnet,
+      })
       .eq('id', id);
     if (!error) {
       await this.loadStatePlates();

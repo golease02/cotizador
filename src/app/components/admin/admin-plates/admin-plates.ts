@@ -21,6 +21,7 @@ export class AdminPlatesComponent implements OnInit {
   loading = true;
   searchTerm = '';
   costFilter: 'all' | 'withCost' = 'all';
+  loadError = '';
 
   // Modales
   showConfirmModal = false;
@@ -30,15 +31,13 @@ export class AdminPlatesComponent implements OnInit {
   formLoading = false;
   formError = '';
   formSuccess = '';
-  loadError = '';
+  editingPlateId: string | null = null;
 
-  // Formulario (el ID se genera automáticamente al crear)
+  // Formulario
   plateForm = {
     name: '',
     costnet: 0,
   };
-  // ID de la placa que se está editando (solo edición)
-  editingPlateId: string | null = null;
 
   async ngOnInit() {
     await this.loadPlates();
@@ -54,6 +53,7 @@ export class AdminPlatesComponent implements OnInit {
       console.error('Error loading state plates:', error);
       this.loadError = 'No fue posible cargar las placas. ' + error.message;
     } else {
+      // ✅ Filtrar 'pendiente' (protegida) y mapear correctamente
       this.plates.set((data || []).filter(plate => plate.id !== 'pendiente'));
       this.applyFilters();
     }
@@ -124,6 +124,10 @@ export class AdminPlatesComponent implements OnInit {
   }
 
   openEditPlate(plate: StatePlateOption) {
+    if (!plate || !plate.id) {
+      console.error('Placa inválida:', plate);
+      return;
+    }
     this.isEditMode = true;
     this.editingPlateId = plate.id;
     this.plateForm = {
@@ -172,6 +176,7 @@ export class AdminPlatesComponent implements OnInit {
           costnet: this.plateForm.costnet,
         });
         if (error) {
+          console.error('❌ Error al actualizar:', error);
           this.formError = 'Error al actualizar: ' + error.message;
         } else {
           this.formSuccess = '✅ Placa actualizada correctamente';
@@ -183,6 +188,7 @@ export class AdminPlatesComponent implements OnInit {
           costnet: this.plateForm.costnet,
         });
         if (error) {
+          console.error('❌ Error al crear:', error);
           this.formError = 'Error al crear: ' + error.message;
         } else {
           this.formSuccess = '✅ Placa creada correctamente';
@@ -190,16 +196,17 @@ export class AdminPlatesComponent implements OnInit {
         }
       }
     } catch (err: any) {
-      console.error('Error en submitForm:', err);
+      console.error('❌ Error en submitForm:', err);
       this.formError = 'Error inesperado: ' + (err.message || '');
     } finally {
       this.formLoading = false;
       this.cdr.detectChanges();
       if (operationSucceeded) {
+        // ✅ Esperar un momento antes de recargar para permitir la propagación
         setTimeout(() => {
           this.showFormModal = false;
           this.loadPlates();
-        }, 1500);
+        }, 500);
       }
     }
   }
