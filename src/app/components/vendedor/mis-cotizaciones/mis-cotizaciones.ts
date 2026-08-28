@@ -43,7 +43,7 @@ export class MisCotizacionesComponent implements OnInit {
 
     const { data, error } = await this.supabase.getVendedorQuotes(user.id);
     if (error) {
-      console.error('Error cargando cotizaciones:', error);
+      // Error silencioso: no se muestra en consola
       this.loading.set(false);
       return;
     }
@@ -56,7 +56,6 @@ export class MisCotizacionesComponent implements OnInit {
   aplicarFiltros() {
     let items = this.cotizaciones();
 
-    // Filtro por texto (cliente, marca, modelo)
     if (this.filtroTexto.trim()) {
       const term = this.filtroTexto.toLowerCase().trim();
       items = items.filter(item =>
@@ -66,7 +65,6 @@ export class MisCotizacionesComponent implements OnInit {
       );
     }
 
-    // Filtro por período
     if (this.filtroPeriodo !== 'todos') {
       const ahora = new Date();
       const limite = new Date();
