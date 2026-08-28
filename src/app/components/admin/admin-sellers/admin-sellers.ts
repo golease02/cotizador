@@ -27,6 +27,7 @@ export class AdminSellersComponent implements OnInit {
   showConfirmModal = false;
   confirmAction: 'delete' | 'toggle' | null = null;
   selectedSellerId: string | null = null;
+  selectedSellerCardId: string | null = null;
   showFormModal = false;
   isEditMode = false;
   formLoading = false;
@@ -252,6 +253,10 @@ export class AdminSellersComponent implements OnInit {
 
   onSearch() {
     this.applyFilters();
+  }
+
+  selectSeller(sellerId: string): void {
+    this.selectedSellerCardId = sellerId;
   }
 
   // ===================== MODAL DE CONFIRMACIÓN =====================
@@ -633,6 +638,14 @@ export class AdminSellersComponent implements OnInit {
       this.marker = null!;
     }
     this.cdr.detectChanges();
+  }
+
+  getInitials(name: string): string {
+    const clean = (name || '').trim().replace(/\s+/g, ' ');
+    if (!clean) return '?';
+    const parts = clean.split(' ');
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   getStatusLabel(active: boolean): string {

@@ -24,6 +24,7 @@ export class AdminAdminsComponent implements OnInit {
   showConfirmModal = false;
   confirmAction: 'delete' | 'toggle' | null = null;
   selectedAdminId: string | null = null;
+  selectedAdminCardId: string | null = null;
   showFormModal = false;
   isEditMode = false;
   formLoading = false;
@@ -73,6 +74,10 @@ export class AdminAdminsComponent implements OnInit {
 
   onSearch() {
     this.applyFilters();
+  }
+
+  selectAdmin(adminId: string): void {
+    this.selectedAdminCardId = adminId;
   }
 
   // ===================== MODAL DE CONFIRMACIÓN =====================
@@ -314,6 +319,14 @@ export class AdminAdminsComponent implements OnInit {
   closeFormModal() {
     this.showFormModal = false;
     this.cdr.detectChanges();
+  }
+
+  getInitials(name: string): string {
+    const clean = (name || '').trim().replace(/\s+/g, ' ');
+    if (!clean) return '?';
+    const parts = clean.split(' ');
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
   getStatusLabel(active: boolean): string {

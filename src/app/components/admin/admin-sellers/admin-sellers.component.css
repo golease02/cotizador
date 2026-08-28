@@ -60,38 +60,6 @@
     box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.15);
 }
 
-.table-wrapper {
-    overflow-x: auto;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-
-th,
-td {
-    padding: 0.7rem 0.8rem;
-    text-align: left;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-th {
-    background: #f8fafc;
-    font-weight: 700;
-    color: #334155;
-    white-space: nowrap;
-}
-
-tr:hover td {
-    background: #f8fafc;
-}
-
-.center {
-    text-align: center;
-}
-
 .loading,
 .empty-state {
     text-align: center;
@@ -378,210 +346,6 @@ tr:hover td {
     .map-container {
         height: 200px;
     }
-
-    /* ============================================
-   INDICADORES DE COLOR EN TARJETAS
-   ============================================ */
-    /* ============================================
-   TARJETAS DE COTIZACIONES CON COLOR DE BORDE
-   ============================================ */
-    .quote-card {
-        border-left: 6px solid #94a3b8;
-        /* color por defecto */
-        transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
-        position: relative;
-        overflow: visible;
-    }
-
-    /* Estado Verde - Seguimiento */
-    .quote-card.color-verde {
-        border-left-color: #22c55e;
-    }
-
-    .quote-card.color-verde .status-badge {
-        background: #dcfce7;
-        color: #15803d;
-    }
-
-    /* Estado Amarillo - Pendiente */
-    .quote-card.color-amarillo {
-        border-left-color: #f59e0b;
-    }
-
-    .quote-card.color-amarillo .status-badge {
-        background: #fef3c7;
-        color: #b45309;
-    }
-
-    /* Estado Rojo - Urgente */
-    .quote-card.color-rojo {
-        border-left-color: #ef4444;
-    }
-
-    .quote-card.color-rojo .status-badge {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    /* Etiqueta de estado en la tarjeta */
-    .status-badge {
-        display: inline-block;
-        font-size: 0.65rem;
-        font-weight: 700;
-        padding: 0.15rem 0.6rem;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        margin-left: 0.5rem;
-        background: #e2e8f0;
-        color: #475569;
-        border: none;
-    }
-
-    .quote-card .card-header .client-info {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.4rem;
-    }
-
-    .quote-card .card-header .client-info .client-avatar {
-        margin-right: 0.2rem;
-    }
-
-    .quote-card .card-header .client-info .status-badge {
-        margin-left: 0.3rem;
-    }
-
-    /* Selector de color en el pie de tarjeta */
-    .color-selector {
-        display: flex;
-        gap: 0.2rem;
-        align-items: center;
-        margin-right: 0.3rem;
-    }
-
-    .color-btn {
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        padding: 2px;
-        border-radius: 50%;
-        transition: 0.2s;
-    }
-
-    .color-btn:hover {
-        transform: scale(1.2);
-    }
-
-    .color-btn.active {
-        outline: 2px solid #0f172a;
-        outline-offset: 2px;
-    }
-
-    .color-dot {
-        display: inline-block;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        border: 1px solid #e2e8f0;
-    }
-
-    .color-dot.dot-verde {
-        background: #22c55e;
-    }
-
-    .color-dot.dot-amarillo {
-        background: #f59e0b;
-    }
-
-    .color-dot.dot-rojo {
-        background: #ef4444;
-    }
-
-    /* Botón de nota en tarjeta */
-    .btn-note {
-        background: transparent;
-        border: none;
-        font-size: 1rem;
-        cursor: pointer;
-        padding: 0 0.3rem;
-        transition: 0.2s;
-    }
-
-    .btn-note:hover {
-        transform: scale(1.2);
-    }
-
-    /* Botón ver detalle en tarjeta */
-    .btn-view {
-        background: transparent;
-        border: none;
-        color: #15803d;
-        font-weight: 600;
-        font-size: 0.85rem;
-        cursor: pointer;
-        padding: 0.2rem 0.4rem;
-        transition: 0.2s;
-    }
-
-    .btn-view:hover {
-        background: #f0fdf4;
-        border-radius: 6px;
-    }
-
-    /* ============================================
-   MODAL DE NOTAS - RESPONSIVE
-   ============================================ */
-    @media (max-width: 600px) {
-        .notas-modal {
-            max-width: 95%;
-            padding: 1.2rem;
-        }
-
-        .nota-item {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.3rem;
-        }
-
-        .nota-acciones {
-            justify-content: flex-end;
-        }
-
-        .nota-editor-actions {
-            flex-direction: column;
-        }
-
-        .nota-editor-actions .btn-primary,
-        .nota-editor-actions .btn-secondary {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    /* ============================================
-   INDICADOR DE COLOR EN LA TARJETA (barra superior)
-   ============================================ */
-    .card-color-indicator {
-        width: 100%;
-        height: 4px;
-        border-radius: 4px 4px 0 0;
-        margin-bottom: 0.5rem;
-    }
-
-    .card-color-indicator.color-verde {
-        background: #22c55e;
-    }
-
-    .card-color-indicator.color-amarillo {
-        background: #f59e0b;
-    }
-
-    .card-color-indicator.color-rojo {
-        background: #ef4444;
-    }
-
 }
 
 /* Refinamiento visual compartido con el listado de administradores */
@@ -647,45 +411,6 @@ tr:hover td {
     min-height: 44px;
     border-color: #dbe4ec;
     background: #f8fafc;
-}
-
-.sellers-container .table-wrapper,
-.admins-container .table-wrapper {
-    border: 1px solid #e2e8f0;
-    border-radius: 11px;
-    overflow: auto;
-}
-
-.sellers-container table,
-.admins-container table {
-    min-width: 860px;
-}
-
-.sellers-container th,
-.admins-container th {
-    padding: 0.85rem 1rem;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 0.72rem;
-    letter-spacing: 0.55px;
-    text-transform: uppercase;
-}
-
-.sellers-container td,
-.admins-container td {
-    padding: 0.95rem 1rem;
-    color: #334155;
-    border-bottom-color: #edf2f5;
-}
-
-.sellers-container tbody tr:last-child td,
-.admins-container tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-.sellers-container tbody tr:hover td,
-.admins-container tbody tr:hover td {
-    background: #f8fcf9;
 }
 
 .sellers-container .status-badge,
@@ -839,14 +564,6 @@ tr:hover td {
     box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
 }
 
-.sellers-container .table-wrapper,
-.admins-container .table-wrapper {
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    background: #ffffff;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
-}
-
 @media (max-width: 768px) {
     .sellers-container .page-header,
     .admins-container .page-header {
@@ -973,18 +690,6 @@ tr:hover td {
 .admins-container .modal-actions {
     padding-top: 0.8rem;
     border-top: 1px solid #eef2f6;
-}
-
-.seller-name-cell {
-    position: relative;
-    min-width: 180px;
-}
-
-.seller-name {
-    display: inline-block;
-    color: #0f172a;
-    font-weight: 700;
-    cursor: help;
 }
 
 .seller-notes-tooltip {
@@ -1200,5 +905,356 @@ tr:hover td {
     .notas-modal .nota-editor .btn-secondary,
     .notas-modal .modal-actions .btn-cancel {
         width: 100%;
+    }
+}
+/* ============================================
+   LISTADO EN TARJETAS — VENDEDORES
+   ============================================ */
+
+.sellers-container .search-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.sellers-container .search-bar > .search-input {
+    flex: 1 1 200px;
+    padding-left: 2rem;
+}
+
+.sellers-container .results-count {
+    flex: 0 0 auto;
+    margin-left: auto;
+    color: #64748b;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.sellers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
+    gap: 1rem;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #dbe4ec;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.users-table {
+    width: 100%;
+    min-width: 780px;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.users-table th {
+    padding: 0.85rem 1rem;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.7rem;
+    letter-spacing: 0.6px;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.users-table td {
+    padding: 0.9rem 1rem;
+    border-top: 1px solid #edf2f5;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.users-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.users-table tbody tr:hover td {
+    background: #f8fcf9;
+}
+
+.users-table tbody tr:focus-visible {
+    outline: 3px solid rgba(32, 176, 56, 0.35);
+    outline-offset: -3px;
+}
+
+.users-table tbody tr.is-selected td {
+    background: #effbf1;
+    border-top-color: #c4eacb;
+}
+
+.users-table tbody tr.is-selected td:first-child {
+    box-shadow: inset 4px 0 0 #20b038;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 190px;
+}
+
+.user-cell > span:last-child {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.user-cell strong {
+    overflow: hidden;
+    color: #10251f;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-cell small {
+    margin-top: 0.2rem;
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.location-cell {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.actions-column {
+    text-align: right !important;
+}
+
+.seller-card {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1.25rem 1.1rem;
+    border: 1px solid #dbe4ec;
+    border-top: 3px solid #20b038;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffffff 0%, #ffffff 72%, #f0fdf4 100%);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.seller-card:hover {
+    border-color: rgba(32, 176, 56, 0.42);
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+    transform: translateY(-3px);
+}
+
+.seller-card:focus-visible {
+    outline: 3px solid rgba(32, 176, 56, 0.35);
+    outline-offset: 3px;
+}
+
+.seller-card.is-selected {
+    border-color: #20b038;
+    border-top-color: #15803d;
+    background: linear-gradient(145deg, #f0fdf4 0%, #ffffff 58%, #dcfce7 100%);
+    box-shadow: 0 16px 32px rgba(32, 176, 56, 0.18), 0 0 0 3px rgba(32, 176, 56, 0.12);
+    transform: translateY(-3px);
+}
+
+.seller-card.is-selected .seller-avatar {
+    box-shadow: 0 0 0 4px rgba(139, 226, 140, 0.45), 0 8px 18px rgba(32, 176, 56, 0.3);
+}
+
+.seller-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+}
+
+.seller-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #15803d, #20b038);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(32, 176, 56, 0.25);
+}
+
+.seller-card h3 {
+    margin: 0 0 0.35rem;
+    color: #10251f;
+    font-size: 1.08rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.seller-card-number {
+    align-self: flex-start;
+    padding: 0.22rem 0.6rem;
+    border-radius: 6px;
+    background: #eaf8ed;
+    color: #15803d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.seller-card-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem 1rem;
+    margin: 1.1rem 0 1rem;
+    padding: 0.9rem 0;
+    border-top: 1px solid #edf2f5;
+    border-bottom: 1px solid #edf2f5;
+}
+
+.seller-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    min-width: 0;
+}
+
+.seller-detail .detail-label {
+    color: #94a3b8;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.seller-detail strong {
+    color: #334155;
+    font-size: 0.88rem;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.seller-detail-count {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+.seller-detail-count strong.quote-count {
+    color: #15803d;
+    font-size: 1.25rem;
+    white-space: nowrap;
+}
+
+.seller-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.seller-card-hint {
+    color: #94a3b8;
+    font-size: 0.7rem;
+    font-style: italic;
+}
+
+/* Estados de lista (cargando / vacío) */
+.catalog-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-height: 180px;
+    padding: 2rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    box-sizing: border-box;
+    text-align: center;
+    color: #64748b;
+    font-style: normal;
+}
+
+.catalog-state.loading {
+    flex-direction: row;
+    gap: 0.6rem;
+}
+
+.catalog-spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #20b038;
+    border-radius: 50%;
+    animation: catalog-spin 0.8s linear infinite;
+}
+
+@keyframes catalog-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.catalog-state.empty-state strong {
+    color: #475569;
+    font-size: 1rem;
+}
+
+.catalog-state.empty-state > span:last-child {
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0.4rem;
+    border-radius: 12px;
+    background: #eaf8ed;
+    color: #15803d;
+}
+
+.empty-state-icon svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+}
+
+@media (max-width: 640px) {
+    .sellers-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sellers-container .search-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .sellers-container .results-count {
+        margin-left: 0;
     }
 }

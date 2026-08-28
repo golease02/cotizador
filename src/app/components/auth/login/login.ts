@@ -9,7 +9,6 @@ import { SupabaseService } from '../../../services/supabase.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
 })
 export class LoginComponent {
   private supabase = inject(SupabaseService);

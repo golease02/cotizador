@@ -9,7 +9,6 @@ import { SupabaseService } from '../../../services/supabase.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './password-recovery.html',
-  styleUrls: ['../login/login.css']
 })
 export class PasswordRecoveryComponent {
   private supabase = inject(SupabaseService);
