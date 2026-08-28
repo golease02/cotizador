@@ -45,17 +45,15 @@ export class LoginComponent {
         return;
       }
 
-      // Cargar perfil y obtenerlo directamente
       const loggedProfile = await this.supabase.loadProfile(user.id);
 
-      // ✅ Redirigir según rol (solo aquí, no en los guardias)
       if (loggedProfile?.role === 'admin') {
         this.router.navigate(['/admin']);
       } else {
         this.router.navigate(['/']);
       }
     } catch (error) {
-      console.error('Error en login:', error);
+      // Error silencioso: no se muestra en consola
       this.errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
     }
   }

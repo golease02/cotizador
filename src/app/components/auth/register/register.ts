@@ -47,8 +47,6 @@ export class RegisterComponent implements AfterViewInit {
   }
 
   initMap() {
-    // Evita que Leaflet concatene el imagePath detectado (p.ej. http://localhost:4200/media/)
-    // delante de la URL de los iconos (causa de los errores 404).
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
@@ -96,7 +94,7 @@ export class RegisterComponent implements AfterViewInit {
         this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
         this.manualAddress = this.addressText;
       }
-    } catch (error) {
+    } catch {
       this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       this.manualAddress = this.addressText;
     }
@@ -133,8 +131,7 @@ export class RegisterComponent implements AfterViewInit {
       } else {
         this.errorMessage = 'No se encontró la dirección. Intenta con otra búsqueda.';
       }
-    } catch (error) {
-      console.error('Error en geocodificación:', error);
+    } catch {
       this.errorMessage = 'Error al buscar la dirección. Intenta de nuevo.';
     } finally {
       this.isSearching = false;
@@ -149,61 +146,49 @@ export class RegisterComponent implements AfterViewInit {
   }
 
   async onRegister() {
-    console.log('🚀 Iniciando registro...');
-
-    // 1. Validar campos obligatorios
+    // Validar campos obligatorios
     if (!this.phoneNumber || !this.fullName || !this.password || !this.agencyBrand) {
       this.errorMessage = 'Todos los campos son obligatorios';
-      console.warn('❌ Campos faltantes:', { phone: !!this.phoneNumber, name: !!this.fullName, pass: !!this.password, brand: !!this.agencyBrand });
       return;
     }
 
-    // 2. Validar ubicación
+    // Validar ubicación
     let finalLocation = '';
     if (this.selectedCoords) {
       finalLocation = this.addressText || `${this.selectedCoords.lat}, ${this.selectedCoords.lng}`;
-      console.log('📍 Usando coordenadas:', this.selectedCoords);
     } else if (this.manualAddress.trim()) {
       finalLocation = this.manualAddress.trim();
-      console.log('📍 Usando dirección manual:', finalLocation);
     } else {
       this.errorMessage = 'Selecciona una ubicación en el mapa o escribe una dirección y presiona "Buscar"';
-      console.warn('❌ Sin ubicación seleccionada');
       return;
     }
 
-    // 3. Marca final
+    // Marca final
     const finalBrand = this.agencyBrand === 'Otro' ? this.otherBrand : this.agencyBrand;
     if (!finalBrand) {
       this.errorMessage = 'Debes escribir el nombre de la marca';
       return;
     }
 
-    // 4. Crear email
+    // Crear email
     const email = `vendedor_${this.phoneNumber}@golease.com`;
-    console.log('📧 Email generado:', email);
 
     try {
-      // 5. Registrar en Supabase Auth
-      console.log('🔐 Registrando en Supabase Auth...');
+      // Registrar en Supabase Auth
       const { error: authError } = await this.supabase.signUp(email, this.password, this.fullName);
       if (authError) {
-        console.error('❌ Error en Auth:', authError);
         this.errorMessage = authError.message || 'Error al registrarse';
         return;
       }
 
-      // 6. Obtener usuario
+      // Obtener usuario
       const user = this.supabase.currentUser();
       if (!user) {
-        console.error('❌ Usuario no encontrado después del registro');
         this.errorMessage = 'No se pudo obtener el usuario después del registro';
         return;
       }
-      console.log('✅ Usuario creado:', user.id);
 
-      // 7. Guardar perfil
-      console.log('💾 Guardando perfil...');
+      // Guardar perfil
       const profileData: any = {
         seller_number: this.phoneNumber,
         full_name: this.fullName,
@@ -219,16 +204,13 @@ export class RegisterComponent implements AfterViewInit {
       const { error: profileError } = await this.supabase.updateProfile(user.id, profileData);
 
       if (profileError) {
-        console.error('❌ Error al guardar perfil:', profileError);
         this.errorMessage = `Error al guardar datos: ${profileError.message || 'desconocido'}`;
         return;
       }
 
-      console.log('✅ Registro completado exitosamente');
-      // 8. Redirigir
+      // Redirigir al inicio
       await this.router.navigate(['/']);
     } catch (error: any) {
-      console.error('❌ Error inesperado:', error);
       this.errorMessage = error.message || 'Error inesperado. Intenta de nuevo.';
     }
   }
