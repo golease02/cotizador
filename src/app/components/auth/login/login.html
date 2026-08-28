@@ -1,30 +1,98 @@
 <div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h2>Iniciar Sesión</h2>
-            <p>Usa tu número de celular y contraseña</p>
-        </div>
+    <div class="auth-inner">
+        <!-- Panel de marca -->
+        <aside class="auth-brand">
+            <div class="brand-blob brand-blob--1"></div>
+            <div class="brand-blob brand-blob--2"></div>
 
-        <form (ngSubmit)="onLogin()">
-            <div class="form-group">
-                <label>Número de celular</label>
-                <input type="text" [(ngModel)]="phoneNumber" name="phoneNumber" required placeholder="Ej. 5512345678" />
+            <div class="brand-top">
+                <span class="brand-mark">G</span>
+                <div class="brand-names">
+                    <strong class="brand-name">GO LEASE MX</strong>
+                    <em class="brand-tag">Cotizador de vehículos</em>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" />
+            <div class="brand-quote">
+                <p>"Haz de tus impuestos, la renta de tu auto"</p>
             </div>
 
-            <button type="submit" class="btn-primary">Iniciar sesión</button>
-        </form>
+            <ul class="brand-features">
+                <li>
+                    <span class="feature-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                    Ingresa con tu número de celular y contraseña registrados.
+                </li>
+                <li>
+                    <span class="feature-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                    Genera cotizaciones y consulta tu historial.
+                </li>
+                <li>
+                    <span class="feature-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    </span>
+                    ¿Olvidaste tu contraseña? Recupérala desde el formulario.
+                </li>
+            </ul>
 
-        <p class="auth-link">
-            ¿No tienes cuenta? <a routerLink="/register">Regístrate</a>
-        </p>
-        <p class="auth-link">
-            <a routerLink="/recuperar-contrasena">¿Olvidaste tu contraseña?</a>
-        </p>
-        <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+            <div class="brand-footer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Conexión segura SSL
+            </div>
+        </aside>
+
+        <!-- Panel del formulario -->
+        <section class="auth-form-panel">
+            <div class="auth-card">
+                <span class="card-topline"></span>
+
+                <div class="auth-header">
+                    <span class="auth-eyebrow"><span class="pulse-dot"></span>Portal de vendedores</span>
+                    <h2 class="auth-title">Iniciar Sesión</h2>
+                    <p>Usa tu número de celular y contraseña</p>
+                </div>
+
+                <form (ngSubmit)="onLogin()">
+                    <div class="form-group">
+                        <label for="login-phone">Número de celular</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.13a2 2 0 0 1 1.99-2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            </span>
+                            <input id="login-phone" type="text" [(ngModel)]="phoneNumber" name="phoneNumber" required placeholder="Ej. 5512345678" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">Contraseña</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            </span>
+                            <input id="login-password" type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" />
+                        </div>
+                    </div>
+
+                    <div class="form-action">
+                        <button type="submit" class="btn-primary">
+                            <span>Iniciar sesión</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="auth-links">
+                    <p class="auth-link">
+                        ¿No tienes cuenta? <a routerLink="/register">Regístrate</a>
+                    </p>
+                    <a class="forgot-link" routerLink="/recuperar-contrasena">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+            </div>
+        </section>
     </div>
 </div>

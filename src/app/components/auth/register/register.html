@@ -1,76 +1,175 @@
 <div class="auth-container">
-    <div class="auth-card register-card">
-        <div class="auth-header">
-            <h2>Registrarse</h2>
-            <p>Ingresa tus datos para comenzar a cotizar</p>
-        </div>
+    <div class="auth-inner register-inner">
+        <!-- Panel de marca -->
+        <aside class="auth-brand">
+            <div class="brand-blob brand-blob--1"></div>
+            <div class="brand-blob brand-blob--2"></div>
 
-        <form (ngSubmit)="onRegister()">
-            <!-- Número de celular -->
-            <div class="form-group">
-                <label>Número de celular *</label>
-                <input type="text" [(ngModel)]="phoneNumber" name="phoneNumber" required placeholder="Ej. 5512345678" />
-            </div>
-
-            <!-- Nombre completo -->
-            <div class="form-group">
-                <label>Nombre Completo *</label>
-                <input type="text" [(ngModel)]="fullName" name="fullName" required placeholder="Juan Pérez" />
-            </div>
-
-            <!-- Contraseña -->
-            <div class="form-group">
-                <label>Contraseña *</label>
-                <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" />
-            </div>
-
-            <!-- Marca -->
-            <div class="form-group">
-                <label>Marca (Agencia) *</label>
-                <select [(ngModel)]="agencyBrand" name="agencyBrand" required>
-                    <option value="">Selecciona una marca</option>
-                    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-                    <option value="Otro">Otro</option>
-                </select>
-                <input *ngIf="agencyBrand === 'Otro'" type="text" [(ngModel)]="otherBrand"
-                    placeholder="Escribe la marca" name="otherBrand" style="margin-top: 0.5rem;" />
-            </div>
-
-            <!-- Mapa -->
-            <div class="form-group">
-                <label>Ubicación de Sucursal *</label>
-                <div #mapContainer class="map-container"></div>
-                <div *ngIf="selectedCoords" class="coords-info">
-                    <span class="coord-label">📍 Dirección:</span>
-                    <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
+            <div class="brand-top">
+                <span class="brand-mark">G</span>
+                <div class="brand-names">
+                    <strong class="brand-name">GO LEASE MX</strong>
+                    <em class="brand-tag">Registro de vendedores</em>
                 </div>
-                <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de tu sucursal</p>
             </div>
 
-            <!-- Buscador de direcciones (como Google Maps) -->
-            <div class="form-group">
-                <label>Buscar sucursal en el mapa</label>
-                <div class="search-group">
-                    <input type="text" [(ngModel)]="manualAddress" name="manualAddress"
-                        placeholder="Ej. Toyota Querétaro" (keydown)="onSearchKeydown($event)" class="search-input" />
-                    <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        </svg>
-                        {{ isSearching ? 'Buscando...' : 'Buscar' }}
+            <div class="brand-quote">
+                <p>"Haz de tus impuestos, la renta de tu auto"</p>
+            </div>
+
+            <ul class="brand-features">
+                <li>
+                    <span class="feature-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    </span>
+                    Crea tu cuenta en minutos
+                </li>
+                <li>
+                    <span class="feature-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14" /></svg>
+                    </span>
+                    Selecciona la marca de tu agencia
+                </li>
+                <li>
+                    <span class="feature-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                    </span>
+                    Marca tu sucursal en el mapa interactivo
+                </li>
+            </ul>
+
+            <div class="brand-footer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Datos protegidos y seguros
+            </div>
+        </aside>
+
+        <!-- Panel del formulario -->
+        <section class="auth-form-panel">
+            <div class="auth-card register-card">
+                <span class="card-topline"></span>
+
+                <div class="auth-header">
+                    <span class="auth-eyebrow"><span class="pulse-dot"></span>Nuevo usuario</span>
+                    <h2 class="auth-title">Registrarse</h2>
+                    <p>Ingresa tus datos para comenzar a cotizar</p>
+                </div>
+
+                <form (ngSubmit)="onRegister()">
+                    <!-- Sección 1 · Cuenta -->
+                    <div class="auth-section">
+                        <div class="section-head">
+                            <span class="section-badge">1</span>
+                            <h3 class="section-name">Cuenta de acceso</h3>
+                            <span class="section-line"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reg-phone">Número de celular *</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.13a2 2 0 0 1 1.99-2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                </span>
+                                <input id="reg-phone" type="text" [(ngModel)]="phoneNumber" name="phoneNumber" required placeholder="Ej. 5512345678" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reg-name">Nombre Completo *</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v1" /></svg>
+                                </span>
+                                <input id="reg-name" type="text" [(ngModel)]="fullName" name="fullName" required placeholder="Juan Pérez" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reg-password">Contraseña *</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                </span>
+                                <input id="reg-password" type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" />
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Sección 2 · Agencia -->
+                    <div class="auth-section">
+                        <div class="section-head">
+                            <span class="section-badge">2</span>
+                            <h3 class="section-name">Agencia</h3>
+                            <span class="section-line"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reg-brand">Marca (Agencia) *</label>
+                            <div class="input-wrapper select-wrapper">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
+                                </span>
+                                <select id="reg-brand" [(ngModel)]="agencyBrand" name="agencyBrand" required>
+                                    <option value="">Selecciona una marca</option>
+                                    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                                <span class="select-arrow">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </span>
+                            </div>
+                            <input *ngIf="agencyBrand === 'Otro'" class="brand-other" type="text" [(ngModel)]="otherBrand"
+                                placeholder="Escribe la marca" name="otherBrand" />
+                        </div>
+                    </div>
+
+                    <!-- Sección 3 · Ubicación -->
+                    <div class="auth-section">
+                        <div class="section-head">
+                            <span class="section-badge">3</span>
+                            <h3 class="section-name">Ubicación de la sucursal</h3>
+                            <span class="section-line"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="reg-search">Buscar sucursal en el mapa</label>
+                            <div class="search-group">
+                                <div class="input-wrapper search-wrapper">
+                                    <span class="input-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                    </span>
+                                    <input id="reg-search" type="text" [(ngModel)]="manualAddress" name="manualAddress"
+                                        placeholder="Ej. Toyota Querétaro" (keydown)="onSearchKeydown($event)" class="search-input" />
+                                </div>
+                                <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                                    {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                                </button>
+                            </div>
+                            <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ubicación de Sucursal *</label>
+                            <div #mapContainer class="map-container"></div>
+                            <div *ngIf="selectedCoords" class="coords-info">
+                                <span class="coord-label">📍 Dirección:</span>
+                                <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
+                            </div>
+                            <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de tu sucursal</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <span>Registrarse</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </button>
-                </div>
-                <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
+                </form>
+
+                <p class="auth-link register-link">
+                    ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
+                </p>
+                <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
             </div>
-
-            <button type="submit" class="btn-primary">Registrarse</button>
-        </form>
-
-        <p class="auth-link">
-            ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
-        </p>
-        <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+        </section>
     </div>
 </div>
