@@ -1,4 +1,3 @@
-// src/app/components/header/header.component.ts
 import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
@@ -17,7 +16,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
-  currentDate = new Date();
   private refreshSubscription: Subscription | null = null;
 
   async ngOnInit() {
@@ -26,17 +24,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
       if (!this.supabase.currentProfile()) {
         await this.supabase.loadProfile(user.id);
       }
-      console.log('📋 Header - Perfil:', this.supabase.currentProfile());
     }
 
     // Suscribirse a los eventos de refresco de perfil
     this.refreshSubscription = this.supabase.refreshProfile$.subscribe(async () => {
-      console.log('🔄 Header: Recibiendo evento de refresco de perfil');
       const user = this.supabase.currentUser();
       if (user) {
         await this.supabase.loadProfile(user.id);
         this.cdr.detectChanges();
-        console.log('📋 Header - Perfil actualizado:', this.supabase.currentProfile());
       }
     });
   }
