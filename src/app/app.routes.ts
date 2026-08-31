@@ -31,6 +31,11 @@ export const routes: Routes = [
         loadComponent: () => import('./components/cotizador/cotizador').then(m => m.CotizadorComponent),
         canActivate: [AuthGuard]
     },
+    {
+        path: 'perfil',
+        loadComponent: () => import('./components/perfil/perfil.component').then(m => m.PerfilComponent),
+        canActivate: [AuthGuard]
+    },
     // ✅ Ruta alternativa por si alguien escribe /mis-cotizaciones (redirige a raíz)
     {
         path: 'mis-cotizaciones',

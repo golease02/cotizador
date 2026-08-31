@@ -1,0 +1,77 @@
+<section class="profile-shell">
+  <div class="profile-hero">
+    <div class="hero-user">
+      <div class="profile-avatar">{{ (fullName || 'U').charAt(0).toUpperCase() }}</div>
+      <div class="hero-copy">
+        <span class="eyebrow">Mi perfil</span>
+        <h2>{{ fullName || 'Usuario' }}</h2>
+        <p>{{ isAdmin() ? 'Administrador' : 'Vendedor' }}</p>
+      </div>
+    </div>
+
+    <button type="button" class="btn-back" (click)="goBack()">
+      <span>←</span> Volver
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert error">{{ errorMessage() }}</div>
+  <div *ngIf="successMessage()" class="alert success">{{ successMessage() }}</div>
+
+  <div *ngIf="loading()" class="profile-loading">Cargando información...</div>
+
+  <form *ngIf="!loading()" class="profile-content" (ngSubmit)="saveProfile()">
+    <div class="profile-card form-card">
+      <div class="section-header">
+        <span class="section-title">Datos del usuario</span>
+      </div>
+
+      <div class="field-grid">
+        <div class="form-field">
+          <label>Nombre completo</label>
+          <input type="text" [(ngModel)]="fullName" name="fullName" placeholder="Ej. Aldair Rodríguez" />
+        </div>
+
+        <div class="form-field">
+          <label>Número de vendedor</label>
+          <input type="text" [(ngModel)]="sellerNumber" name="sellerNumber" placeholder="Ej. 4421234567" />
+        </div>
+
+        <div class="form-field">
+          <label>Marca / Agencia</label>
+          <select [(ngModel)]="agencyBrand" name="agencyBrand">
+            <option value="">Selecciona una marca</option>
+            <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+          </select>
+        </div>
+
+        <div class="form-field" *ngIf="agencyBrand === 'Otro'">
+          <label>Especifica otra marca</label>
+          <input type="text" [(ngModel)]="otherBrand" name="otherBrand" placeholder="Nombre de la marca" />
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-card map-card">
+      <div class="section-header">
+        <span class="section-title">Ubicación</span>
+      </div>
+
+      <div class="search-row">
+        <input type="text" [(ngModel)]="manualAddress" name="manualAddress" placeholder="Busca tu ubicación o dirección" />
+        <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching()">
+          {{ isSearching() ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </div>
+
+      <div class="map-box">
+        <div #mapContainer class="map-container"></div>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <button type="submit" class="btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
+  </form>
+</section>

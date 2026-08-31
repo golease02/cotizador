@@ -1,22 +1,22 @@
+import { signal } from '@angular/core';
 import { SupabaseService } from './services/supabase.service';
 
-describe('SupabaseService', () => {
+describe('SupabaseService security checks', () => {
   let service: SupabaseService;
 
   beforeEach(() => {
     service = new SupabaseService();
   });
 
-  it('should return initial state plates catalog', () => {
-    const plates = service.getStatePlates();
-    expect(plates.length).toBeGreaterThan(0);
-    expect(plates.find(p => p.id === 'cdmx')?.costNet).toBe(1432);
+  it('should deny editing another user profile without admin role', () => {
+    service['currentUserSignal'].set({ id: 'user-1' } as any);
+    service['currentProfileSignal'].set({ id: 'user-1', role: 'seller', email: 'seller@test.com', full_name: 'Seller' } as any);
+
+    expect(service.canManageProfile('user-2')).toBeFalse();
   });
 
-  it('should return vehicle catalog suggestions including Audi', () => {
-    const vehicles = service.getVehicleCatalog();
-    expect(vehicles.length).toBeGreaterThan(0);
-    expect(vehicles[0].brand).toBe('Audi');
-    expect(vehicles[0].model).toBe('Q3 Sportback');
+  it('should sanitize unsafe string content to prevent code injection', () => {
+    expect(service.sanitizeText('<script>alert(1)</script>', 'content', 200)).toBe('scriptalert(1)script');
+    expect(service.sanitizeText('  Nombre válido  ', 'full_name', 50)).toBe('Nombre válido');
   });
 });

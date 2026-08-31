@@ -28,9 +28,22 @@ export interface Profile {
 export class SupabaseService {
   private supabase: SupabaseClient;
 
-    private currentUserSignal = signal<User | null>(null);
+  private currentUserSignal = signal<User | null>(null);
   private currentProfileSignal = signal<Profile | null>(null);
   private savedQuotesSignal = signal<QuoteCalculationResult[]>([]);
+
+  private readonly maxFieldLength: Record<string, number> = {
+    full_name: 120,
+    seller_number: 40,
+    agency_name: 120,
+    agency_brand: 120,
+    agency_location: 300,
+    email: 160,
+    content: 3000,
+    client_name: 120,
+    brand: 80,
+    model: 80,
+  };
 
   // ✅ Catálogo de placas de estado — cacheado desde la base de datos
   private statePlatesSignal = signal<StatePlateOption[]>([...STATE_PLATES_CATALOG]);
@@ -74,11 +87,44 @@ export class SupabaseService {
     }
   }
 
+  public sanitizeText(value: unknown, fieldName: string, maxLength = 200): string {
+    const raw = String(value ?? '');
+    const normalized = raw
+      .replace(/<script\b[^>]*>.*?<\/script>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/javascript\s*:/gi, '')
+      .replace(/on\w+\s*=\s*(['"]).*?\1/gi, '')
+      .replace(/[\u0000-\u001F\u007F]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const limit = this.maxFieldLength[fieldName] ?? maxLength;
+    return normalized.slice(0, limit);
+  }
+
+  public canManageProfile(targetUserId: string): boolean {
+    const currentUser = this.currentUserSignal();
+    const currentProfile = this.currentProfileSignal();
+
+    if (!currentUser || !targetUserId) {
+      return false;
+    }
+
+    if (currentUser.id === targetUserId) {
+      return true;
+    }
+
+    return currentProfile?.role === 'admin' && currentProfile?.active !== false;
+  }
+
   public async signUp(email: string, password: string, fullName: string): Promise<{ error: any }> {
+    const safeEmail = this.sanitizeText(email, 'email', 160).toLowerCase();
+    const safeName = this.sanitizeText(fullName, 'full_name', 120);
+
     const { data, error } = await this.supabase.auth.signUp({
-      email,
+      email: safeEmail,
       password,
-      options: { data: { full_name: fullName } }
+      options: { data: { full_name: safeName } }
     });
     if (!error && data.user) {
       this.currentUserSignal.set(data.user);
@@ -139,23 +185,55 @@ export class SupabaseService {
   }
 
   public async getProfileById(userId: string): Promise<{ data: any; error: any }> {
-    console.log('🔍 getProfileById llamado con ID:', userId);
+    if (!userId || !this.canManageProfile(userId)) {
+      return { data: null, error: { message: 'No tienes permisos para consultar este perfil.' } };
+    }
+
     const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
-    console.log('📦 Resultado getProfileById:', { data, error });
     return { data, error };
   }
 
   // Dentro de SupabaseService
   public async deleteUserFromAuth(userId: string): Promise<{ error: any }> {
+    const currentUser = this.currentUserSignal();
+    const currentProfile = this.currentProfileSignal();
+
+    if (!currentUser || !this.canManageProfile(userId)) {
+      return { error: { message: 'No tienes permisos para eliminar este usuario.' } };
+    }
+
+    if (currentUser.id === userId) {
+      return { error: { message: 'No puedes eliminar tu propio usuario.' } };
+    }
+
+    if (currentProfile?.role !== 'admin') {
+      return { error: { message: 'Solo los administradores pueden eliminar usuarios.' } };
+    }
+
     const { error } = await this.supabase.rpc('delete_user', { user_id: userId });
     return { error };
   }
 
   public async updateUserPassword(userId: string, password: string): Promise<{ error: any }> {
+    const currentUser = this.currentUserSignal();
+    const currentProfile = this.currentProfileSignal();
+
+    if (!currentUser || !this.canManageProfile(userId)) {
+      return { error: { message: 'No tienes permisos para actualizar esta contraseña.' } };
+    }
+
+    if (password.length < 6 || password.length > 128) {
+      return { error: { message: 'La contraseña debe tener entre 6 y 128 caracteres.' } };
+    }
+
+    if (currentProfile?.role !== 'admin' && currentUser.id !== userId) {
+      return { error: { message: 'No puedes restablecer otra contraseña.' } };
+    }
+
     const { error } = await this.supabase.rpc('update_user_password', {
       target_user_id: userId,
       new_password: password
@@ -241,16 +319,16 @@ export class SupabaseService {
 
     const quoteData = {
       seller_id: user.id,
-      client_name: quote.input.clientName || '',
-      brand: quote.input.brand,
-      model: quote.input.model,
+      client_name: this.sanitizeText(quote.input.clientName || '', 'client_name', 120),
+      brand: this.sanitizeText(quote.input.brand, 'brand', 80),
+      model: this.sanitizeText(quote.input.model, 'model', 80),
       year: quote.input.year,
       pricenet: quote.input.priceNet,
       ishybridorelectric: quote.input.isHybridOrElectric,
       termmonths: quote.input.termMonths,
       extraordinaryrentpct: quote.input.extraordinaryRentPct || 0,
       securitydepositpct: quote.input.securityDepositPct || 0,
-      selectedstateplateid: quote.input.selectedStatePlateId || 'pendiente',
+      selectedstateplateid: this.sanitizeText(quote.input.selectedStatePlateId || 'pendiente', 'agency_brand', 40),
       isinsuranceestimated: quote.input.isInsuranceEstimated || false,
       totalpayment: 0
     };
@@ -370,26 +448,65 @@ export class SupabaseService {
   public async createNote(entityType: 'seller' | 'quote', entityId: string, content: string): Promise<{ error: any }> {
     const user = this.currentUserSignal();
     if (!user) return { error: { message: 'No hay usuario autenticado' } };
+
+    const sanitizedContent = this.sanitizeText(content, 'content', 3000);
+
     const { error } = await this.supabase
       .from('notes')
       .insert([{
         entity_type: entityType,
         entity_id: entityId,
-        content,
+        content: sanitizedContent,
         created_by: user.id
       }]);
     return { error };
   }
 
   public async updateNote(noteId: string, content: string): Promise<{ error: any }> {
+    const currentUser = this.currentUserSignal();
+    if (!currentUser) return { error: { message: 'No hay usuario autenticado' } };
+
+    const sanitizedContent = this.sanitizeText(content, 'content', 3000);
+
+    const { data: existingNote, error: readError } = await this.supabase
+      .from('notes')
+      .select('created_by')
+      .eq('id', noteId)
+      .maybeSingle();
+
+    if (readError || !existingNote) {
+      return { error: readError || { message: 'Nota no encontrada.' } };
+    }
+
+    if (existingNote.created_by !== currentUser.id && this.currentProfileSignal()?.role !== 'admin') {
+      return { error: { message: 'No tienes permisos para editar esta nota.' } };
+    }
+
     const { error } = await this.supabase
       .from('notes')
-      .update({ content, updated_at: new Date().toISOString() })
+      .update({ content: sanitizedContent, updated_at: new Date().toISOString() })
       .eq('id', noteId);
     return { error };
   }
 
   public async deleteNote(noteId: string): Promise<{ error: any }> {
+    const currentUser = this.currentUserSignal();
+    if (!currentUser) return { error: { message: 'No hay usuario autenticado' } };
+
+    const { data: existingNote, error: readError } = await this.supabase
+      .from('notes')
+      .select('created_by')
+      .eq('id', noteId)
+      .maybeSingle();
+
+    if (readError || !existingNote) {
+      return { error: readError || { message: 'Nota no encontrada.' } };
+    }
+
+    if (existingNote.created_by !== currentUser.id && this.currentProfileSignal()?.role !== 'admin') {
+      return { error: { message: 'No tienes permisos para eliminar esta nota.' } };
+    }
+
     const { error } = await this.supabase
       .from('notes')
       .delete()
@@ -413,6 +530,17 @@ export class SupabaseService {
   // ==================== UTILIDADES ====================
 
   public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {
+    const currentUser = this.currentUserSignal();
+    const currentProfile = this.currentProfileSignal();
+
+    if (!currentUser) {
+      return { data: null, error: { message: 'No hay usuario autenticado.' } };
+    }
+
+    if (currentUser.id !== sellerId && currentProfile?.role !== 'admin') {
+      return { data: null, error: { message: 'No tienes permisos para consultar estas cotizaciones.' } };
+    }
+
     const { data, error } = await this.supabase
       .from('quotes')
       .select('*')
@@ -422,18 +550,35 @@ export class SupabaseService {
   }
 
   public async updateProfile(userId: string, data: any): Promise<{ error: any }> {
+    if (!userId || !this.canManageProfile(userId)) {
+      return { error: { message: 'No tienes permisos para modificar este perfil.' } };
+    }
+
+    const safeData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data ?? {})) {
+      if (key === 'id' || key === 'email') {
+        continue;
+      }
+
+      if (typeof value === 'string') {
+        safeData[key] = this.sanitizeText(value, key, this.maxFieldLength[key] ?? 200);
+      } else if (typeof value === 'number' || typeof value === 'boolean' || value === null) {
+        safeData[key] = value;
+      } else if (value !== undefined) {
+        safeData[key] = this.sanitizeText(String(value), key, this.maxFieldLength[key] ?? 200);
+      }
+    }
+
     const { error } = await this.supabase
       .from('profiles')
       .upsert(
-        { id: userId, ...data },
+        { id: userId, ...safeData },
         { onConflict: 'id' }
       );
     return { error };
   }
 
   public async getProfileBySellerNumber(sellerNumber: string): Promise<{ data: any; error: any }> {
-    console.log('🔍 Buscando perfil con seller_number:', sellerNumber);
-
     const { data, error } = await this.supabase
       .rpc('get_profile_by_seller', { seller_number_input: sellerNumber });
 
@@ -443,7 +588,6 @@ export class SupabaseService {
     }
 
     const profile = data && data.length > 0 ? data[0] : null;
-    console.log('✅ Perfil encontrado:', profile);
 
     return { data: profile, error: null };
   }

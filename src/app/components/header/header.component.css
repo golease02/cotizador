@@ -118,6 +118,14 @@
   box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.09);
 }
 
+.user-profile-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-decoration: none;
+  color: inherit;
+}
+
 .user-avatar {
   width: 34px;
   height: 34px;

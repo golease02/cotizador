@@ -20,16 +20,15 @@
 }
 
 .plates-container .page-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1.5rem;
-  align-items: center;
   position: relative;
   z-index: 1;
-  padding: 1.5rem 1.75rem;
-  margin: 0 0 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
   min-height: 164px;
-  align-items: flex-end;
+  margin: 0 0 1.25rem;
+  padding: 1.5rem 1.75rem;
   border: 1px solid rgba(139, 226, 140, 0.22);
   border-radius: 16px;
   background: linear-gradient(115deg, #10251f 0%, #173c2e 68%, #1f6840 100%);
@@ -37,8 +36,9 @@
 }
 
 .plates-container .page-heading {
+  flex: 1 1 auto;
   min-width: 0;
-  padding: 1.5rem 1.75rem;
+  padding: 0;
 }
 
 .plates-container .page-heading h2 {
@@ -58,7 +58,12 @@
 .plates-container .btn-primary {
   position: relative;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   min-height: 44px;
+  margin-left: auto;
   padding: 0.75rem 1rem;
   border: 0;
   border-radius: 9px;
@@ -66,6 +71,10 @@
   color: #10251f;
   box-shadow: none;
   white-space: nowrap;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .plates-container .btn-primary:hover {
