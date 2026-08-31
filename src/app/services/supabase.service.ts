@@ -260,7 +260,7 @@ export class SupabaseService {
     try {
       const { data, error } = await this.supabase
         .from('state_plates')
-        .select('id, name, costnet')
+        .select('id, name, costnet, estado, disponible')
         .order('name');
 
       if (!error && data && data.length > 0) {
@@ -268,6 +268,8 @@ export class SupabaseService {
           id: p.id,
           name: p.name,
           costNet: Number(p.costnet) || 0,
+          estado: p.estado ?? '',
+          disponible: p.disponible !== false,
         }));
 
         // ✅ Garantizar que 'pendiente' siempre exista (opción por defecto del cotizador)
@@ -775,16 +777,20 @@ export class SupabaseService {
         id: p.id,
         name: p.name,
         costNet: Number(p.costnet) || 0,
+        estado: p.estado ?? '',
+        disponible: p.disponible !== false,
       })),
       error: null,
     };
   }
 
-  public async createStatePlate(plate: { name: string; costnet: number }): Promise<{ error: any }> {
+  public async createStatePlate(plate: { name: string; costnet: number; estado: string; disponible: boolean }): Promise<{ error: any }> {
     const { error } = await this.supabase.from('state_plates').insert([{
       id: crypto.randomUUID(), // Generar UUID automáticamente
       name: plate.name,
       costnet: plate.costnet,
+      estado: plate.estado || null,
+      disponible: plate.disponible !== false,
     }]);
     if (!error) {
       await this.loadStatePlates(); // Actualizar caché local
@@ -792,13 +798,26 @@ export class SupabaseService {
     return { error };
   }
 
-  public async updateStatePlate(id: string, plate: { name: string; costnet: number }): Promise<{ error: any }> {
+  public async updateStatePlate(id: string, plate: { name: string; costnet: number; estado: string; disponible: boolean }): Promise<{ error: any }> {
     const { error } = await this.supabase
       .from('state_plates')
       .update({
         name: plate.name,
         costnet: plate.costnet,
+        estado: plate.estado || null,
+        disponible: plate.disponible !== false,
       })
+      .eq('id', id);
+    if (!error) {
+      await this.loadStatePlates();
+    }
+    return { error };
+  }
+
+  public async toggleStatePlateAvailability(id: string, disponible: boolean): Promise<{ error: any }> {
+    const { error } = await this.supabase
+      .from('state_plates')
+      .update({ disponible })
       .eq('id', id);
     if (!error) {
       await this.loadStatePlates();

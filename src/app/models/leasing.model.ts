@@ -2,17 +2,58 @@ export interface StatePlateOption {
   id: string;
   name: string;
   costNet: number; // Cost with IVA
+  estado?: string; // Estado de la República Mexicana al que pertenece
+  disponible?: boolean; // true = aparece en el cotizador; false = oculta
 }
 
+/**
+ * Los 32 estados de la República Mexicana (incluye la Ciudad de México).
+ * Se usa en el catálogo de placas para filtrar y asignar el estado.
+ */
+export const ESTADOS_MEXICO: string[] = [
+  'Aguascalientes',
+  'Baja California',
+  'Baja California Sur',
+  'Campeche',
+  'Chiapas',
+  'Chihuahua',
+  'Ciudad de México',
+  'Coahuila',
+  'Colima',
+  'Durango',
+  'Guanajuato',
+  'Guerrero',
+  'Hidalgo',
+  'Jalisco',
+  'Estado de México',
+  'Michoacán',
+  'Morelos',
+  'Nayarit',
+  'Nuevo León',
+  'Oaxaca',
+  'Puebla',
+  'Querétaro',
+  'Quintana Roo',
+  'San Luis Potosí',
+  'Sinaloa',
+  'Sonora',
+  'Tabasco',
+  'Tamaulipas',
+  'Tlaxcala',
+  'Veracruz',
+  'Yucatán',
+  'Zacatecas',
+];
+
 export const STATE_PLATES_CATALOG: StatePlateOption[] = [
-  { id: 'cdmx', name: 'Alta de placas CDMX', costNet: 1432 },
-  { id: 'edomex', name: 'Alta de placas Edo de Mex', costNet: 1432 },
-  { id: 'guanajuato', name: 'Alta de placas Guanajuato', costNet: 4454 },
-  { id: 'michoacan', name: 'Alta de placas Michoacan', costNet: 7948 },
-  { id: 'queretaro', name: 'Alta de placas Querétaro', costNet: 6679 },
-  { id: 'slp', name: 'Alta de placas San Luis Potosi', costNet: 6933 },
-  { id: 'jalisco', name: 'Alta Placas Jalisco', costNet: 11460 },
-  { id: 'pendiente', name: 'Alta de placas pendientes x cotizar', costNet: 0 },
+  { id: 'cdmx', name: 'Alta de placas CDMX', costNet: 1432, estado: 'Ciudad de México', disponible: true },
+  { id: 'edomex', name: 'Alta de placas Edo de Mex', costNet: 1432, estado: 'Estado de México', disponible: true },
+  { id: 'guanajuato', name: 'Alta de placas Guanajuato', costNet: 4454, estado: 'Guanajuato', disponible: true },
+  { id: 'michoacan', name: 'Alta de placas Michoacan', costNet: 7948, estado: 'Michoacán', disponible: true },
+  { id: 'queretaro', name: 'Alta de placas Querétaro', costNet: 6679, estado: 'Querétaro', disponible: true },
+  { id: 'slp', name: 'Alta de placas San Luis Potosi', costNet: 6933, estado: 'San Luis Potosí', disponible: true },
+  { id: 'jalisco', name: 'Alta Placas Jalisco', costNet: 11460, estado: 'Jalisco', disponible: true },
+  { id: 'pendiente', name: 'Alta de placas pendientes x cotizar', costNet: 0, estado: '', disponible: true },
 ];
 
 export interface TermRatesOption {

@@ -47,7 +47,8 @@ export class QuoteFormComponent implements OnInit {
     });
 
     await this.supabaseService.loadStatePlates();
-    this.statePlates = this.supabaseService.getStatePlates();
+    // Solo mostrar placas disponibles (las "no disponibles" no aparecen en el cotizador)
+    this.statePlates = this.supabaseService.getStatePlates().filter(p => p.disponible !== false);
     this.presetVehicles = await this.supabaseService.getVehicleCatalog();
 
     const brandMap = new Map<string, VehicleCatalogItem[]>();

@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../services/supabase.service';
-import { StatePlateOption } from '../../../models/leasing.model';
+import { StatePlateOption, ESTADOS_MEXICO } from '../../../models/leasing.model';
 
 @Component({
   selector: 'app-admin-plates',
@@ -21,10 +21,15 @@ export class AdminPlatesComponent implements OnInit {
   loading = true;
   searchTerm = '';
   costFilter: 'all' | 'withCost' = 'all';
+  estadoFilter = '';
   loadError = '';
+
+  // Estados de la República Mexicana (para filtros y formulario)
+  estadosMexico: string[] = ESTADOS_MEXICO;
 
   // Modales
   showConfirmModal = false;
+  confirmAction: 'delete' | 'toggle' | null = null;
   selectedPlateId: string | null = null;
   showFormModal = false;
   isEditMode = false;
@@ -37,6 +42,8 @@ export class AdminPlatesComponent implements OnInit {
   plateForm = {
     name: '',
     costnet: 0,
+    estado: '',
+    disponible: true,
   };
 
   async ngOnInit() {
@@ -69,6 +76,9 @@ export class AdminPlatesComponent implements OnInit {
     if (this.costFilter === 'withCost') {
       filtered = filtered.filter(p => p.costNet > 0);
     }
+    if (this.estadoFilter) {
+      filtered = filtered.filter(p => (p.estado || '') === this.estadoFilter);
+    }
     this.filteredPlates.set(filtered);
     this.cdr.detectChanges();
   }
@@ -85,6 +95,19 @@ export class AdminPlatesComponent implements OnInit {
       return;
     }
     this.selectedPlateId = plateId;
+    this.confirmAction = 'delete';
+    this.showConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  toggleDisponibilidad(plate: StatePlateOption) {
+    if (!plate || !plate.id) return;
+    if (this.isProtectedPlate(plate.id)) {
+      alert('La placa "pendiente" es obligatoria y no puede deshabilitarse.');
+      return;
+    }
+    this.selectedPlateId = plate.id;
+    this.confirmAction = 'toggle';
     this.showConfirmModal = true;
     this.cdr.detectChanges();
   }
@@ -93,13 +116,25 @@ export class AdminPlatesComponent implements OnInit {
     if (!this.selectedPlateId) return;
     this.loading = true;
 
-    const { error } = await this.supabase.deleteStatePlate(this.selectedPlateId);
-    if (error) {
-      alert('Error al eliminar: ' + error.message);
+    if (this.confirmAction === 'delete') {
+      const { error } = await this.supabase.deleteStatePlate(this.selectedPlateId);
+      if (error) {
+        alert('Error al eliminar: ' + error.message);
+      }
+    } else if (this.confirmAction === 'toggle') {
+      const plate = this.plates().find(p => p.id === this.selectedPlateId);
+      if (plate) {
+        const current = plate.disponible !== false;
+        const { error } = await this.supabase.toggleStatePlateAvailability(this.selectedPlateId, !current);
+        if (error) {
+          alert('Error al cambiar disponibilidad: ' + error.message);
+        }
+      }
     }
 
     this.showConfirmModal = false;
     this.selectedPlateId = null;
+    this.confirmAction = null;
     await this.loadPlates();
     this.loading = false;
     this.cdr.detectChanges();
@@ -107,6 +142,7 @@ export class AdminPlatesComponent implements OnInit {
 
   cancelModal() {
     this.showConfirmModal = false;
+    this.confirmAction = null;
     this.cdr.detectChanges();
   }
 
@@ -115,7 +151,7 @@ export class AdminPlatesComponent implements OnInit {
   openNewPlate() {
     this.isEditMode = false;
     this.editingPlateId = null;
-    this.plateForm = { name: '', costnet: 0 };
+    this.plateForm = { name: '', costnet: 0, estado: '', disponible: true };
     this.formError = '';
     this.formSuccess = '';
     this.showFormModal = true;
@@ -131,6 +167,8 @@ export class AdminPlatesComponent implements OnInit {
     this.plateForm = {
       name: plate.name,
       costnet: plate.costNet,
+      estado: plate.estado ?? '',
+      disponible: plate.disponible !== false,
     };
     this.formError = '';
     this.formSuccess = '';
@@ -161,6 +199,11 @@ export class AdminPlatesComponent implements OnInit {
       this.formLoading = false;
       return;
     }
+    if (!this.plateForm.estado) {
+      this.formError = 'Selecciona un estado de la República Mexicana';
+      this.formLoading = false;
+      return;
+    }
 
     try {
       if (this.isEditMode) {
@@ -172,6 +215,8 @@ export class AdminPlatesComponent implements OnInit {
         const { error } = await this.supabase.updateStatePlate(this.editingPlateId, {
           name: normalizedName,
           costnet: this.plateForm.costnet,
+          estado: this.plateForm.estado,
+          disponible: this.plateForm.disponible !== false,
         });
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
@@ -183,6 +228,8 @@ export class AdminPlatesComponent implements OnInit {
         const { error } = await this.supabase.createStatePlate({
           name: normalizedName,
           costnet: this.plateForm.costnet,
+          estado: this.plateForm.estado,
+          disponible: this.plateForm.disponible !== false,
         });
         if (error) {
           this.formError = 'Error al crear: ' + error.message;
@@ -209,6 +256,15 @@ export class AdminPlatesComponent implements OnInit {
 
   isProtectedPlate(plateId: string): boolean {
     return plateId === 'pendiente';
+  }
+
+  getAvailabilityLabel(plate: StatePlateOption): string {
+    if (this.isProtectedPlate(plate.id)) return 'Protegida';
+    return plate.disponible !== false ? 'Disponible' : 'No disponible';
+  }
+
+  isPlateAvailable(plate: StatePlateOption): boolean {
+    return plate.disponible !== false;
   }
 
   formatPrice(price: number): string {

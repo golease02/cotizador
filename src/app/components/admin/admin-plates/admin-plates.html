@@ -16,6 +16,11 @@
             <option value="all">Todos los costos</option>
             <option value="withCost">Con costo</option>
         </select>
+        <select [(ngModel)]="estadoFilter" (change)="onSearch()" name="estadoFilter" class="filter-select"
+            aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option *ngFor="let estado of estadosMexico" [value]="estado">{{ estado }}</option>
+        </select>
         <span class="results-count" *ngIf="!loading">{{ filteredPlates().length }} placa(s)</span>
     </div>
 
@@ -27,18 +32,29 @@
                 <span class="plate-symbol" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h10M7 14h5"></path></svg>
                 </span>
-                <span class="plate-status" [class.protected]="isProtectedPlate(plate.id)">
-                    {{ isProtectedPlate(plate.id) ? 'Protegida' : 'Disponible' }}
+                <span class="plate-status" [class.protected]="isProtectedPlate(plate.id)"
+                    [class.unavailable]="!isProtectedPlate(plate.id) && !isPlateAvailable(plate)">
+                    {{ getAvailabilityLabel(plate) }}
                 </span>
             </div>
             <h3>{{ plate.name }}</h3>
+            <span class="plate-estado" title="Estado" *ngIf="plate.estado">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                {{ plate.estado }}
+            </span>
             <div class="plate-card-details">
                 <span class="detail-label">Costo con IVA</span>
                 <strong>{{ formatPrice(plate.costNet) }}</strong>
             </div>
             <div class="plate-card-footer">
-                <span class="plate-usage">Visible en el cotizador</span>
+                <span class="plate-usage">{{ isPlateAvailable(plate) ? 'Visible en el cotizador' : 'Oculta del cotizador' }}</span>
                 <div class="action-buttons">
+                    <button class="btn-icon btn-toggle" (click)="toggleDisponibilidad(plate)"
+                        [class.off]="!isPlateAvailable(plate)"
+                        [title]="isPlateAvailable(plate) ? 'Marcar como no disponible' : 'Marcar como disponible'"
+                        [attr.aria-label]="isPlateAvailable(plate) ? 'Marcar como no disponible' : 'Marcar como disponible'">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
                     <button class="btn-icon btn-edit" (click)="openEditPlate(plate)" title="Editar" aria-label="Editar placa">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                     </button>
@@ -59,7 +75,7 @@
     <div *ngIf="!loading && filteredPlates().length === 0" class="catalog-state empty-state">
         <span class="empty-state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h10M7 14h5"></path></svg></span>
         <strong>No se encontraron placas</strong>
-        <span>Prueba con otro término o cambia el filtro de costo.</span>
+        <span>Prueba con otro término o cambia los filtros de costo o estado.</span>
     </div>
 </div>
 
@@ -70,11 +86,15 @@
             <span class="modal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></span>
             <div><span class="modal-eyebrow">Confirmación</span><h3>Confirmar acción</h3></div>
         </div>
-        <p>¿Estás seguro de eliminar esta placa?</p>
-        <p class="warning-copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18h15.2l-3.1-6.2"></path></svg> Esta placa desaparecerá del catálogo de placas disponibles.</p>
+        <p *ngIf="confirmAction === 'toggle'">¿Cambiar la disponibilidad de esta placa?</p>
+        <p *ngIf="confirmAction !== 'toggle'">¿Estás seguro de eliminar esta placa?</p>
+        <p class="warning-copy" *ngIf="confirmAction === 'toggle'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg> Las placas marcadas como "No disponible" no aparecerán en el formulario del cotizador.</p>
+        <p class="warning-copy" *ngIf="confirmAction !== 'toggle'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18h15.2l-3.1-6.2"></path></svg> Esta placa desaparecerá del catálogo de placas disponibles.</p>
         <div class="modal-actions">
             <button class="btn-cancel" (click)="cancelModal()">Cancelar</button>
-            <button class="btn-confirm" (click)="confirmActionHandler()">Eliminar</button>
+            <button class="btn-confirm" (click)="confirmActionHandler()">
+                {{ confirmAction === 'toggle' ? 'Cambiar' : 'Eliminar' }}
+            </button>
         </div>
     </div>
 </div>
@@ -95,6 +115,26 @@
                 <label>Nombre *</label>
                 <input type="text" [(ngModel)]="plateForm.name" name="name" required
                     placeholder="Ej. Alta de placas CDMX" />
+            </div>
+
+            <!-- Estado -->
+            <div class="form-group">
+                <label>Estado *</label>
+                <select [(ngModel)]="plateForm.estado" name="estado" required>
+                    <option value="" disabled>Selecciona un estado...</option>
+                    <option *ngFor="let estado of estadosMexico" [value]="estado">{{ estado }}</option>
+                </select>
+                <small>Elige el estado de la República Mexicana al que corresponde la placa.</small>
+            </div>
+
+            <!-- Disponibilidad -->
+            <div class="form-group">
+                <label>Disponibilidad *</label>
+                <select [(ngModel)]="plateForm.disponible" name="disponible" required>
+                    <option [ngValue]="true">Disponible</option>
+                    <option [ngValue]="false">No disponible</option>
+                </select>
+                <small>Si está "No disponible", la placa no aparecerá en el formulario del cotizador.</small>
             </div>
 
             <!-- Costo Neto -->
