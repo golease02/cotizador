@@ -54,6 +54,10 @@ export class AdminAdminsComponent implements OnInit {
     active: true
   };
 
+  // ------------------- DRAWER DE DETALLE -------------------
+  showDetailDrawer = false;
+  detailAdmin: any = null;
+
   async ngOnInit() {
     await this.loadAdmins();
   }
@@ -61,12 +65,37 @@ export class AdminAdminsComponent implements OnInit {
   @HostListener('document:keydown.escape')
   onEscapeKey() {
     if (this.showConfirmModal) this.cancelModal();
+    if (this.showDetailDrawer) this.closeDetail();
     if (this.showFormDrawer) this.closeFormDrawer();
   }
 
   handleToast(t: any) {
     if (t.action) t.action();
     this.toastService.dismiss(t.id);
+  }
+
+  // ===================== DETALLE (DRAWER) =====================
+
+  openDetail(admin: any) {
+    this.detailAdmin = admin;
+    this.showDetailDrawer = true;
+  }
+
+  closeDetail() {
+    this.showDetailDrawer = false;
+    this.detailAdmin = null;
+  }
+
+  detailEdit() {
+    const admin = this.detailAdmin;
+    this.closeDetail();
+    if (admin) this.openEditAdmin(admin);
+  }
+
+  detailDelete() {
+    const admin = this.detailAdmin;
+    this.closeDetail();
+    if (admin) this.deleteAdmin(admin.id);
   }
 
   // ===================== LISTADO =====================

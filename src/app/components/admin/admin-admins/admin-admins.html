@@ -70,9 +70,9 @@
                 <tr><th>Administrador</th><th>Identificación</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
             </thead>
             <tbody>
-                <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="selectedAdminCardId === admin.id"
-                    (click)="selectAdmin(admin.id)" tabindex="0" (keydown.enter)="selectAdmin(admin.id)"
-                    (keydown.space)="selectAdmin(admin.id); $event.preventDefault()">
+                <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="showDetailDrawer && detailAdmin?.id === admin.id"
+                    (click)="openDetail(admin)" tabindex="0" (keydown.enter)="openDetail(admin)"
+                    (keydown.space)="openDetail(admin); $event.preventDefault()">
                     <td class="user-cell">
                         <span class="avatar" [class]="getAvatarClass(admin.full_name)" aria-hidden="true">
                             {{ getInitials(admin.full_name) }}
@@ -216,6 +216,65 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </aside>
+</div>
+
+<!-- DRAWER: DETALLE DE ADMINISTRADOR -->
+<div class="drawer-overlay" *ngIf="showDetailDrawer && detailAdmin" (click)="closeDetail()">
+    <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" aria-label="Detalle del administrador">
+        <div class="drawer-header">
+            <div>
+                <span class="page-kicker">Control de acceso</span>
+                <h3>Detalle del Administrador</h3>
+            </div>
+            <button class="drawer-close" (click)="closeDetail()" aria-label="Cerrar detalle">×</button>
+        </div>
+
+        <div class="drawer-body">
+            <div class="detail-hero">
+                <span class="detail-avatar" [class]="getAvatarClass(detailAdmin.full_name)" aria-hidden="true">
+                    {{ getInitials(detailAdmin.full_name) }}
+                </span>
+                <div class="detail-hero-meta">
+                    <strong>{{ detailAdmin.full_name }}</strong>
+                    <span class="status-pill" [class.is-on]="detailAdmin.active ?? true">
+                        {{ getStatusLabel(detailAdmin.active ?? true) }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Información de acceso</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <small>Número de identificación</small>
+                        <strong>{{ detailAdmin.seller_number || '—' }}</strong>
+                    </div>
+                    <div class="detail-item">
+                        <small>Email de acceso</small>
+                        <strong>{{ detailAdmin.email || '—' }}</strong>
+                    </div>
+                    <div class="detail-item" *ngIf="detailAdmin.recovery_email">
+                        <small>Correo de recuperación</small>
+                        <strong>{{ detailAdmin.recovery_email }}</strong>
+                    </div>
+                    <div class="detail-item">
+                        <small>Rol</small>
+                        <strong>{{ detailAdmin.role === 'seller' ? 'Vendedor' : 'Administrador' }}</strong>
+                    </div>
+                    <div class="detail-item">
+                        <small>Registro</small>
+                        <strong>{{ detailAdmin.created_at | date:'dd/MM/yyyy' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <button type="button" class="btn-cancel" (click)="closeDetail()">Cerrar</button>
+                <button type="button" class="btn-primary" (click)="detailEdit()">Editar</button>
+                <button type="button" class="btn-danger" (click)="detailDelete()">Eliminar</button>
+            </div>
         </div>
     </aside>
 </div>

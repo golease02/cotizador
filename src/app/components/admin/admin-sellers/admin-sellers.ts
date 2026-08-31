@@ -77,7 +77,7 @@ export class AdminSellersComponent implements OnInit {
   private detailMap: L.Map | null = null;
   private detailMarker: L.Marker | null = null;
 
-  // ------------------- NOTAS -------------------
+    // ------------------- NOTAS -------------------
   showNotasModal = false;
   notasVendedor: any[] = [];
   showSellerTooltip = false;
@@ -87,6 +87,8 @@ export class AdminSellersComponent implements OnInit {
   notaEditando: any = null;
   notaLoading = false;
   notaError = '';
+  showNotaConfirmModal = false;
+  notaToDelete: any = null;
 
   // ------------------- MAPA -------------------
   manualAddress = '';
@@ -110,8 +112,9 @@ export class AdminSellersComponent implements OnInit {
     await this.loadSellers();
   }
 
-  @HostListener('document:keydown.escape')
+    @HostListener('document:keydown.escape')
   onEscapeKey() {
+    if (this.showNotaConfirmModal) this.cancelarEliminarNota();
     if (this.showConfirmModal) this.cancelModal();
     if (this.showNotasModal) this.cerrarNotas();
     if (this.showDetailDrawer) this.closeDetail();
@@ -354,6 +357,12 @@ export class AdminSellersComponent implements OnInit {
 
     this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
 
+    // Si ya hay coordenadas seleccionadas (modo edición), centrar el mapa ahí
+    if (this.selectedCoords) {
+      this.map.setView([this.selectedCoords.lat, this.selectedCoords.lng], 16);
+      this.marker.setLatLng([this.selectedCoords.lat, this.selectedCoords.lng]);
+    }
+
     this.map.on('click', (e: L.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       this.setMarkerAndReverseGeocode(lat, lng);
@@ -397,6 +406,12 @@ export class AdminSellersComponent implements OnInit {
       this.formError = 'Escribe una dirección para buscar';
       return;
     }
+    // Asegurar que el mapa esté inicializado antes de usarlo
+    if (!this.map) this.initMap();
+    if (!this.map || !this.marker) {
+      this.formError = 'El mapa aún se está cargando. Intenta de nuevo.';
+      return;
+    }
     this.isSearching = true;
     this.formError = '';
     try {
@@ -410,6 +425,7 @@ export class AdminSellersComponent implements OnInit {
         const lng = parseFloat(result.lon);
         this.map.setView([lat, lng], 16);
         this.marker.setLatLng([lat, lng]);
+        this.map.invalidateSize();
         this.selectedCoords = { lat, lng };
         this.addressText = result.display_name || `${lat}, ${lng}`;
         this.manualAddress = this.addressText;
@@ -417,7 +433,8 @@ export class AdminSellersComponent implements OnInit {
       } else {
         this.formError = 'No se encontró la dirección. Intenta con otra búsqueda.';
       }
-    } catch {
+    } catch (err) {
+      console.error('❌ Error al buscar la dirección:', err);
       this.formError = 'Error al buscar la dirección. Intenta de nuevo.';
     } finally {
       this.isSearching = false;
@@ -440,7 +457,8 @@ export class AdminSellersComponent implements OnInit {
     this.showFormDrawer = true;
     this.showDetailDrawer = false;
     this.cdr.detectChanges();
-    setTimeout(() => this.initMap(), 250);
+    // El mapa se inicializa al entrar al paso 2 (nextFormStep),
+    // porque el contenedor #mapContainer solo existe cuando formStep === 2.
   }
 
   async openEditSeller(seller: any) {
@@ -479,15 +497,7 @@ export class AdminSellersComponent implements OnInit {
         const lat = parseFloat(data.latitude);
         const lng = parseFloat(data.longitude);
         this.selectedCoords = { lat, lng };
-        setTimeout(() => {
-          this.initMap();
-          if (this.map && this.marker) {
-            this.map.setView([lat, lng], 16);
-            this.marker.setLatLng([lat, lng]);
-          }
-        }, 200);
-      } else {
-        setTimeout(() => this.initMap(), 200);
+        // initMap() centrará el mapa en estas coordenadas al entrar al paso 2
       }
 
       this.formLoading = false;
@@ -525,7 +535,11 @@ export class AdminSellersComponent implements OnInit {
       if (!this.validateStep1()) return;
       this.formStep = 2;
       this.cdr.detectChanges();
-      setTimeout(() => this.map?.invalidateSize(), 120);
+      // El contenedor del mapa ya existe en el DOM; inicializarlo y ajustar tamaño
+      setTimeout(() => {
+        this.initMap();
+        this.map?.invalidateSize();
+      }, 120);
     } else {
       this.submitForm();
     }
@@ -534,10 +548,20 @@ export class AdminSellersComponent implements OnInit {
   prevFormStep() {
     if (this.formStep === 2) {
       this.formStep = 1;
+      // El contenedor del mapa se elimina con el *ngIf; liberar la instancia de Leaflet
+      this.destroyFormMap();
     } else {
       this.closeFormDrawer();
     }
     this.cdr.detectChanges();
+  }
+
+  private destroyFormMap() {
+    if (this.map) {
+      this.map.remove();
+      this.map = null!;
+      this.marker = null!;
+    }
   }
 
   validateStep1(): boolean {
@@ -610,11 +634,7 @@ export class AdminSellersComponent implements OnInit {
 
   closeFormDrawer() {
     this.showFormDrawer = false;
-    if (this.map) {
-      this.map.remove();
-      this.map = null!;
-      this.marker = null!;
-    }
+    this.destroyFormMap();
     this.cdr.detectChanges();
   }
 
@@ -856,23 +876,39 @@ export class AdminSellersComponent implements OnInit {
     this.notaText = nota.texto;
   }
 
-  async eliminarNota(notaId: string) {
-    if (!confirm('¿Eliminar esta nota?')) return;
+  eliminarNota(nota: any) {
+    this.notaToDelete = nota;
+    this.showNotaConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  async confirmarEliminarNota() {
+    if (!this.notaToDelete) return;
     this.notaLoading = true;
+    this.showNotaConfirmModal = false;
     const { error } = await this.supabase.client
       .from('notas')
       .delete()
-      .eq('id', notaId);
+      .eq('id', this.notaToDelete.id);
     if (error) {
       this.notaError = 'Error al eliminar nota';
     } else {
       await this.cargarNotas(this.selectedSellerId!);
     }
     this.notaLoading = false;
+    this.notaToDelete = null;
+    this.cdr.detectChanges();
+  }
+
+  cancelarEliminarNota() {
+    this.showNotaConfirmModal = false;
+    this.notaToDelete = null;
     this.cdr.detectChanges();
   }
 
   cerrarNotas() {
+    this.showNotaConfirmModal = false;
+    this.notaToDelete = null;
     this.showNotasModal = false;
     this.notasVendedor = [];
     this.notaText = '';

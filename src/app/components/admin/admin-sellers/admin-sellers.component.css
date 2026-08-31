@@ -60,7 +60,8 @@
   text-transform: uppercase;
 }
 
-.sellers-container .btn-primary {
+.sellers-container .btn-primary,
+.btn-primary {
   position: relative;
   z-index: 2;
   display: inline-flex;
@@ -81,7 +82,8 @@
   text-decoration: none;
 }
 
-.sellers-container .btn-primary:hover {
+.sellers-container .btn-primary:hover,
+.btn-primary:hover {
   background: #b1f0b1;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
 }
@@ -1736,11 +1738,17 @@ button.stat-card:hover {
 
 /* ===== FOCUS VISIBLE ===== */
 .sellers-container .btn-primary:focus-visible,
+.btn-primary:focus-visible,
 .sellers-container .btn-icon:focus-visible,
+.btn-icon:focus-visible,
 .sellers-container .btn-cancel:focus-visible,
+.btn-cancel:focus-visible,
 .sellers-container .btn-confirm:focus-visible,
+.btn-confirm:focus-visible,
 .sellers-container .switch:focus-visible,
+.switch:focus-visible,
 .sellers-container .chip:focus-visible,
+.chip:focus-visible,
 .drawer button:focus-visible,
 .drawer a:focus-visible,
 .drawer input:focus-visible,
@@ -1748,4 +1756,89 @@ button.stat-card:hover {
 .drawer textarea:focus-visible {
   outline: 2px solid #20b038;
   outline-offset: 2px;
+}
+
+/* ===== BOTÓN DE PELIGRO (ELIMINAR) ===== */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  background: #e5484d;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #d93a3f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(229, 72, 77, 0.25);
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger:focus-visible {
+  outline: 2px solid #e5484d;
+  outline-offset: 2px;
+}
+
+/* ===== MODAL DE CONFIRMACIÓN ===== */
+.confirm-modal {
+  max-width: 420px;
+  width: calc(100% - 2rem);
+  text-align: center;
+}
+
+.confirm-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.confirm-icon.danger {
+  background: rgba(229, 72, 77, 0.12);
+  color: #e5484d;
+}
+
+.confirm-icon svg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.confirm-modal h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  color: #1a1a1a;
+}
+
+.confirm-modal p {
+  margin: 0 0 1.2rem;
+  color: #555555;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.confirm-modal .modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
 }
