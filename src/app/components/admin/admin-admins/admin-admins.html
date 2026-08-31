@@ -1,4 +1,5 @@
 <div class="admins-container">
+    <!-- CABECERA -->
     <div class="page-header">
         <div class="page-heading">
             <span class="page-kicker">Control de acceso</span>
@@ -8,119 +9,213 @@
         <button class="btn-primary" (click)="openNewAdmin()"><span class="button-icon">+</span> Nuevo Administrador</button>
     </div>
 
-    <div class="search-bar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por nombre o número"
-            class="search-input" />
-        <span class="results-count" *ngIf="!loading">{{ filteredAdmins().length }} administrador(es)</span>
+    <!-- MÉTRICAS -->
+    <div class="stats-grid">
+        <button type="button" class="stat-card" [class.is-active]="statusFilter === 'todos'" (click)="setStatusFilter('todos')">
+            <span class="stat-icon tone-slate">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.total }}</strong><small>Administradores</small></span>
+        </button>
+        <button type="button" class="stat-card" [class.is-active]="statusFilter === 'activos'" (click)="setStatusFilter('activos')">
+            <span class="stat-icon tone-green">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="M22 4 12 14.01l-3-3"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.activos }}</strong><small>Activos</small></span>
+        </button>
+        <button type="button" class="stat-card" [class.is-active]="statusFilter === 'inactivos'" (click)="setStatusFilter('inactivos')">
+            <span class="stat-icon tone-amber">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="M8 11l3 3 6-6"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.inactivos }}</strong><small>Inactivos</small></span>
+        </button>
     </div>
 
-    <div *ngIf="loading" class="catalog-state loading">
-        <span class="catalog-spinner" aria-hidden="true"></span>
-        Cargando administradores...
+    <!-- BÚSQUEDA Y FILTROS -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()"
+                placeholder="Buscar por nombre o número..." class="search-input" />
+            <button *ngIf="searchTerm" type="button" class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">×</button>
+        </div>
+
+        <div class="chip-group" role="group" aria-label="Filtrar por estado">
+            <button type="button" class="chip" [class.is-active]="statusFilter === 'todos'" (click)="setStatusFilter('todos')">Todos</button>
+            <button type="button" class="chip" [class.is-active]="statusFilter === 'activos'" (click)="setStatusFilter('activos')">Activos</button>
+            <button type="button" class="chip" [class.is-active]="statusFilter === 'inactivos'" (click)="setStatusFilter('inactivos')">Inactivos</button>
+        </div>
+
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
+            <select [(ngModel)]="sortBy" (change)="setSortBy(sortBy)">
+                <option value="recientes">Más recientes</option>
+                <option value="nombre">Nombre A–Z</option>
+                <option value="antiguos">Antiguos</option>
+            </select>
+        </label>
+
+        <span class="results-count" *ngIf="!loading">{{ filteredAdmins().length }} resultado(s)</span>
     </div>
 
+    <!-- SKELETON -->
+    <div *ngIf="loading" class="skeleton-list" aria-label="Cargando administradores">
+        <div class="skeleton-row" *ngFor="let i of [0,1,2,3,4]"></div>
+    </div>
+
+    <!-- TABLA -->
     <div class="table-wrapper" *ngIf="!loading && filteredAdmins().length > 0">
         <table class="users-table">
-            <thead><tr><th>Administrador</th><th>Identificación</th><th>Estado</th><th class="actions-column">Acciones</th></tr></thead>
+            <thead>
+                <tr><th>Administrador</th><th>Identificación</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
+            </thead>
             <tbody>
-                <tr *ngFor="let admin of filteredAdmins()">
-                    <td class="user-cell"><span class="admin-avatar" aria-hidden="true">{{ getInitials(admin.full_name) }}</span><strong>{{ admin.full_name }}</strong></td>
-                    <td>{{ admin.seller_number || '-' }}</td>
-                    <td><span class="status-badge" [class]="getStatusClass(admin.active ?? true)">{{ getStatusLabel(admin.active ?? true) }}</span></td>
-                    <td class="actions-column"><div class="action-buttons">
-                    <button class="btn-icon btn-edit" (click)="openEditAdmin(admin)" title="Editar" aria-label="Editar administrador">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                    </button>
-                    <button class="btn-icon btn-toggle" (click)="toggleAdminStatus(admin.id)"
-                        title="Cambiar estado" aria-label="Cambiar estado del administrador">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-14.8-3L3 11"></path><path d="M3 4v7h7"></path><path d="M4 13a8.1 8.1 0 0 0 14.8 3L21 13"></path><path d="M21 20v-7h-7"></path></svg>
-                    </button>
-                    <button class="btn-icon btn-delete" (click)="deleteAdmin(admin.id)"
-                        title="Eliminar" aria-label="Eliminar administrador">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
-                    </button>
-                    </div></td>
+                <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="selectedAdminCardId === admin.id"
+                    (click)="selectAdmin(admin.id)" tabindex="0" (keydown.enter)="selectAdmin(admin.id)"
+                    (keydown.space)="selectAdmin(admin.id); $event.preventDefault()">
+                    <td class="user-cell">
+                        <span class="avatar" [class]="getAvatarClass(admin.full_name)" aria-hidden="true">
+                            {{ getInitials(admin.full_name) }}
+                            <span class="avatar-dot" [class.is-on]="admin.active ?? true"></span>
+                        </span>
+                        <span class="user-meta">
+                            <strong>{{ admin.full_name }}</strong>
+                            <small>Administrador</small>
+                        </span>
+                    </td>
+                    <td><span class="id-chip">{{ admin.seller_number || '-' }}</span></td>
+                    <td>
+                        <button type="button" class="switch" [class.is-on]="admin.active ?? true" role="switch"
+                            [attr.aria-checked]="admin.active ?? true"
+                            [title]="'Cambiar estado (' + getStatusLabel(admin.active ?? true) + ')'"
+                            (click)="toggleAdminStatus(admin); $event.stopPropagation()">
+                            <span class="switch-thumb"></span>
+                        </button>
+                        <span class="switch-label">{{ getStatusLabel(admin.active ?? true) }}</span>
+                    </td>
+                    <td class="actions-column" (click)="$event.stopPropagation()">
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-edit" (click)="openEditAdmin(admin)" title="Editar" aria-label="Editar administrador">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                            </button>
+                            <button class="btn-icon btn-delete" (click)="deleteAdmin(admin.id)" title="Eliminar" aria-label="Eliminar administrador">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
+    <!-- ESTADO VACÍO -->
     <div *ngIf="!loading && filteredAdmins().length === 0" class="catalog-state empty-state">
         <span class="empty-state-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
         </span>
-        <strong>No se encontraron administradores</strong>
-        <span>Prueba con otro término de búsqueda.</span>
+        <strong>{{ admins().length === 0 ? 'Aún no hay administradores registrados' : 'Sin resultados' }}</strong>
+        <span>{{ admins().length === 0 ? 'Agrega tu primer administrador para empezar.' : 'Ajusta tu búsqueda o los filtros.' }}</span>
+        <button *ngIf="admins().length > 0" type="button" class="btn-secondary" (click)="clearFilters()">Limpiar filtros</button>
+        <button *ngIf="admins().length === 0" type="button" class="btn-primary" (click)="openNewAdmin()">+ Nuevo Administrador</button>
     </div>
 </div>
 
-<!-- MODAL DE CONFIRMACIÓN -->
+<!-- TOASTS -->
+<div class="toast-host">
+    <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
+        (click)="handleToast(t)">
+        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+        <span class="toast-msg">{{ t.message }}</span>
+        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+        <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()" aria-label="Cerrar">×</button>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN (ELIMINAR) -->
 <div class="modal-overlay" *ngIf="showConfirmModal" (click)="cancelModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-heading modal-heading-warning">
-            <span class="modal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></span>
-            <div><span class="modal-eyebrow">Confirmación</span><h3>Confirmar acción</h3></div>
+            <span class="modal-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            </span>
+            <div><span class="modal-eyebrow">Confirmación</span><h3>Eliminar administrador</h3></div>
         </div>
-        <p *ngIf="confirmAction === 'delete'">¿Estás seguro de eliminar este administrador?</p>
-        <p *ngIf="confirmAction === 'toggle'">¿Cambiar estado de este administrador?</p>
+        <p>
+            ¿Estás seguro de que deseas eliminar a <strong>{{ getAdminName() }}</strong>?
+            <br>
+            Esta operación no se puede deshacer.
+        </p>
         <div class="modal-actions">
             <button class="btn-cancel" (click)="cancelModal()">Cancelar</button>
-            <button class="btn-confirm" (click)="confirmActionHandler()">
-                {{ confirmAction === 'delete' ? 'Eliminar' : 'Confirmar' }}
+            <button class="btn-confirm" (click)="confirmAdminDelete()" [disabled]="actionLoading">
+                {{ actionLoading ? 'Eliminando...' : 'Eliminar' }}
             </button>
         </div>
     </div>
 </div>
-
-<!-- MODAL DE FORMULARIO (CREAR/EDITAR) -->
-<div class="modal-overlay" *ngIf="showFormModal" (click)="closeFormModal()">
-    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
-        <h3>{{ isEditMode ? 'Editar Administrador' : 'Nuevo Administrador' }}</h3>
-
-        <div *ngIf="formSuccess" class="success">{{ formSuccess }}</div>
-        <div *ngIf="formError" class="error">{{ formError }}</div>
-
-        <div *ngIf="formLoading" class="loading">Cargando...</div>
-
-        <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
-            <!-- Número -->
-            <div class="form-group">
-                <label>Número de identificación *</label>
-                <input type="text" [(ngModel)]="adminForm.seller_number" name="seller_number" required
-                    [disabled]="isEditMode" placeholder="Ej. 001" />
-                <small *ngIf="!isEditMode">Este número se usará para iniciar sesión (junto con la contraseña).</small>
+    <!-- DRAWER: FORMULARIO (CREAR / EDITAR) -->
+<div class="drawer-overlay" *ngIf="showFormDrawer" (click)="closeFormDrawer()">
+    <aside class="drawer form-drawer" (click)="$event.stopPropagation()" role="dialog"
+        [attr.aria-label]="isEditMode ? 'Editar administrador' : 'Nuevo administrador'">
+        <div class="drawer-header">
+            <div>
+                <span class="page-kicker">{{ isEditMode ? 'Edición de administrador' : 'Nuevo registro' }}</span>
+                <h3>{{ isEditMode ? 'Editar Administrador' : 'Nuevo Administrador' }}</h3>
             </div>
+            <button class="drawer-close" (click)="closeFormDrawer()" aria-label="Cerrar formulario">×</button>
+        </div>
 
-            <!-- Nombre -->
-            <div class="form-group">
-                <label>Nombre Completo *</label>
-                <input type="text" [(ngModel)]="adminForm.full_name" name="full_name" required
-                    placeholder="Juan Pérez" />
-            </div>
+        <div class="drawer-body">
+            <div *ngIf="formError" class="form-banner error">{{ formError }}</div>
+            <div *ngIf="formLoading" class="drawer-loading"><span class="catalog-spinner"></span> Cargando...</div>
 
-            <!-- Contraseña -->
-            <div class="form-group">
-                <label>Contraseña {{ isEditMode ? '(opcional)' : '*' }}</label>
-                <input type="password" [(ngModel)]="adminForm.password" name="password" [required]="!isEditMode"
-                    placeholder="Mínimo 6 caracteres" minlength="6" />
-                <small *ngIf="isEditMode">Déjala vacía para conservar la contraseña actual.</small>
-            </div>
+            <form (ngSubmit)="submitForm()" *ngIf="!formLoading" novalidate>
+                <div class="form-group" [class.has-error]="formValidated && fieldErrors['seller_number']">
+                    <label>Número de identificación *</label>
+                    <input type="text" [(ngModel)]="adminForm.seller_number" name="seller_number"
+                        [disabled]="isEditMode" placeholder="Ej. 001" inputmode="numeric" />
+                    <small class="field-error" *ngIf="formValidated && fieldErrors['seller_number']">{{ fieldErrors['seller_number'] }}</small>
+                    <small *ngIf="!isEditMode && !fieldErrors['seller_number']">Se usará para iniciar sesión (junto con la contraseña).</small>
+                    <small *ngIf="isEditMode && !fieldErrors['seller_number']">Este número define el acceso; no se puede modificar.</small>
+                </div>
 
-            <!-- Estado (solo edición) -->
-            <div class="form-group" *ngIf="isEditMode">
-                <label>Estado</label>
-                <select [(ngModel)]="adminForm.active" name="active">
-                    <option [value]="true">Activo</option>
-                    <option [value]="false">Inactivo</option>
-                </select>
-            </div>
+                <div class="form-group" [class.has-error]="formValidated && fieldErrors['full_name']">
+                    <label>Nombre Completo *</label>
+                    <input type="text" [(ngModel)]="adminForm.full_name" name="full_name" placeholder="Juan Pérez" />
+                    <small class="field-error" *ngIf="formValidated && fieldErrors['full_name']">{{ fieldErrors['full_name'] }}</small>
+                </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" (click)="closeFormModal()">Cancelar</button>
-                <button type="submit" class="btn-confirm" [disabled]="formLoading">
-                    {{ isEditMode ? 'Actualizar' : 'Crear' }}
-                </button>
-            </div>
-        </form>
-    </div>
+                <div class="form-group" [class.has-error]="formValidated && fieldErrors['password']">
+                    <label>Contraseña {{ isEditMode ? '(opcional)' : '*' }}</label>
+                    <div class="input-with-action">
+                        <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="adminForm.password"
+                            name="password" placeholder="{{ isEditMode ? 'Dejar vacía conserva la actual' : 'Mínimo 6 caracteres' }}" />
+                        <button type="button" class="btn-ghost-icon" (click)="showPassword = !showPassword"
+                            [title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                    </div>
+                    <div class="field-actions">
+                        <small class="field-error" *ngIf="formValidated && fieldErrors['password']">{{ fieldErrors['password'] }}</small>
+                        <button type="button" class="btn-link" (click)="generatePassword()">🛡 Generar contraseña segura</button>
+                    </div>
+                </div>
+
+                <div class="form-group" *ngIf="isEditMode">
+                    <label>Estado</label>
+                    <select [(ngModel)]="adminForm.active" name="active">
+                        <option [ngValue]="true">Activo</option>
+                        <option [ngValue]="false">Inactivo</option>
+                    </select>
+                </div>
+
+                <div class="drawer-actions">
+                    <button type="button" class="btn-cancel" (click)="closeFormDrawer()">Cancelar</button>
+                    <button type="submit" class="btn-confirm" [disabled]="formLoading">
+                        {{ formLoading ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Crear' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </aside>
 </div>

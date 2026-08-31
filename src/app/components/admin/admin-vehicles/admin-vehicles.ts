@@ -278,7 +278,13 @@ export class AdminVehiclesComponent implements OnInit {
   // ===================== HELPERS =====================
 
   getHybridLabel(isHybrid: boolean): string {
-    return isHybrid ? 'Sí' : 'No';
+    return isHybrid ? 'Híbrido / Eléctrico' : 'Combustión';
+  }
+
+  getHybridTooltip(isHybrid: boolean): string {
+    return isHybrid
+      ? 'Sí, es híbrido o eléctrico. Afecta la renta mensual básica ($8,550 + IVA).'
+      : 'No, es de combustión. Renta mensual básica ($6,000 + IVA).';
   }
 
   getHybridClass(isHybrid: boolean): string {

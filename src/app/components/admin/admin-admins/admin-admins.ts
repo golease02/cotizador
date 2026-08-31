@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../services/supabase.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-admin-admins',
@@ -13,24 +14,38 @@ import { SupabaseService } from '../../../services/supabase.service';
 export class AdminAdminsComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private cdr = inject(ChangeDetectorRef);
+  readonly toastService = inject(ToastService);
 
-  // Listado
+  // ------------------- LISTADO -------------------
   admins = signal<any[]>([]);
   filteredAdmins = signal<any[]>([]);
   loading = true;
+  actionLoading = false;
   searchTerm = '';
+  statusFilter: 'todos' | 'activos' | 'inactivos' = 'todos';
+  sortBy: 'recientes' | 'nombre' | 'antiguos' = 'recientes';
 
-  // Modales
+  get stats() {
+    const list = this.admins();
+    const total = list.length;
+    const activos = list.filter(a => (a.active ?? true)).length;
+    return { total, activos, inactivos: total - activos };
+  }
+
+  // ------------------- CONFIRMACIÓN (solo eliminar) -------------------
   showConfirmModal = false;
-  confirmAction: 'delete' | 'toggle' | null = null;
   selectedAdminId: string | null = null;
-  showFormModal = false;
+  selectedAdminCardId: string | null = null;
+
+  // ------------------- FORMULARIO (DRAWER) -------------------
+  showFormDrawer = false;
   isEditMode = false;
   formLoading = false;
   formError = '';
-  formSuccess = '';
+  showPassword = false;
+  formValidated = false;
+  fieldErrors: Record<string, string> = {};
 
-  // Formulario
   adminForm = {
     id: '',
     seller_number: '',
@@ -43,6 +58,17 @@ export class AdminAdminsComponent implements OnInit {
     await this.loadAdmins();
   }
 
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showConfirmModal) this.cancelModal();
+    if (this.showFormDrawer) this.closeFormDrawer();
+  }
+
+  handleToast(t: any) {
+    if (t.action) t.action();
+    this.toastService.dismiss(t.id);
+  }
+
   // ===================== LISTADO =====================
 
   async loadAdmins() {
@@ -51,6 +77,8 @@ export class AdminAdminsComponent implements OnInit {
     if (!error) {
       this.admins.set(data || []);
       this.applyFilters();
+    } else {
+      this.toastService.error('No se pudieron cargar los administradores');
     }
     this.loading = false;
     this.cdr.detectChanges();
@@ -58,12 +86,26 @@ export class AdminAdminsComponent implements OnInit {
 
   applyFilters() {
     let filtered = this.admins();
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase().trim();
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
       filtered = filtered.filter(a =>
         (a.full_name || '').toLowerCase().includes(term) ||
         (a.seller_number || '').toLowerCase().includes(term)
       );
+    }
+    if (this.statusFilter === 'activos') filtered = filtered.filter(a => (a.active ?? true));
+    if (this.statusFilter === 'inactivos') filtered = filtered.filter(a => !(a.active ?? true));
+
+    switch (this.sortBy) {
+      case 'nombre':
+        filtered = [...filtered].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+        break;
+      case 'antiguos':
+        filtered = [...filtered].reverse();
+        break;
+      case 'recientes':
+      default:
+        break;
     }
     this.filteredAdmins.set(filtered);
     this.cdr.detectChanges();
@@ -73,82 +115,113 @@ export class AdminAdminsComponent implements OnInit {
     this.applyFilters();
   }
 
-  // ===================== MODAL DE CONFIRMACIÓN =====================
-
-  async toggleAdminStatus(adminId: string) {
-    this.selectedAdminId = adminId;
-    this.confirmAction = 'toggle';
-    this.showConfirmModal = true;
-    this.cdr.detectChanges();
+  clearSearch() {
+    this.searchTerm = '';
+    this.applyFilters();
   }
 
-  async deleteAdmin(adminId: string) {
-    this.selectedAdminId = adminId;
-    this.confirmAction = 'delete';
-    this.showConfirmModal = true;
-    this.cdr.detectChanges();
+  clearFilters() {
+    this.searchTerm = '';
+    this.statusFilter = 'todos';
+    this.sortBy = 'recientes';
+    this.selectedAdminCardId = null;
+    this.applyFilters();
   }
 
-  async confirmActionHandler() {
-    if (!this.selectedAdminId) return;
-    this.loading = true;
+  setStatusFilter(f: 'todos' | 'activos' | 'inactivos') {
+    this.statusFilter = f;
+    this.applyFilters();
+  }
 
-    if (this.confirmAction === 'delete') {
-      const { error } = await this.supabase.deleteUserFromAuth(this.selectedAdminId);
-      if (error) {
-        alert('Error al eliminar: ' + error.message);
-      }
-    } else if (this.confirmAction === 'toggle') {
-      const admin = this.admins().find(a => a.id === this.selectedAdminId);
-      if (admin) {
-        const { error } = await this.supabase.updateProfile(this.selectedAdminId, {
-          active: !admin.active
-        });
-        if (error) {
-          alert('Error al cambiar estado: ' + error.message);
-        }
-      }
+  setSortBy(value: 'recientes' | 'nombre' | 'antiguos') {
+    this.sortBy = value;
+    this.applyFilters();
+  }
+
+  selectAdmin(adminId: string): void {
+    this.selectedAdminCardId = adminId;
+  }
+
+  // ===================== TOGGLE DE ESTADO (INLINE + DESHACER) =====================
+
+  async toggleAdminStatus(admin: any) {
+    if (this.actionLoading) return;
+    const previous = admin.active ?? true;
+    const next = !previous;
+    this.patchAdmin(admin.id, { active: next });
+
+    const { error } = await this.supabase.updateProfile(admin.id, { active: next });
+    if (error) {
+      this.patchAdmin(admin.id, { active: previous });
+      this.toastService.error('No se pudo cambiar el estado: ' + error.message);
+      return;
     }
 
-    this.showConfirmModal = false;
-    this.selectedAdminId = null;
-    this.confirmAction = null;
-    await this.loadAdmins();
-    this.loading = false;
+    this.toastService.undo(
+      next ? `${admin.full_name} ahora está activo` : `${admin.full_name} quedó inactivo`,
+      () => {
+        this.patchAdmin(admin.id, { active: previous });
+        this.supabase.updateProfile(admin.id, { active: previous });
+      }
+    );
+  }
+
+  private patchAdmin(id: string, patch: any) {
+    this.admins.update(list => list.map(a => (a.id === id ? { ...a, ...patch } : a)));
+    this.applyFilters();
+  }
+
+  // ===================== ELIMINAR (CON CONFIRMACIÓN) =====================
+
+  deleteAdmin(adminId: string) {
+    this.selectedAdminId = adminId;
+    this.showConfirmModal = true;
     this.cdr.detectChanges();
+  }
+
+  getAdminName(): string {
+    const admin = this.admins().find(a => a.id === this.selectedAdminId);
+    return admin?.full_name || 'este administrador';
+  }
+
+  confirmAdminDelete() {
+    if (!this.selectedAdminId) return;
+    this.actionLoading = true;
+    this.cdr.detectChanges();
+    this.supabase.deleteUserFromAuth(this.selectedAdminId).then(({ error }) => {
+      this.actionLoading = false;
+      if (error) {
+        this.toastService.error('Error al eliminar: ' + error.message);
+      } else {
+        this.toastService.success('Administrador eliminado correctamente');
+        this.showConfirmModal = false;
+        this.selectedAdminId = null;
+        this.loadAdmins();
+      }
+      this.cdr.detectChanges();
+    });
   }
 
   cancelModal() {
     this.showConfirmModal = false;
     this.selectedAdminId = null;
-    this.confirmAction = null;
     this.cdr.detectChanges();
   }
 
-  // ===================== MODAL DE FORMULARIO =====================
+  // ===================== FORMULARIO (DRAWER) =====================
 
   openNewAdmin() {
     this.isEditMode = false;
-    this.adminForm = {
-      id: '',
-      seller_number: '',
-      full_name: '',
-      password: '',
-      active: true
-    };
-    this.formError = '';
-    this.formSuccess = '';
-    this.formLoading = false;
-    this.showFormModal = true;
+    this.resetForm();
+    this.showFormDrawer = true;
     this.cdr.detectChanges();
   }
 
   async openEditAdmin(admin: any) {
     this.isEditMode = true;
+    this.resetForm();
     this.formLoading = true;
-    this.formError = '';
-    this.formSuccess = '';
-    this.showFormModal = true;
+    this.showFormDrawer = true;
     this.cdr.detectChanges();
 
     try {
@@ -177,37 +250,82 @@ export class AdminAdminsComponent implements OnInit {
     }
   }
 
-  // ===================== GUARDAR (CREAR/EDITAR) =====================
+  private resetForm() {
+    this.adminForm = { id: '', seller_number: '', full_name: '', password: '', active: true };
+    this.formError = '';
+    this.fieldErrors = {};
+    this.formValidated = false;
+    this.showPassword = false;
+    this.formLoading = false;
+  }
+
+  validateForm(): boolean {
+    this.formValidated = true;
+    this.fieldErrors = {};
+    let valid = true;
+    const numberField = this.adminForm.seller_number.trim();
+
+    if (!numberField) {
+      this.fieldErrors['seller_number'] = 'El número de identificación es obligatorio.';
+      valid = false;
+    } else if (!/^\d+$/.test(numberField) || numberField.length < 3) {
+      this.fieldErrors['seller_number'] = 'Ingresa un número de identificación válido.';
+      valid = false;
+    }
+
+    if (!this.adminForm.full_name.trim()) {
+      this.fieldErrors['full_name'] = 'El nombre completo es obligatorio.';
+      valid = false;
+    }
+
+    if (!this.isEditMode) {
+      if (!this.adminForm.password) {
+        this.fieldErrors['password'] = 'La contraseña es obligatoria.';
+        valid = false;
+      } else if (this.adminForm.password.length < 6) {
+        this.fieldErrors['password'] = 'La contraseña debe tener al menos 6 caracteres.';
+        valid = false;
+      }
+    } else if (this.adminForm.password && this.adminForm.password.length < 6) {
+      this.fieldErrors['password'] = 'La contraseña debe tener al menos 6 caracteres.';
+      valid = false;
+    }
+
+    this.cdr.detectChanges();
+    return valid;
+  }
+
+  generatePassword() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    const rand = new Uint32Array(12);
+    crypto.getRandomValues(rand);
+    let pw = '';
+    for (let i = 0; i < 12; i++) pw += chars[rand[i] % chars.length];
+    this.adminForm.password = pw;
+    this.fieldErrors['password'] = '';
+    this.cdr.detectChanges();
+  }
+
+  closeFormDrawer() {
+    this.showFormDrawer = false;
+    this.cdr.detectChanges();
+  }
+
+  // ===================== GUARDAR (CREAR / EDITAR) =====================
 
   async submitForm() {
-    this.formLoading = true;
     this.formError = '';
-    this.formSuccess = '';
+    if (!this.validateForm()) return;
 
-    if (!this.adminForm.seller_number || !this.adminForm.full_name) {
-      this.formError = 'Número y nombre son obligatorios';
-      this.formLoading = false;
-      return;
-    }
-    if (!this.isEditMode && this.adminForm.password.length < 6) {
-      this.formError = 'La contraseña es obligatoria y debe tener al menos 6 caracteres';
-      this.formLoading = false;
-      return;
-    }
-    if (this.isEditMode && this.adminForm.password && this.adminForm.password.length < 6) {
-      this.formError = 'La contraseña debe tener al menos 6 caracteres';
-      this.formLoading = false;
-      return;
-    }
+    this.formLoading = true;
+    this.cdr.detectChanges();
 
     try {
-      // Guardar sesión del administrador actual
-      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
-
+      // ---------- EDICIÓN ----------
       if (this.isEditMode) {
         const { error } = await this.supabase.updateProfile(this.adminForm.id, {
-          full_name: this.adminForm.full_name,
-          seller_number: this.adminForm.seller_number,
+          full_name: this.adminForm.full_name.trim(),
+          seller_number: this.adminForm.seller_number.trim(),
           active: this.adminForm.active,
           role: 'admin',
           agency_name: 'GoLease',
@@ -216,92 +334,118 @@ export class AdminAdminsComponent implements OnInit {
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
           this.formLoading = false;
+          this.cdr.detectChanges();
           return;
         }
         if (this.adminForm.password) {
-          const { error: passwordError } = await this.supabase.updateUserPassword(
+          const { error: pwdError } = await this.supabase.updateUserPassword(
             this.adminForm.id,
             this.adminForm.password
           );
-          if (passwordError) {
-            this.formError = 'Error al cambiar la contraseña: ' + passwordError.message;
+          if (pwdError) {
+            this.formError = 'Error al cambiar la contraseña: ' + pwdError.message;
             this.formLoading = false;
+            this.cdr.detectChanges();
             return;
           }
         }
-        this.formSuccess = '✅ Administrador actualizado correctamente';
-      } else {
-        // Crear nuevo administrador
-        const email = `admin_${this.adminForm.seller_number}@golease.com`;
-        const { error: authError } = await this.supabase.signUp(
-          email,
-          this.adminForm.password,
-          this.adminForm.full_name
-        );
-        if (authError) {
-          this.formError = 'Error al crear usuario: ' + authError.message;
-          this.formLoading = false;
-          return;
-        }
+        this.toastService.success('Administrador actualizado correctamente');
+        this.closeFormDrawer();
+        await this.loadAdmins();
+        return;
+      }
 
-        const newUser = this.supabase.currentUser();
-        if (!newUser) {
-          this.formError = 'No se pudo obtener el usuario';
-          this.formLoading = false;
-          return;
-        }
+      // ---------- CREACIÓN ----------
+      const email = `admin_${this.adminForm.seller_number.trim()}@golease.com`;
 
-        const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
-          seller_number: this.adminForm.seller_number,
-          full_name: this.adminForm.full_name,
+      // 1) Camino preferido: RPC create_user (no cambia sesión, sin recargar)
+      const created = await this.supabase.createUserAsAdmin({
+        email,
+        password: this.adminForm.password,
+        full_name: this.adminForm.full_name.trim(),
+        role: 'admin'
+      });
+
+      if (!created.error && created.data?.id) {
+        const { error: profileError } = await this.supabase.updateProfile(created.data.id, {
+          seller_number: this.adminForm.seller_number.trim(),
+          full_name: this.adminForm.full_name.trim(),
           active: true,
           role: 'admin',
           agency_name: 'GoLease',
           agency_location: 'Querétaro'
         });
         if (profileError) {
-          this.formError = 'Error al guardar perfil: ' + profileError.message;
-          this.formLoading = false;
-          return;
+          this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
+        } else {
+          this.toastService.success('Administrador creado correctamente');
         }
-
-        // Restaurar sesión del administrador original
-        if (adminSession) {
-          await this.supabase.client.auth.setSession({
-            access_token: adminSession.access_token,
-            refresh_token: adminSession.refresh_token
-          });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const adminUser = this.supabase.currentUser();
-          if (adminUser) {
-            await this.supabase.loadProfile(adminUser.id);
-          }
-          this.supabase.triggerProfileRefresh();
-          this.cdr.detectChanges();
-        }
-
-        this.formSuccess = '✅ Administrador creado correctamente';
-
-        // Forzar recarga de la página para actualizar el header
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        this.closeFormDrawer();
+        await this.loadAdmins();
+        this.cdr.detectChanges();
+        return;
       }
+
+      // 2) Fallback: signUp + restaurar sesión (base sin migrar la RPC)
+      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
+      const { error: authError } = await this.supabase.signUp(
+        email,
+        this.adminForm.password,
+        this.adminForm.full_name
+      );
+      if (authError) {
+        this.formError = 'Error al crear usuario: ' + authError.message;
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const newUser = this.supabase.currentUser();
+      if (!newUser) {
+        this.formError = 'No se pudo obtener el usuario';
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
+        seller_number: this.adminForm.seller_number.trim(),
+        full_name: this.adminForm.full_name.trim(),
+        active: true,
+        role: 'admin',
+        agency_name: 'GoLease',
+        agency_location: 'Querétaro'
+      });
+      if (profileError) {
+        this.formError = 'Error al guardar perfil: ' + profileError.message;
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // Restaurar sesión del administrador original
+      if (adminSession) {
+        await this.supabase.client.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token
+        });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const adminUser = this.supabase.currentUser();
+        if (adminUser) {
+          await this.supabase.loadProfile(adminUser.id);
+        }
+        this.supabase.triggerProfileRefresh();
+      }
+
+      this.toastService.success('Administrador creado correctamente');
+      this.closeFormDrawer();
+      await this.loadAdmins();
+      this.cdr.detectChanges();
     } catch (err: any) {
       this.formError = 'Error inesperado: ' + (err.message || '');
-    } finally {
       this.formLoading = false;
       this.cdr.detectChanges();
-      setTimeout(() => {
-        this.showFormModal = false;
-        this.loadAdmins();
-      }, 1500);
     }
-  }
-
-  closeFormModal() {
-    this.showFormModal = false;
-    this.cdr.detectChanges();
   }
 
   // ===================== HELPERS =====================
@@ -320,5 +464,13 @@ export class AdminAdminsComponent implements OnInit {
 
   getStatusClass(active: boolean): string {
     return active ? 'status-active' : 'status-inactive';
+  }
+
+  getAvatarClass(name: string): string {
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) {
+      hash = (hash * 31 + (name.charCodeAt(i) || 0)) % 1000;
+    }
+    return `avatar-tone-${hash % 6}`;
   }
 }

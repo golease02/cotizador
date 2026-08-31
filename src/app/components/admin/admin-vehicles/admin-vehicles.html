@@ -59,7 +59,14 @@
                     <article class="vehicle-card" *ngFor="let vehicle of group.vehicles">
                         <div class="vehicle-card-head">
                             <span class="vehicle-year">{{ vehicle.year }}</span>
-                            <span class="status-badge" [class]="getHybridClass(vehicle.isHybridOrElectric)">
+                            <span class="status-badge" [class]="getHybridClass(vehicle.isHybridOrElectric)"
+                                [title]="getHybridTooltip(vehicle.isHybridOrElectric)">
+                                <svg *ngIf="vehicle.isHybridOrElectric" viewBox="0 0 24 24" aria-hidden="true">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                                <svg *ngIf="!vehicle.isHybridOrElectric" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                                </svg>
                                 {{ getHybridLabel(vehicle.isHybridOrElectric) }}
                             </span>
                         </div>
@@ -67,7 +74,6 @@
                         <span class="vehicle-reference">Precio sugerido de lista</span>
                         <strong class="vehicle-price">{{ formatPrice(vehicle.suggestedPriceNet) }}</strong>
                         <div class="vehicle-card-footer">
-                            <span class="vehicle-type">{{ vehicle.isHybridOrElectric ? 'Tecnología electrificada' : 'Motor a combustión' }}</span>
                             <div class="action-buttons">
                                 <button class="btn-icon btn-edit" (click)="openEditVehicle(vehicle)" title="Editar" aria-label="Editar vehículo">
                                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>

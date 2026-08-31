@@ -218,6 +218,48 @@ export class SupabaseService {
     return { error };
   }
 
+  /**
+   * Crea un usuario (admin/seller) desde el panel de administración usando la
+   * RPC `create_user` (security definer). A diferencia de signUp(), NO cambia
+   * la sesión actual, por lo que no requiere restaurar sesión ni recargar la página.
+   * Si la RPC no está disponible (base sin migrar), devuelve error para que el
+   * llamador use el fallback con signUp().
+   */
+  public async createUserAsAdmin(payload: {
+    email: string;
+    password: string;
+    full_name: string;
+    role: 'admin' | 'seller';
+  }): Promise<{ data: { id: string } | null; error: any }> {
+    const currentProfile = this.currentProfileSignal();
+    if (!this.currentUserSignal() || currentProfile?.role !== 'admin' || currentProfile?.active === false) {
+      return { data: null, error: { message: 'No tienes permisos para crear usuarios.' } };
+    }
+
+    const safeEmail = this.sanitizeText(payload.email, 'email', 160).toLowerCase();
+    const safeName = this.sanitizeText(payload.full_name, 'full_name', 120);
+
+    if (!safeEmail || !payload.password || payload.password.length < 6) {
+      return { data: null, error: { message: 'Datos inválidos para crear el usuario.' } };
+    }
+
+    const { data, error } = await this.supabase.rpc('create_user', {
+      p_email: safeEmail,
+      p_password: payload.password,
+      p_full_name: safeName,
+      p_role: payload.role
+    });
+
+    if (error) return { data: null, error };
+
+    if (data && typeof data === 'object' && (data as any)?.error) {
+      return { data: null, error: { message: (data as any).error } };
+    }
+
+    const userId = (data as any)?.id ?? null;
+    return { data: userId ? { id: userId } : null, error: null };
+  }
+
   public async updateUserPassword(userId: string, password: string): Promise<{ error: any }> {
     const currentUser = this.currentUserSignal();
     const currentProfile = this.currentProfileSignal();

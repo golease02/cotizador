@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../services/supabase.service';
+import { ToastService } from '../../../services/toast.service';
 import * as L from 'leaflet';
 
 @Component({
@@ -14,27 +15,51 @@ import * as L from 'leaflet';
 export class AdminSellersComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private cdr = inject(ChangeDetectorRef);
+  readonly toastService = inject(ToastService);
 
   @ViewChild('mapContainer') mapContainer!: ElementRef;
+  @ViewChild('detailMapContainer') detailMapContainer!: ElementRef;
 
-  // Listado
+  // ------------------- LISTADO -------------------
   sellers = signal<any[]>([]);
   filteredSellers = signal<any[]>([]);
   loading = true;
+  actionLoading = false;
   searchTerm = '';
+  statusFilter: 'todos' | 'activos' | 'inactivos' = 'todos';
+  brandFilter = 'todas';
+  sortBy: 'recientes' | 'nombre' | 'cotizaciones' | 'antiguos' = 'recientes';
 
-  // Modales
+  get stats() {
+    const list = this.sellers();
+    const total = list.length;
+    const activos = list.filter(s => (s.active ?? true)).length;
+    const cotizaciones = list.reduce((acc, s) => acc + (Number(s.quote_count) || 0), 0);
+    return { total, activos, inactivos: total - activos, cotizaciones };
+  }
+
+  get brandsList(): string[] {
+    const set = new Set<string>();
+    this.sellers().forEach(s => { if (s.agency_brand) set.add(s.agency_brand); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }
+
+  // ------------------- CONFIRMACIÓN (solo eliminar) -------------------
   showConfirmModal = false;
-  confirmAction: 'delete' | 'toggle' | null = null;
+  confirmAction: 'delete' | null = null;
   selectedSellerId: string | null = null;
   selectedSellerCardId: string | null = null;
-  showFormModal = false;
+
+  // ------------------- FORMULARIO (DRAWER) -------------------
+  showFormDrawer = false;
   isEditMode = false;
+  formStep: 1 | 2 = 1;
   formLoading = false;
   formError = '';
-  formSuccess = '';
+  showPassword = false;
+  formValidated = false;
+  fieldErrors: Record<string, string> = {};
 
-  // Formulario
   sellerForm = {
     id: '',
     seller_number: '',
@@ -46,7 +71,13 @@ export class AdminSellersComponent implements OnInit {
     active: true
   };
 
-  // Notas
+  // ------------------- DRAWER DE DETALLE -------------------
+  showDetailDrawer = false;
+  detailSeller: any = null;
+  private detailMap: L.Map | null = null;
+  private detailMarker: L.Marker | null = null;
+
+  // ------------------- NOTAS -------------------
   showNotasModal = false;
   notasVendedor: any[] = [];
   showSellerTooltip = false;
@@ -57,7 +88,7 @@ export class AdminSellersComponent implements OnInit {
   notaLoading = false;
   notaError = '';
 
-  // Mapa
+  // ------------------- MAPA -------------------
   manualAddress = '';
   selectedCoords: { lat: number; lng: number } | null = null;
   addressText = '';
@@ -65,7 +96,7 @@ export class AdminSellersComponent implements OnInit {
   private map!: L.Map;
   private marker!: L.Marker;
 
-  // Listas para selects
+  // ------------------- MARCAS -------------------
   brands = [
     'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
     'VOLKSWAGEN', 'CHEVROLET', 'HONDA', 'MAZDA', 'HYUNDAI', 'KIA',
@@ -79,6 +110,19 @@ export class AdminSellersComponent implements OnInit {
     await this.loadSellers();
   }
 
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showConfirmModal) this.cancelModal();
+    if (this.showNotasModal) this.cerrarNotas();
+    if (this.showDetailDrawer) this.closeDetail();
+    if (this.showFormDrawer) this.closeFormDrawer();
+  }
+
+  handleToast(t: any) {
+    if (t.action) t.action();
+    this.toastService.dismiss(t.id);
+  }
+
   // ===================== LISTADO =====================
 
   async loadSellers() {
@@ -87,6 +131,8 @@ export class AdminSellersComponent implements OnInit {
     if (!error) {
       this.sellers.set(data || []);
       this.applyFilters();
+    } else {
+      this.toastService.error('No se pudieron cargar los vendedores');
     }
     this.loading = false;
     this.cdr.detectChanges();
@@ -94,12 +140,32 @@ export class AdminSellersComponent implements OnInit {
 
   applyFilters() {
     let filtered = this.sellers();
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase().trim();
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
       filtered = filtered.filter(s =>
         (s.full_name || '').toLowerCase().includes(term) ||
-        (s.seller_number || '').toLowerCase().includes(term)
+        (s.seller_number || '').toLowerCase().includes(term) ||
+        (s.agency_brand || '').toLowerCase().includes(term) ||
+        (s.agency_location || '').toLowerCase().includes(term)
       );
+    }
+    if (this.statusFilter === 'activos') filtered = filtered.filter(s => (s.active ?? true));
+    if (this.statusFilter === 'inactivos') filtered = filtered.filter(s => !(s.active ?? true));
+    if (this.brandFilter !== 'todas') filtered = filtered.filter(s => s.agency_brand === this.brandFilter);
+
+    switch (this.sortBy) {
+      case 'nombre':
+        filtered = [...filtered].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+        break;
+      case 'cotizaciones':
+        filtered = [...filtered].sort((a, b) => (Number(b.quote_count) || 0) - (Number(a.quote_count) || 0));
+        break;
+      case 'antiguos':
+        filtered = [...filtered].reverse();
+        break;
+      case 'recientes':
+      default:
+        break;
     }
     this.filteredSellers.set(filtered);
     this.cdr.detectChanges();
@@ -109,11 +175,79 @@ export class AdminSellersComponent implements OnInit {
     this.applyFilters();
   }
 
+  clearSearch() {
+    this.searchTerm = '';
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.statusFilter = 'todos';
+    this.brandFilter = 'todas';
+    this.sortBy = 'recientes';
+    this.selectedSellerCardId = null;
+    this.applyFilters();
+  }
+
+  setStatusFilter(f: 'todos' | 'activos' | 'inactivos') {
+    this.statusFilter = f;
+    this.applyFilters();
+  }
+
+  setBrandFilter(value: string) {
+    this.brandFilter = value;
+    this.applyFilters();
+  }
+
+  setSortBy(value: 'recientes' | 'nombre' | 'cotizaciones' | 'antiguos') {
+    this.sortBy = value;
+    this.applyFilters();
+  }
+
   selectSeller(sellerId: string): void {
     this.selectedSellerCardId = sellerId;
   }
 
-  // ===================== MODAL DE CONFIRMACIÓN =====================
+  // ===================== TOGGLE DE ESTADO (INLINE + DESHACER) =====================
+
+  async toggleSellerStatus(seller: any) {
+    if (this.actionLoading) return;
+    const previous = seller.active ?? true;
+    const next = !previous;
+    this.patchSeller(seller.id, { active: next });
+
+    const { error } = await this.supabase.updateProfile(seller.id, { active: next });
+    if (error) {
+      this.patchSeller(seller.id, { active: previous });
+      this.toastService.error('No se pudo cambiar el estado: ' + error.message);
+      return;
+    }
+
+    this.toastService.undo(
+      next ? `${seller.full_name} ahora está activo` : `${seller.full_name} quedó inactivo`,
+      () => {
+        this.patchSeller(seller.id, { active: previous });
+        this.supabase.updateProfile(seller.id, { active: previous });
+      }
+    );
+  }
+
+  private patchSeller(id: string, patch: any) {
+    this.sellers.update(list => list.map(s => (s.id === id ? { ...s, ...patch } : s)));
+    if (this.detailSeller?.id === id) {
+      this.detailSeller = { ...this.detailSeller, ...patch };
+    }
+    this.applyFilters();
+  }
+
+  // ===================== ELIMINAR (CON CONFIRMACIÓN) =====================
+
+  async deleteSeller(sellerId: string) {
+    this.selectedSellerId = sellerId;
+    this.confirmAction = 'delete';
+    this.showConfirmModal = true;
+    this.cdr.detectChanges();
+  }
 
   getSellerName(): string {
     const seller = this.sellers().find(s => s.id === this.selectedSellerId);
@@ -125,47 +259,24 @@ export class AdminSellersComponent implements OnInit {
     return seller?.quote_count || 0;
   }
 
-  async toggleSellerStatus(sellerId: string) {
-    this.selectedSellerId = sellerId;
-    this.confirmAction = 'toggle';
-    this.showConfirmModal = true;
-    this.cdr.detectChanges();
-  }
-
-  async deleteSeller(sellerId: string) {
-    this.selectedSellerId = sellerId;
-    this.confirmAction = 'delete';
-    this.showConfirmModal = true;
-    this.cdr.detectChanges();
-  }
-
-  async confirmActionHandler() {
+  confirmSellerDelete() {
     if (!this.selectedSellerId) return;
-    this.loading = true;
-
-    if (this.confirmAction === 'delete') {
-      const { error } = await this.supabase.deleteUserFromAuth(this.selectedSellerId);
-      if (error) {
-        alert('Error al eliminar: ' + error.message);
-      }
-    } else if (this.confirmAction === 'toggle') {
-      const seller = this.sellers().find(s => s.id === this.selectedSellerId);
-      if (seller) {
-        const { error } = await this.supabase.updateProfile(this.selectedSellerId, {
-          active: !seller.active
-        });
-        if (error) {
-          alert('Error al cambiar estado: ' + error.message);
-        }
-      }
-    }
-
-    this.showConfirmModal = false;
-    this.selectedSellerId = null;
-    this.confirmAction = null;
-    await this.loadSellers();
-    this.loading = false;
+    this.actionLoading = true;
     this.cdr.detectChanges();
+    this.supabase.deleteUserFromAuth(this.selectedSellerId).then(({ error }) => {
+      this.actionLoading = false;
+      if (error) {
+        this.toastService.error('Error al eliminar: ' + error.message);
+      } else {
+        this.toastService.success('Vendedor eliminado correctamente');
+        this.showConfirmModal = false;
+        this.selectedSellerId = null;
+        this.confirmAction = null;
+        if (this.showDetailDrawer) this.closeDetail();
+        this.loadSellers();
+      }
+      this.cdr.detectChanges();
+    });
   }
 
   cancelModal() {
@@ -175,17 +286,65 @@ export class AdminSellersComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ===================== MAPA Y FORMULARIO =====================
+  // ===================== DRAWER DE DETALLE =====================
 
-  initMap() {
-    if (!this.mapContainer || this.map) return;
+  openDetail(seller: any) {
+    this.detailSeller = seller;
+    this.selectedSellerId = seller.id;
+    this.showDetailDrawer = true;
+    this.cdr.detectChanges();
+    setTimeout(() => {
+      this.initDetailMap();
+      this.detailMap?.invalidateSize();
+    }, 200);
+  }
 
+  closeDetail() {
+    this.showDetailDrawer = false;
+    this.detailSeller = null;
+    this.destroyDetailMap();
+    this.selectedSellerId = null;
+    this.cdr.detectChanges();
+  }
+
+  initDetailMap() {
+    if (!this.detailMapContainer || this.detailMap) return;
+    this.setupLeafletIcons();
+    const seller = this.detailSeller || {};
+    let lat = 20.5921, lng = -100.3947;
+    if (seller.latitude && seller.longitude) {
+      lat = parseFloat(seller.latitude);
+      lng = parseFloat(seller.longitude);
+    }
+    this.detailMap = L.map(this.detailMapContainer.nativeElement).setView([lat, lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(this.detailMap);
+    this.detailMarker = L.marker([lat, lng]).addTo(this.detailMap);
+  }
+
+  destroyDetailMap() {
+    if (this.detailMap) {
+      this.detailMap.remove();
+      this.detailMap = null;
+      this.detailMarker = null;
+    }
+  }
+
+  // ===================== MAPA Y GEOLOCALIZACIÓN (FORMULARIO) =====================
+
+  private setupLeafletIcons() {
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
       iconUrl: '/leaflet/marker-icon.png',
       shadowUrl: '/leaflet/marker-shadow.png',
-    });
+    } as any);
+  }
+
+  initMap() {
+    if (!this.mapContainer || this.map) return;
+    this.setupLeafletIcons();
 
     const queretaroCoords: L.LatLngExpression = [20.5921, -100.3947];
     this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
@@ -272,37 +431,25 @@ export class AdminSellersComponent implements OnInit {
     }
   }
 
-  // ===================== ABRIR MODALES DE FORMULARIO =====================
+  // ===================== FORMULARIO (DRAWER) =====================
 
   openNewSeller() {
     this.isEditMode = false;
-    this.sellerForm = {
-      id: '',
-      seller_number: '',
-      full_name: '',
-      password: '',
-      agency_brand: '',
-      other_brand: '',
-      agency_location: '',
-      active: true
-    };
-    this.manualAddress = '';
-    this.selectedCoords = null;
-    this.addressText = '';
-    this.formError = '';
-    this.formSuccess = '';
-    this.formLoading = false;
-    this.showFormModal = true;
+    this.formStep = 1;
+    this.resetForm();
+    this.showFormDrawer = true;
+    this.showDetailDrawer = false;
     this.cdr.detectChanges();
-    setTimeout(() => this.initMap(), 200);
+    setTimeout(() => this.initMap(), 250);
   }
 
   async openEditSeller(seller: any) {
     this.isEditMode = true;
+    this.formStep = 1;
+    this.resetForm();
     this.formLoading = true;
-    this.formError = '';
-    this.formSuccess = '';
-    this.showFormModal = true;
+    this.showFormDrawer = true;
+    this.showDetailDrawer = false;
     this.cdr.detectChanges();
 
     try {
@@ -337,7 +484,6 @@ export class AdminSellersComponent implements OnInit {
           if (this.map && this.marker) {
             this.map.setView([lat, lng], 16);
             this.marker.setLatLng([lat, lng]);
-            this.cdr.detectChanges();
           }
         }, 200);
       } else {
@@ -353,42 +499,161 @@ export class AdminSellersComponent implements OnInit {
     }
   }
 
-  // ===================== GUARDAR (CREAR/EDITAR) =====================
+  private resetForm() {
+    this.sellerForm = {
+      id: '',
+      seller_number: '',
+      full_name: '',
+      password: '',
+      agency_brand: '',
+      other_brand: '',
+      agency_location: '',
+      active: true
+    };
+    this.manualAddress = '';
+    this.selectedCoords = null;
+    this.addressText = '';
+    this.formError = '';
+    this.fieldErrors = {};
+    this.formValidated = false;
+    this.showPassword = false;
+    this.formLoading = false;
+  }
+
+  nextFormStep() {
+    if (this.formStep === 1) {
+      if (!this.validateStep1()) return;
+      this.formStep = 2;
+      this.cdr.detectChanges();
+      setTimeout(() => this.map?.invalidateSize(), 120);
+    } else {
+      this.submitForm();
+    }
+  }
+
+  prevFormStep() {
+    if (this.formStep === 2) {
+      this.formStep = 1;
+    } else {
+      this.closeFormDrawer();
+    }
+    this.cdr.detectChanges();
+  }
+
+  validateStep1(): boolean {
+    this.formValidated = true;
+    this.fieldErrors = {};
+    let valid = true;
+    const numberField = this.sellerForm.seller_number.trim();
+
+    if (!numberField) {
+      this.fieldErrors['seller_number'] = 'El número de celular es obligatorio.';
+      valid = false;
+    } else if (!/^\d+$/.test(numberField) || numberField.length < 10) {
+      this.fieldErrors['seller_number'] = 'Ingresa un número de celular válido (10 dígitos).';
+      valid = false;
+    }
+
+    if (!this.sellerForm.full_name.trim()) {
+      this.fieldErrors['full_name'] = 'El nombre completo es obligatorio.';
+      valid = false;
+    }
+
+    if (!this.isEditMode) {
+      if (!this.sellerForm.password) {
+        this.fieldErrors['password'] = 'La contraseña es obligatoria.';
+        valid = false;
+      } else if (this.sellerForm.password.length < 6) {
+        this.fieldErrors['password'] = 'La contraseña debe tener al menos 6 caracteres.';
+        valid = false;
+      }
+    } else if (this.sellerForm.password && this.sellerForm.password.length < 6) {
+      this.fieldErrors['password'] = 'La contraseña debe tener al menos 6 caracteres.';
+      valid = false;
+    }
+
+    this.cdr.detectChanges();
+    return valid;
+  }
+
+  validateStep2(): boolean {
+    this.formValidated = true;
+    this.fieldErrors = { ...this.fieldErrors, agency_brand: '', other_brand: '', agency_location: '' };
+    let valid = true;
+    const finalBrand = this.sellerForm.agency_brand === 'Otro'
+      ? this.sellerForm.other_brand
+      : this.sellerForm.agency_brand;
+
+    if (!finalBrand) {
+      this.fieldErrors[this.sellerForm.agency_brand === 'Otro' ? 'other_brand' : 'agency_brand'] =
+        'Selecciona o escribe la marca de la agencia.';
+      valid = false;
+    }
+    if (!this.selectedCoords && !this.manualAddress.trim()) {
+      this.fieldErrors['agency_location'] = 'Selecciona una ubicación en el mapa o busca una dirección.';
+      valid = false;
+    }
+    this.cdr.detectChanges();
+    return valid;
+  }
+
+  generatePassword() {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    const rand = new Uint32Array(12);
+    crypto.getRandomValues(rand);
+    let pw = '';
+    for (let i = 0; i < 12; i++) pw += chars[rand[i] % chars.length];
+    this.sellerForm.password = pw;
+    this.fieldErrors['password'] = '';
+    this.cdr.detectChanges();
+  }
+
+  closeFormDrawer() {
+    this.showFormDrawer = false;
+    if (this.map) {
+      this.map.remove();
+      this.map = null!;
+      this.marker = null!;
+    }
+    this.cdr.detectChanges();
+  }
+
+  // ===================== GUARDAR (CREAR / EDITAR) =====================
 
   async submitForm() {
-    this.formLoading = true;
     this.formError = '';
-    this.formSuccess = '';
+    if (this.formStep === 1) {
+      if (!this.validateStep1()) return;
+      if (!this.validateStep2()) {
+        this.formStep = 2;
+        this.cdr.detectChanges();
+        setTimeout(() => this.map?.invalidateSize(), 120);
+        return;
+      }
+    }
+
+    const finalBrand = this.sellerForm.agency_brand === 'Otro'
+      ? this.sellerForm.other_brand
+      : this.sellerForm.agency_brand;
 
     let finalLocation = '';
     if (this.selectedCoords) {
       finalLocation = this.addressText || `${this.selectedCoords.lat}, ${this.selectedCoords.lng}`;
     } else if (this.manualAddress.trim()) {
       finalLocation = this.manualAddress.trim();
-    } else {
-      this.formError = 'Selecciona una ubicación en el mapa o escribe una dirección y presiona "Buscar"';
-      this.formLoading = false;
-      return;
     }
 
-    const finalBrand = this.sellerForm.agency_brand === 'Otro'
-      ? this.sellerForm.other_brand
-      : this.sellerForm.agency_brand;
-    if (!finalBrand) {
-      this.formError = 'Debes escribir el nombre de la marca';
-      this.formLoading = false;
-      return;
-    }
+    this.formLoading = true;
+    this.cdr.detectChanges();
 
     try {
-      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
-
+      // ---------- EDICIÓN ----------
       if (this.isEditMode) {
         const { error } = await this.supabase.updateProfile(this.sellerForm.id, {
-          full_name: this.sellerForm.full_name,
+          full_name: this.sellerForm.full_name.trim(),
           agency_brand: finalBrand,
           agency_location: finalLocation,
-          seller_number: this.sellerForm.seller_number,
+          seller_number: this.sellerForm.seller_number.trim(),
           active: this.sellerForm.active,
           latitude: this.selectedCoords?.lat || null,
           longitude: this.selectedCoords?.lng || null
@@ -396,32 +661,42 @@ export class AdminSellersComponent implements OnInit {
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
           this.formLoading = false;
+          this.cdr.detectChanges();
           return;
         }
-        this.formSuccess = '✅ Vendedor actualizado correctamente';
-      } else {
-        const email = `vendedor_${this.sellerForm.seller_number}@golease.com`;
-        const { error: authError } = await this.supabase.signUp(
-          email,
-          this.sellerForm.password || '12345678',
-          this.sellerForm.full_name
-        );
-        if (authError) {
-          this.formError = 'Error al crear usuario: ' + authError.message;
-          this.formLoading = false;
-          return;
+        if (this.sellerForm.password) {
+          const { error: pwdError } = await this.supabase.updateUserPassword(
+            this.sellerForm.id,
+            this.sellerForm.password
+          );
+          if (pwdError) {
+            this.formError = 'Cambio de contraseña falló: ' + pwdError.message;
+            this.formLoading = false;
+            this.cdr.detectChanges();
+            return;
+          }
         }
+        this.toastService.success('Vendedor actualizado correctamente');
+        this.closeFormDrawer();
+        await this.loadSellers();
+        return;
+      }
 
-        const newUser = this.supabase.currentUser();
-        if (!newUser) {
-          this.formError = 'No se pudo obtener el usuario';
-          this.formLoading = false;
-          return;
-        }
+      // ---------- CREACIÓN ----------
+      const email = `vendedor_${this.sellerForm.seller_number.trim()}@golease.com`;
 
-        const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
-          seller_number: this.sellerForm.seller_number,
-          full_name: this.sellerForm.full_name,
+      // 1) Camino preferido: RPC create_user (no cambia sesión, sin recargar)
+      const created = await this.supabase.createUserAsAdmin({
+        email,
+        password: this.sellerForm.password,
+        full_name: this.sellerForm.full_name.trim(),
+        role: 'seller'
+      });
+
+      if (!created.error && created.data?.id) {
+        const { error: profileError } = await this.supabase.updateProfile(created.data.id, {
+          seller_number: this.sellerForm.seller_number.trim(),
+          full_name: this.sellerForm.full_name.trim(),
           agency_brand: finalBrand,
           agency_location: finalLocation,
           active: true,
@@ -430,50 +705,78 @@ export class AdminSellersComponent implements OnInit {
           longitude: this.selectedCoords?.lng || null
         });
         if (profileError) {
-          this.formError = 'Error al guardar perfil: ' + profileError.message;
-          this.formLoading = false;
-          return;
+          this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
+        } else {
+          this.toastService.success('Vendedor creado correctamente');
         }
-
-        if (adminSession) {
-          await this.supabase.client.auth.setSession({
-            access_token: adminSession.access_token,
-            refresh_token: adminSession.refresh_token
-          });
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const adminUser = this.supabase.currentUser();
-          if (adminUser) {
-            await this.supabase.loadProfile(adminUser.id);
-          }
-          this.supabase.triggerProfileRefresh();
-          this.cdr.detectChanges();
-        }
-
-        this.formSuccess = '✅ Vendedor creado correctamente';
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        this.closeFormDrawer();
+        await this.loadSellers();
+        this.cdr.detectChanges();
+        return;
       }
+
+      // 2) Fallback: signUp + restaurar sesión (base sin migrar la RPC)
+      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
+      const { error: authError } = await this.supabase.signUp(
+        email,
+        this.sellerForm.password || '12345678',
+        this.sellerForm.full_name
+      );
+      if (authError) {
+        this.formError = 'Error al crear usuario: ' + authError.message;
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const newUser = this.supabase.currentUser();
+      if (!newUser) {
+        this.formError = 'No se pudo obtener el usuario';
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
+        seller_number: this.sellerForm.seller_number.trim(),
+        full_name: this.sellerForm.full_name.trim(),
+        agency_brand: finalBrand,
+        agency_location: finalLocation,
+        active: true,
+        role: 'seller',
+        latitude: this.selectedCoords?.lat || null,
+        longitude: this.selectedCoords?.lng || null
+      });
+      if (profileError) {
+        this.formError = 'Error al guardar perfil: ' + profileError.message;
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // Restaurar sesión del administrador original
+      if (adminSession) {
+        await this.supabase.client.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token
+        });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const adminUser = this.supabase.currentUser();
+        if (adminUser) {
+          await this.supabase.loadProfile(adminUser.id);
+        }
+        this.supabase.triggerProfileRefresh();
+      }
+
+      this.toastService.success('Vendedor creado correctamente');
+      this.closeFormDrawer();
+      await this.loadSellers();
+      this.cdr.detectChanges();
     } catch (err: any) {
       this.formError = 'Error inesperado: ' + (err.message || '');
-    } finally {
       this.formLoading = false;
       this.cdr.detectChanges();
-      setTimeout(() => {
-        this.showFormModal = false;
-        this.loadSellers();
-      }, 1500);
     }
-  }
-
-  closeFormModal() {
-    this.showFormModal = false;
-    if (this.map) {
-      this.map.remove();
-      this.map = null!;
-      this.marker = null!;
-    }
-    this.cdr.detectChanges();
   }
 
   // ===================== NOTAS =====================
@@ -622,5 +925,13 @@ export class AdminSellersComponent implements OnInit {
 
   getStatusClass(active: boolean): string {
     return active ? 'status-active' : 'status-inactive';
+  }
+
+  getAvatarClass(name: string): string {
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) {
+      hash = (hash * 31 + (name.charCodeAt(i) || 0)) % 1000;
+    }
+    return `avatar-tone-${hash % 6}`;
   }
 }

@@ -202,20 +202,39 @@
 }
 
 .vehicles-container .status-badge {
-  padding: 0.32rem 0.7rem;
-  font-size: 0.68rem;
-  letter-spacing: 0.35px;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.vehicles-container .status-badge svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .status-hybrid {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #bae6fd;
 }
 
 .status-combustion {
   background: #f1f5f9;
   color: #475569;
+  border-color: #e2e8f0;
 }
 
 .vehicles-container .btn-icon {
@@ -443,16 +462,9 @@
 }
 
 .vehicle-card-footer {
+  justify-content: flex-end;
   padding-top: 0.75rem;
   border-top: 1px solid #edf2f5;
-}
-
-.vehicle-type {
-  overflow: hidden;
-  color: #64748b;
-  font-size: 0.7rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .catalog-state {

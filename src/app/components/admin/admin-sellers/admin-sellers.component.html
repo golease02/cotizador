@@ -1,4 +1,5 @@
 <div class="sellers-container">
+    <!-- CABECERA -->
     <div class="page-header">
         <div class="page-heading">
             <span class="page-kicker">Equipo comercial</span>
@@ -8,17 +9,74 @@
         <button class="btn-primary" (click)="openNewSeller()"><span class="button-icon">+</span> Nuevo Vendedor</button>
     </div>
 
-    <div class="search-bar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por nombre o número"
-            class="search-input" />
-        <span class="results-count" *ngIf="!loading">{{ filteredSellers().length }} vendedor(es)</span>
+    <!-- MÉTRICAS -->
+    <div class="stats-grid">
+        <button type="button" class="stat-card" [class.is-active]="statusFilter === 'todos'" (click)="setStatusFilter('todos')">
+            <span class="stat-icon tone-slate">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.total }}</strong><small>Vendedores</small></span>
+        </button>
+        <button type="button" class="stat-card" [class.is-active]="statusFilter === 'activos'" (click)="setStatusFilter('activos')">
+            <span class="stat-icon tone-green">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="M22 4 12 14.01l-3-3"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.activos }}</strong><small>Activos</small></span>
+        </button>
+        <button type="button" class="stat-card" [class.is-active]="statusFilter === 'inactivos'" (click)="setStatusFilter('inactivos')">
+            <span class="stat-icon tone-amber">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="M8 11l3 3 6-6"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.inactivos }}</strong><small>Inactivos</small></span>
+        </button>
+        <div class="stat-card stat-plain">
+            <span class="stat-icon tone-blue">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ stats.cotizaciones }}</strong><small>Cotizaciones generadas</small></span>
+        </div>
+    </div>
+    <!-- BÚSQUEDA Y FILTROS -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()"
+                placeholder="Buscar por nombre, número, marca o sucursal..." class="search-input" />
+            <button *ngIf="searchTerm" type="button" class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">×</button>
+        </div>
+
+        <div class="chip-group" role="group" aria-label="Filtrar por estado">
+            <button type="button" class="chip" [class.is-active]="statusFilter === 'todos'" (click)="setStatusFilter('todos')">Todos</button>
+            <button type="button" class="chip" [class.is-active]="statusFilter === 'activos'" (click)="setStatusFilter('activos')">Activos</button>
+            <button type="button" class="chip" [class.is-active]="statusFilter === 'inactivos'" (click)="setStatusFilter('inactivos')">Inactivos</button>
+        </div>
+
+        <label class="toolbar-select" *ngIf="brandsList.length">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <select [(ngModel)]="brandFilter" (change)="setBrandFilter(brandFilter)">
+                <option value="todas">Todas las agencias</option>
+                <option *ngFor="let b of brandsList" [value]="b">{{ b }}</option>
+            </select>
+        </label>
+
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
+            <select [(ngModel)]="sortBy" (change)="setSortBy(sortBy)">
+                <option value="recientes">Más recientes</option>
+                <option value="nombre">Nombre A–Z</option>
+                <option value="cotizaciones">Más cotizaciones</option>
+                <option value="antiguos">Antiguos</option>
+            </select>
+        </label>
+
+        <span class="results-count" *ngIf="!loading">{{ filteredSellers().length }} resultado(s)</span>
     </div>
 
-    <div *ngIf="loading" class="catalog-state loading">
-        <span class="catalog-spinner" aria-hidden="true"></span>
-        Cargando vendedores...
+    <!-- SKELETON -->
+    <div *ngIf="loading" class="skeleton-list" aria-label="Cargando vendedores">
+        <div class="skeleton-row" *ngFor="let i of [0,1,2,3,4]"></div>
     </div>
-
+    <!-- TABLA -->
     <div class="table-wrapper" *ngIf="!loading && filteredSellers().length > 0">
         <table class="users-table">
             <thead>
@@ -26,38 +84,64 @@
             </thead>
             <tbody>
                 <tr *ngFor="let seller of filteredSellers()" [class.is-selected]="selectedSellerCardId === seller.id"
-                    (click)="selectSeller(seller.id)" tabindex="0" [attr.aria-selected]="selectedSellerCardId === seller.id"
-                    (keydown.enter)="selectSeller(seller.id)" (keydown.space)="selectSeller(seller.id); $event.preventDefault()">
-                    <td class="user-cell"><span class="seller-avatar" aria-hidden="true">{{ getInitials(seller.full_name) }}</span><span><strong (mouseenter)="mostrarNotasTooltip($event, seller)" (mouseleave)="ocultarNotasTooltip()">{{ seller.full_name }}</strong><small>{{ seller.seller_number || '-' }}</small></span></td>
-                    <td>{{ seller.agency_brand || '-' }}</td>
-                    <td class="location-cell" title="{{ seller.agency_location || '-' }}">{{ seller.agency_location || '-' }}</td>
+                    (click)="openDetail(seller)" tabindex="0" (keydown.enter)="openDetail(seller)"
+                    (keydown.space)="openDetail(seller); $event.preventDefault()"
+                    [attr.aria-label]="'Ver detalle de ' + seller.full_name">
+                    <td class="user-cell">
+                        <span class="avatar" [class]="getAvatarClass(seller.full_name)" aria-hidden="true">
+                            {{ getInitials(seller.full_name) }}
+                            <span class="avatar-dot" [class.is-on]="seller.active ?? true"></span>
+                        </span>
+                        <span class="user-meta">
+                            <strong (mouseenter)="mostrarNotasTooltip($event, seller)" (mouseleave)="ocultarNotasTooltip()">{{ seller.full_name }}</strong>
+                            <small>{{ seller.seller_number || '-' }}</small>
+                        </span>
+                    </td>
+                    <td><span class="brand-chip">{{ seller.agency_brand || '—' }}</span></td>
+                    <td class="location-cell" [title]="seller.agency_location || '-'">
+                        <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        {{ seller.agency_location || '-' }}
+                    </td>
                     <td><strong class="quote-count">{{ seller.quote_count || 0 }}</strong></td>
-                    <td><span class="status-badge" [class]="getStatusClass(seller.active ?? true)">{{ getStatusLabel(seller.active ?? true) }}</span></td>
-                    <td class="actions-column"><div class="action-buttons">
-                    <button class="btn-icon btn-note" (click)="abrirNotas(seller)" title="Notas" aria-label="Ver notas del vendedor">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
-                    </button>
-                    <button class="btn-icon btn-edit" (click)="openEditSeller(seller)"
-                        title="Editar" aria-label="Editar vendedor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>
-                    <button class="btn-icon btn-toggle" (click)="toggleSellerStatus(seller.id)"
-                        title="Cambiar estado" aria-label="Cambiar estado del vendedor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8.1 8.1 0 0 0-14.8-3L3 11"></path><path d="M3 4v7h7"></path><path d="M4 13a8.1 8.1 0 0 0 14.8 3L21 13"></path><path d="M21 20v-7h-7"></path></svg></button>
-                    <button class="btn-icon btn-delete" (click)="deleteSeller(seller.id)"
-                        title="Eliminar" aria-label="Eliminar vendedor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg></button>
-                    </div></td>
+                    <td>
+                        <button type="button" class="switch" [class.is-on]="seller.active ?? true" role="switch"
+                            [attr.aria-checked]="seller.active ?? true"
+                            [title]="'Cambiar estado (' + getStatusLabel(seller.active ?? true) + ')'"
+                            (click)="toggleSellerStatus(seller); $event.stopPropagation()">
+                            <span class="switch-thumb"></span>
+                        </button>
+                        <span class="switch-label">{{ getStatusLabel(seller.active ?? true) }}</span>
+                    </td>
+                    <td class="actions-column" (click)="$event.stopPropagation()">
+                        <div class="action-buttons">
+                            <button class="btn-icon btn-note" (click)="abrirNotas(seller)" title="Notas" aria-label="Ver notas del vendedor">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
+                            </button>
+                            <button class="btn-icon btn-edit" (click)="openEditSeller(seller)" title="Editar" aria-label="Editar vendedor">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                            </button>
+                            <button class="btn-icon btn-delete" (click)="deleteSeller(seller.id)" title="Eliminar" aria-label="Eliminar vendedor">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
+    <!-- ESTADO VACÍO -->
     <div *ngIf="!loading && filteredSellers().length === 0" class="catalog-state empty-state">
         <span class="empty-state-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
         </span>
-        <strong>No se encontraron vendedores</strong>
-        <span>Prueba con otro término de búsqueda.</span>
+        <strong>{{ sellers().length === 0 ? 'Aún no hay vendedores registrados' : 'Sin resultados' }}</strong>
+        <span>{{ sellers().length === 0 ? 'Agrega tu primer vendedor para empezar.' : 'Ajusta tu búsqueda o los filtros.' }}</span>
+        <button *ngIf="sellers().length > 0" type="button" class="btn-secondary" (click)="clearFilters()">Limpiar filtros</button>
+        <button *ngIf="sellers().length === 0" type="button" class="btn-primary" (click)="openNewSeller()">+ Nuevo Vendedor</button>
     </div>
 </div>
-
+    <!-- TOOLTIP NOTAS -->
 <div class="seller-notes-tooltip" *ngIf="showSellerTooltip" [style.left.px]="sellerTooltipPosition.x"
     [style.top.px]="sellerTooltipPosition.y">
     <div class="seller-notes-tooltip-header">
@@ -67,124 +151,218 @@
     <div class="seller-notes-tooltip-body">{{ sellerTooltipContent }}</div>
 </div>
 
-<!-- MODAL DE CONFIRMACIÓN -->
+<!-- TOASTS -->
+<div class="toast-host">
+    <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
+        (click)="handleToast(t)">
+        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+        <span class="toast-msg">{{ t.message }}</span>
+        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+        <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()" aria-label="Cerrar">×</button>
+    </div>
+</div>
+
+<!-- DRAWER: DETALLE DEL VENDEDOR -->
+<div class="drawer-overlay" *ngIf="showDetailDrawer" (click)="closeDetail()">
+    <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" aria-label="Detalle del vendedor">
+        <div class="drawer-header">
+            <div class="detail-id">
+                <span class="avatar avatar-lg" [class]="getAvatarClass(detailSeller.full_name)" aria-hidden="true">{{ getInitials(detailSeller.full_name) }}</span>
+                <div>
+                    <span class="page-kicker">Detalle del vendedor</span>
+                    <h3>{{ detailSeller.full_name }}</h3>
+                    <span class="status-badge" [class]="getStatusClass(detailSeller.active ?? true)">{{ getStatusLabel(detailSeller.active ?? true) }}</span>
+                </div>
+            </div>
+            <button class="drawer-close" (click)="closeDetail()" aria-label="Cerrar detalle">×</button>
+        </div>
+
+        <div class="drawer-body">
+            <div class="detail-stats">
+                <div class="detail-stat"><strong>{{ detailSeller.quote_count || 0 }}</strong><small>Cotizaciones</small></div>
+                <div class="detail-stat"><span class="brand-chip">{{ detailSeller.agency_brand || '—' }}</span><small>Agencia</small></div>
+                <div class="detail-stat"><strong>{{ detailSeller.seller_number || '—' }}</strong><small>N° de identificación</small></div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Ubicación de la sucursal</h4>
+                <p class="detail-address">{{ detailSeller.agency_location || 'Sin ubicación registrada' }}</p>
+                <div class="detail-map-wrap">
+                    <div #detailMapContainer class="map-container detail-map"></div>
+                    <span *ngIf="!detailSeller.latitude || !detailSeller.longitude" class="map-empty-hint">Sin coordenadas guardadas</span>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Notas de seguimiento</h4>
+                <button class="btn-secondary btn-block" (click)="abrirNotas(detailSeller)">💬 Ver y administrar notas</button>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <button class="btn-secondary" (click)="openEditSeller(detailSeller)">Editar</button>
+            <button class="btn-secondary danger" (click)="deleteSeller(detailSeller.id)">Eliminar</button>
+            <button class="btn-primary" (click)="abrirNotas(detailSeller)">Notas</button>
+        </div>
+    </aside>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN (ELIMINAR) -->
 <div class="modal-overlay" *ngIf="showConfirmModal" (click)="cancelModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-heading modal-heading-warning">
-            <span class="modal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></span>
-            <div><span class="modal-eyebrow">Confirmación</span><h3>Confirmar acción</h3></div>
+            <span class="modal-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            </span>
+            <div><span class="modal-eyebrow">Confirmación</span><h3>Eliminar vendedor</h3></div>
         </div>
-        <p *ngIf="confirmAction === 'delete'">
+        <p>
             ¿Estás seguro de que deseas eliminar a <strong>{{ getSellerName() }}</strong>?
             <br>
-                <span class="warning-copy">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>Esta acción eliminará todas sus cotizaciones ({{ getSellerQuoteCount() }} cotizaciones).
+            <span class="warning-copy">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+                Esta acción eliminará todas sus cotizaciones ({{ getSellerQuoteCount() }} cotizaciones).
             </span>
             <br>
             Esta operación no se puede deshacer.
         </p>
-        <p *ngIf="confirmAction === 'toggle'">
-            ¿Cambiar estado de <strong>{{ getSellerName() }}</strong>?
-        </p>
         <div class="modal-actions">
             <button class="btn-cancel" (click)="cancelModal()">Cancelar</button>
-            <button class="btn-confirm" (click)="confirmActionHandler()">
-                {{ confirmAction === 'delete' ? 'Eliminar' : 'Confirmar' }}
+            <button class="btn-confirm" (click)="confirmSellerDelete()" [disabled]="actionLoading">
+                {{ actionLoading ? 'Eliminando...' : 'Eliminar' }}
             </button>
         </div>
     </div>
 </div>
-
-<!-- MODAL DE FORMULARIO CON MAPA -->
-<div class="modal-overlay" *ngIf="showFormModal" (click)="closeFormModal()">
-    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
-        <h3>{{ isEditMode ? 'Editar Vendedor' : 'Nuevo Vendedor' }}</h3>
-
-        <div *ngIf="formSuccess" class="success">{{ formSuccess }}</div>
-        <div *ngIf="formError" class="error">{{ formError }}</div>
-
-        <div *ngIf="formLoading" class="loading">Cargando...</div>
-
-        <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
-            <div class="form-group">
-                <label>Número de celular *</label>
-                <input type="text" [(ngModel)]="sellerForm.seller_number" name="seller_number" required
-                    [disabled]="isEditMode" placeholder="Ej. 5512345678" />
+    <!-- DRAWER: FORMULARIO (CREAR / EDITAR) -->
+<div class="drawer-overlay" *ngIf="showFormDrawer" (click)="closeFormDrawer()">
+    <aside class="drawer form-drawer" (click)="$event.stopPropagation()" role="dialog"
+        [attr.aria-label]="isEditMode ? 'Editar vendedor' : 'Nuevo vendedor'">
+        <div class="drawer-header">
+            <div>
+                <span class="page-kicker">{{ isEditMode ? 'Edición de vendedor' : 'Nuevo registro' }}</span>
+                <h3>{{ isEditMode ? 'Editar Vendedor' : 'Nuevo Vendedor' }}</h3>
             </div>
+            <button class="drawer-close" (click)="closeFormDrawer()" aria-label="Cerrar formulario">×</button>
+        </div>
 
-            <div class="form-group">
-                <label>Nombre Completo *</label>
-                <input type="text" [(ngModel)]="sellerForm.full_name" name="full_name" required
-                    placeholder="Juan Pérez" />
+        <!-- STEPPER -->
+        <div class="stepper" aria-label="Progreso del formulario">
+            <div class="step" [class.is-active]="formStep === 1" [class.is-done]="formStep === 2">
+                <span class="step-num">{{ formStep === 2 ? '✓' : '1' }}</span>
+                <span class="step-label">Datos personales</span>
             </div>
-
-            <div class="form-group" *ngIf="!isEditMode">
-                <label>Contraseña *</label>
-                <input type="password" [(ngModel)]="sellerForm.password" name="password" required
-                    placeholder="Mínimo 6 caracteres" />
+            <div class="step-line" [class.is-done]="formStep === 2"></div>
+            <div class="step" [class.is-active]="formStep === 2">
+                <span class="step-num">2</span>
+                <span class="step-label">Sucursal</span>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label>Marca (Agencia) *</label>
-                <select [(ngModel)]="sellerForm.agency_brand" name="agency_brand" required>
-                    <option value="">Selecciona una marca</option>
-                    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-                    <option value="Otro">Otro</option>
-                </select>
-                <input *ngIf="sellerForm.agency_brand === 'Otro'" type="text" [(ngModel)]="sellerForm.other_brand"
-                    placeholder="Escribe la marca" name="other_brand" style="margin-top: 0.5rem;" />
-            </div>
+        <div class="drawer-body">
+            <div *ngIf="formError" class="form-banner error">{{ formError }}</div>
+            <div *ngIf="formLoading" class="drawer-loading"><span class="catalog-spinner"></span> Cargando...</div>
 
-            <div class="form-group">
-                <label>Ubicación de Sucursal *</label>
-                <div #mapContainer class="map-container"></div>
-                <div *ngIf="selectedCoords" class="coords-info">
-                    <span class="coord-label">📍 Dirección:</span>
-                    <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
-                </div>
-                <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de la sucursal</p>
-            </div>
+            <form (ngSubmit)="nextFormStep()" *ngIf="!formLoading" novalidate>
+                <!-- PASO 1: DATOS PERSONALES -->
+                <ng-container *ngIf="formStep === 1">
+                    <div class="form-group" [class.has-error]="formValidated && fieldErrors['seller_number']">
+                        <label>Número de celular *</label>
+                        <input type="text" [(ngModel)]="sellerForm.seller_number" name="seller_number"
+                            [disabled]="isEditMode" placeholder="Ej. 5512345678" inputmode="numeric" />
+                        <small class="field-error" *ngIf="formValidated && fieldErrors['seller_number']">{{ fieldErrors['seller_number'] }}</small>
+                        <small *ngIf="isEditMode && !fieldErrors['seller_number']">Este número define el acceso; no se puede modificar.</small>
+                    </div>
 
-            <div class="form-group">
-                <label>Buscar sucursal en el mapa</label>
-                <div class="search-group">
-                    <input type="text" [(ngModel)]="manualAddress" name="manualAddress"
-                        placeholder="Ej. Toyota Querétaro" (keydown)="onSearchKeydown($event)" class="search-input" />
-                    <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        </svg>
-                        {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                    <div class="form-group" [class.has-error]="formValidated && fieldErrors['full_name']">
+                        <label>Nombre Completo *</label>
+                        <input type="text" [(ngModel)]="sellerForm.full_name" name="full_name" placeholder="Juan Pérez" />
+                        <small class="field-error" *ngIf="formValidated && fieldErrors['full_name']">{{ fieldErrors['full_name'] }}</small>
+                    </div>
+
+                    <div class="form-group" [class.has-error]="formValidated && fieldErrors['password']">
+                        <label>Contraseña {{ isEditMode ? '(opcional)' : '*' }}</label>
+                        <div class="input-with-action">
+                            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="sellerForm.password"
+                                name="password" placeholder="{{ isEditMode ? 'Dejar vacía conserva la actual' : 'Mínimo 6 caracteres' }}" />
+                            <button type="button" class="btn-ghost-icon" (click)="showPassword = !showPassword"
+                                [title]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
+                        <div class="field-actions">
+                            <small class="field-error" *ngIf="formValidated && fieldErrors['password']">{{ fieldErrors['password'] }}</small>
+                            <button type="button" class="btn-link" (click)="generatePassword()">🛡 Generar contraseña segura</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" *ngIf="isEditMode">
+                        <label>Estado</label>
+                        <select [(ngModel)]="sellerForm.active" name="active">
+                            <option [ngValue]="true">Activo</option>
+                            <option [ngValue]="false">Inactivo</option>
+                        </select>
+                    </div>
+                </ng-container>
+                <!-- PASO 2: SUCURSAL -->
+                <ng-container *ngIf="formStep === 2">
+                    <div class="form-group"
+                        [class.has-error]="formValidated && (fieldErrors['agency_brand'] || fieldErrors['other_brand'])">
+                        <label>Marca (Agencia) *</label>
+                        <select [(ngModel)]="sellerForm.agency_brand" name="agency_brand">
+                            <option value="">Selecciona una marca</option>
+                            <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                        <input *ngIf="sellerForm.agency_brand === 'Otro'" type="text" [(ngModel)]="sellerForm.other_brand"
+                            placeholder="Escribe la marca" name="other_brand" class="spaced-input" />
+                        <small class="field-error" *ngIf="formValidated && (fieldErrors['agency_brand'] || fieldErrors['other_brand'])">
+                            {{ fieldErrors['agency_brand'] || fieldErrors['other_brand'] }}
+                        </small>
+                    </div>
+
+                    <div class="form-group" [class.has-error]="formValidated && fieldErrors['agency_location']">
+                        <label>Ubicación de Sucursal *</label>
+                        <div #mapContainer class="map-container"></div>
+                        <div class="coords-info" *ngIf="selectedCoords">
+                            <span class="coord-label">📍 Dirección:</span>
+                            <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
+                        </div>
+                        <small class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de la sucursal</small>
+                        <small class="field-error" *ngIf="formValidated && fieldErrors['agency_location']">{{ fieldErrors['agency_location'] }}</small>
+                    </div>
+
+                    <div class="search-group">
+                        <input type="text" [(ngModel)]="manualAddress" name="manualAddress"
+                            placeholder="Buscar sucursal (ej. Toyota Querétaro)" (keydown)="onSearchKeydown($event)" />
+                        <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            {{ isSearching ? 'Buscando...' : 'Buscar' }}
+                        </button>
+                    </div>
+                    <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
+                </ng-container>
+
+                <div class="drawer-actions">
+                    <button type="button" class="btn-cancel" (click)="prevFormStep()">
+                        {{ formStep === 2 ? 'Volver' : 'Cancelar' }}
+                    </button>
+                    <button type="submit" class="btn-confirm" [disabled]="formLoading">
+                        {{ formLoading ? 'Guardando...' : isEditMode ? (formStep === 2 ? 'Actualizar' : 'Continuar') : (formStep === 2 ? 'Crear' : 'Continuar') }}
                     </button>
                 </div>
-                <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
-            </div>
-
-            <div class="form-group" *ngIf="isEditMode">
-                <label>Estado</label>
-                <select [(ngModel)]="sellerForm.active" name="active">
-                    <option [value]="true">Activo</option>
-                    <option [value]="false">Inactivo</option>
-                </select>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" (click)="closeFormModal()">Cancelar</button>
-                <button type="submit" class="btn-confirm" [disabled]="formLoading">
-                    {{ isEditMode ? 'Actualizar' : 'Crear' }}
-                </button>
-            </div>
-        </form>
-    </div>
+            </form>
+        </div>
+    </aside>
 </div>
 
-<!-- MODAL DE NOTAS PARA VENDEDOR -->
+<!-- MODAL DE NOTAS -->
 <div class="modal-overlay" *ngIf="showNotasModal" (click)="cerrarNotas()">
     <div class="modal-content notas-modal" (click)="$event.stopPropagation()">
         <div class="modal-heading modal-heading-notes">
-            <span class="modal-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg></span>
+            <span class="modal-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
+            </span>
             <div><span class="modal-eyebrow">Seguimiento</span><h3>Notas de Vendedor</h3></div>
         </div>
         <div *ngIf="notaError" class="error">{{ notaError }}</div>
