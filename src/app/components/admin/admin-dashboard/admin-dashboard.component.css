@@ -132,8 +132,7 @@
     box-shadow: inset 0 0 0 1px rgba(139, 226, 140, 0.08);
 }
 
-.admin-sidebar nav a.active,
-.admin-sidebar nav a.nav-profile-link.active {
+.admin-sidebar nav a.active {
     position: relative;
     background: linear-gradient(100deg, rgba(32, 176, 56, 0.28), rgba(32, 176, 56, 0.12));
     border-color: rgba(139, 226, 140, 0.25);
@@ -187,9 +186,35 @@
 
 .sidebar-user .user-info {
     min-width: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
+}
+
+.sidebar-user-link {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+    flex: 1;
+    padding: 0.2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar-user-link:hover {
+    background: rgba(139, 226, 140, 0.1);
+}
+
+.sidebar-user-link:focus-visible {
+    outline: 2px solid #8be28c;
+    outline-offset: 2px;
+}
+
+.sidebar-user-link.active {
+    background: rgba(139, 226, 140, 0.14);
 }
 
 .sidebar-user .user-name {
