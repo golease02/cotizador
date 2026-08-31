@@ -452,19 +452,8 @@ export class AdminAdminsComponent implements OnInit {
         return;
       }
 
-      // Restaurar sesión del administrador original
-      if (adminSession) {
-        await this.supabase.client.auth.setSession({
-          access_token: adminSession.access_token,
-          refresh_token: adminSession.refresh_token
-        });
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const adminUser = this.supabase.currentUser();
-        if (adminUser) {
-          await this.supabase.loadProfile(adminUser.id);
-        }
-        this.supabase.triggerProfileRefresh();
-      }
+      // Restaurar sesión (y señales de UI) del administrador original
+      await this.supabase.restoreSession(adminSession);
 
       this.toastService.success('Administrador creado correctamente');
       this.closeFormDrawer();

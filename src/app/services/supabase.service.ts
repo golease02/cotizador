@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 import { BehaviorSubject } from 'rxjs';
 import { StatePlateOption, STATE_PLATES_CATALOG, QuoteCalculationResult } from '../models/leasing.model';
@@ -258,6 +258,28 @@ export class SupabaseService {
 
     const userId = (data as any)?.id ?? null;
     return { data: userId ? { id: userId } : null, error: null };
+  }
+
+  /**
+   * Restaura una sesión capturada previamente con getSession().
+   * Se usa en el fallback de creación de usuarios: signUp() inicia sesión
+   * con el usuario nuevo y pisa la sesión del admin. Además de restaurar
+   * el token en el cliente, sincroniza explícitamente las señales de
+   * usuario y perfil para que la UI vuelva inmediatamente al administrador
+   * original sin recargar la página.
+   */
+  public async restoreSession(session: Session | null | undefined): Promise<void> {
+    if (!session) return;
+    await this.supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token
+    });
+    // IMPORTANTE: restaurar las señales con el usuario de la sesión guardada
+    // (el admin). Leer currentUser() aquí devolvería al usuario recién creado,
+    // porque signUp() sobrescribió la señal.
+    this.currentUserSignal.set(session.user);
+    await this.loadProfile(session.user.id);
+    this.triggerProfileRefresh();
   }
 
   public async updateUserPassword(userId: string, password: string): Promise<{ error: any }> {
