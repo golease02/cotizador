@@ -367,6 +367,23 @@
         </div>
         <div *ngIf="notaError" class="error">{{ notaError }}</div>
 
+        <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR NOTA -->
+        <div class="modal-overlay" *ngIf="showNotaConfirmModal" (click)="cancelarEliminarNota()">
+          <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+            <div class="confirm-icon danger">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
+            </div>
+            <h3>Eliminar nota</h3>
+            <p>¿Estás seguro de que deseas eliminar esta nota? Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+              <button class="btn-cancel" (click)="cancelarEliminarNota()">Cancelar</button>
+              <button class="btn-confirm" (click)="confirmarEliminarNota()" [disabled]="notaLoading">
+                {{ notaLoading ? 'Eliminando...' : 'Eliminar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="notas-list">
             <div *ngIf="notaLoading" class="loading">Cargando...</div>
             <div *ngFor="let n of notasVendedor" class="nota-item">
@@ -393,7 +410,7 @@
         </div>
 
         <div class="modal-actions">
-            <button class="btn-cancel" (click)="cerrarNotas()">Cerrar</button>
+              <button class="btn-cancel" (click)="cerrarNotas()">Cerrar</button>
         </div>
     </div>
 </div>
