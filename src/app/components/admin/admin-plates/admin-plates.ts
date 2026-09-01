@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../services/supabase.service';
+import { ToastService } from '../../../services/toast.service';
 import { StatePlateOption, ESTADOS_MEXICO } from '../../../models/leasing.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { StatePlateOption, ESTADOS_MEXICO } from '../../../models/leasing.model'
 export class AdminPlatesComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private cdr = inject(ChangeDetectorRef);
+  readonly toastService = inject(ToastService);
 
   // Listado
   plates = signal<StatePlateOption[]>([]);
@@ -22,7 +24,6 @@ export class AdminPlatesComponent implements OnInit {
   searchTerm = '';
   costFilter: 'all' | 'withCost' = 'all';
   estadoFilter = '';
-  loadError = '';
 
   // Estados de la República Mexicana (para filtros y formulario)
   estadosMexico: string[] = ESTADOS_MEXICO;
@@ -31,11 +32,10 @@ export class AdminPlatesComponent implements OnInit {
   showConfirmModal = false;
   confirmAction: 'delete' | 'toggle' | null = null;
   selectedPlateId: string | null = null;
-  showFormModal = false;
+  showFormDrawer = false;
   isEditMode = false;
   formLoading = false;
   formError = '';
-  formSuccess = '';
   editingPlateId: string | null = null;
 
   // Formulario
@@ -50,14 +50,24 @@ export class AdminPlatesComponent implements OnInit {
     await this.loadPlates();
   }
 
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showConfirmModal) this.cancelModal();
+    if (this.showFormDrawer) this.closeFormDrawer();
+  }
+
+  handleToast(t: any) {
+    if (t.action) t.action();
+    this.toastService.dismiss(t.id);
+  }
+
   // ===================== LISTADO =====================
 
   async loadPlates() {
     this.loading = true;
-    this.loadError = '';
     const { data, error } = await this.supabase.getAllStatePlates();
     if (error) {
-      this.loadError = 'No fue posible cargar las placas. ' + error.message;
+      this.toastService.error('No fue posible cargar las placas: ' + error.message);
     } else {
       // Filtrar 'pendiente' (protegida) y mapear correctamente
       this.plates.set((data || []).filter(plate => plate.id !== 'pendiente'));
@@ -91,7 +101,7 @@ export class AdminPlatesComponent implements OnInit {
 
   deletePlate(plateId: string) {
     if (plateId === 'pendiente') {
-      alert('La placa "pendiente" es obligatoria y no puede eliminarse.');
+      this.toastService.info('La placa "pendiente" es obligatoria y no puede eliminarse.');
       return;
     }
     this.selectedPlateId = plateId;
@@ -103,7 +113,7 @@ export class AdminPlatesComponent implements OnInit {
   toggleDisponibilidad(plate: StatePlateOption) {
     if (!plate || !plate.id) return;
     if (this.isProtectedPlate(plate.id)) {
-      alert('La placa "pendiente" es obligatoria y no puede deshabilitarse.');
+      this.toastService.info('La placa "pendiente" es obligatoria y no puede deshabilitarse.');
       return;
     }
     this.selectedPlateId = plate.id;
@@ -114,12 +124,16 @@ export class AdminPlatesComponent implements OnInit {
 
   async confirmActionHandler() {
     if (!this.selectedPlateId) return;
-    this.loading = true;
+    this.formLoading = true;
+    let succeeded = false;
 
     if (this.confirmAction === 'delete') {
       const { error } = await this.supabase.deleteStatePlate(this.selectedPlateId);
       if (error) {
-        alert('Error al eliminar: ' + error.message);
+        this.toastService.error('Error al eliminar la placa: ' + error.message);
+      } else {
+        this.toastService.success('Placa eliminada correctamente');
+        succeeded = true;
       }
     } else if (this.confirmAction === 'toggle') {
       const plate = this.plates().find(p => p.id === this.selectedPlateId);
@@ -127,7 +141,12 @@ export class AdminPlatesComponent implements OnInit {
         const current = plate.disponible !== false;
         const { error } = await this.supabase.toggleStatePlateAvailability(this.selectedPlateId, !current);
         if (error) {
-          alert('Error al cambiar disponibilidad: ' + error.message);
+          this.toastService.error('Error al cambiar la disponibilidad: ' + error.message);
+        } else {
+          this.toastService.success(
+            !current ? 'Placa marcada como no disponible' : 'Placa marcada como disponible'
+          );
+          succeeded = true;
         }
       }
     }
@@ -135,8 +154,10 @@ export class AdminPlatesComponent implements OnInit {
     this.showConfirmModal = false;
     this.selectedPlateId = null;
     this.confirmAction = null;
-    await this.loadPlates();
-    this.loading = false;
+    this.formLoading = false;
+    if (succeeded) {
+      await this.loadPlates();
+    }
     this.cdr.detectChanges();
   }
 
@@ -146,15 +167,14 @@ export class AdminPlatesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ===================== MODAL DE FORMULARIO =====================
+  // ===================== DRAWER DE FORMULARIO =====================
 
   openNewPlate() {
     this.isEditMode = false;
     this.editingPlateId = null;
     this.plateForm = { name: '', costnet: 0, estado: '', disponible: true };
     this.formError = '';
-    this.formSuccess = '';
-    this.showFormModal = true;
+    this.showFormDrawer = true;
     this.cdr.detectChanges();
   }
 
@@ -171,13 +191,12 @@ export class AdminPlatesComponent implements OnInit {
       disponible: plate.disponible !== false,
     };
     this.formError = '';
-    this.formSuccess = '';
-    this.showFormModal = true;
+    this.showFormDrawer = true;
     this.cdr.detectChanges();
   }
 
-  closeFormModal() {
-    this.showFormModal = false;
+  closeFormDrawer() {
+    this.showFormDrawer = false;
     this.cdr.detectChanges();
   }
 
@@ -185,7 +204,6 @@ export class AdminPlatesComponent implements OnInit {
     if (this.formLoading) return;
     this.formLoading = true;
     this.formError = '';
-    this.formSuccess = '';
     let operationSucceeded = false;
 
     const normalizedName = this.plateForm.name.trim();
@@ -221,7 +239,6 @@ export class AdminPlatesComponent implements OnInit {
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
         } else {
-          this.formSuccess = '✅ Placa actualizada correctamente';
           operationSucceeded = true;
         }
       } else {
@@ -234,7 +251,6 @@ export class AdminPlatesComponent implements OnInit {
         if (error) {
           this.formError = 'Error al crear: ' + error.message;
         } else {
-          this.formSuccess = '✅ Placa creada correctamente';
           operationSucceeded = true;
         }
       }
@@ -244,10 +260,9 @@ export class AdminPlatesComponent implements OnInit {
       this.formLoading = false;
       this.cdr.detectChanges();
       if (operationSucceeded) {
-        setTimeout(() => {
-          this.showFormModal = false;
-          this.loadPlates();
-        }, 500);
+        this.closeFormDrawer();
+        this.toastService.success(this.isEditMode ? 'Placa actualizada correctamente' : 'Placa creada correctamente');
+        await this.loadPlates();
       }
     }
   }

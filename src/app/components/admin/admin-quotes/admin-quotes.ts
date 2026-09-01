@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService } from '../../../services/supabase.service';
+import { ToastService } from '../../../services/toast.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
@@ -17,6 +18,7 @@ export class AdminQuotesComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private calculator = inject(FinancialCalculatorService);
   private cdr = inject(ChangeDetectorRef);
+  readonly toastService = inject(ToastService);
 
   // Listado
   quotes = signal<any[]>([]);
@@ -48,6 +50,8 @@ export class AdminQuotesComponent implements OnInit {
   notaLoading = false;
   notaError = '';
   selectedQuoteId: string | null = null;
+  showNotaConfirmModal = false;
+  notaToDelete: any = null;
 
   // Tooltip
   showTooltip = false;
@@ -57,6 +61,18 @@ export class AdminQuotesComponent implements OnInit {
   async ngOnInit() {
     await this.loadQuotes();
     await this.loadVendedores();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showNotaConfirmModal) this.cancelarEliminarNota();
+    if (this.showNotasModal) this.cerrarNotasQuote();
+    if (this.showModal) this.cerrarModal();
+  }
+
+  handleToast(t: any) {
+    if (t.action) t.action();
+    this.toastService.dismiss(t.id);
   }
 
   // ===================== LISTADO =====================
@@ -85,6 +101,8 @@ export class AdminQuotesComponent implements OnInit {
       }
       this.quotes.set(data || []);
       this.applyFilters();
+    } else {
+      this.toastService.error('No se pudieron cargar las cotizaciones');
     }
     this.loading = false;
     this.cdr.detectChanges();
@@ -159,6 +177,33 @@ export class AdminQuotesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  setStatusFilter(color: string) {
+    this.filtroColor = color;
+    this.applyFilters();
+  }
+
+  clearSearch() {
+    this.searchTerm = '';
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.filtroVendedor = 'todos';
+    this.filtroPeriodo = 'todos';
+    this.filtroFechaInicio = '';
+    this.filtroFechaFin = '';
+    this.filtroPrecioMin = null;
+    this.filtroPrecioMax = null;
+    this.filtroColor = 'todos';
+    this.applyFilters();
+  }
+
+  private patchQuote(id: string, patch: any) {
+    this.quotes.update(list => list.map(q => (q.id === id ? { ...q, ...patch } : q)));
+    this.applyFilters();
+  }
+
   // ===================== NOTAS =====================
 
   async abrirNotas(quote: any) {
@@ -223,10 +268,13 @@ export class AdminQuotesComponent implements OnInit {
 
     if (error) {
       this.notaError = 'Error al guardar nota';
+      this.toastService.error('No se pudo guardar la nota');
     } else {
+      const eraEdicion = !!this.notaEditando;
       this.notaText = '';
       this.notaEditando = null;
       await this.cargarNotasQuote(this.selectedQuoteId!);
+      this.toastService.success(eraEdicion ? 'Nota actualizada correctamente' : 'Nota agregada correctamente');
     }
     this.notaLoading = false;
     this.cdr.detectChanges();
@@ -237,23 +285,41 @@ export class AdminQuotesComponent implements OnInit {
     this.notaText = nota.texto;
   }
 
-  async eliminarNotaQuote(notaId: string) {
-    if (!confirm('¿Eliminar esta nota?')) return;
+  eliminarNotaQuote(nota: any) {
+    this.notaToDelete = nota;
+    this.showNotaConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  async confirmarEliminarNota() {
+    if (!this.notaToDelete) return;
     this.notaLoading = true;
+    this.showNotaConfirmModal = false;
     const { error } = await this.supabase.client
       .from('notas')
       .delete()
-      .eq('id', notaId);
+      .eq('id', this.notaToDelete.id);
     if (error) {
       this.notaError = 'Error al eliminar nota';
+      this.toastService.error('No se pudo eliminar la nota');
     } else {
       await this.cargarNotasQuote(this.selectedQuoteId!);
+      this.toastService.success('Nota eliminada correctamente');
     }
     this.notaLoading = false;
+    this.notaToDelete = null;
+    this.cdr.detectChanges();
+  }
+
+  cancelarEliminarNota() {
+    this.showNotaConfirmModal = false;
+    this.notaToDelete = null;
     this.cdr.detectChanges();
   }
 
   cerrarNotasQuote() {
+    this.showNotaConfirmModal = false;
+    this.notaToDelete = null;
     this.showNotasModal = false;
     this.notasCotizacion = [];
     this.notaText = '';
@@ -318,20 +384,29 @@ export class AdminQuotesComponent implements OnInit {
 
   async toggleFijar(quote: any) {
     const nuevoEstado = !quote.fijada;
+    // Actualización optimista (mismo patrón que sellers/admins)
+    this.patchQuote(quote.id, { fijada: nuevoEstado });
+
     const { error } = await this.supabase.client
       .from('quotes')
       .update({ fijada: nuevoEstado })
       .eq('id', quote.id);
     if (error) {
-      alert('Error al fijar cotización');
-    } else {
-      const updatedQuotes = this.quotes().map(q => {
-        if (q.id === quote.id) q.fijada = nuevoEstado;
-        return q;
-      });
-      this.quotes.set(updatedQuotes);
-      this.applyFilters();
+      this.patchQuote(quote.id, { fijada: !nuevoEstado });
+      this.toastService.error('Error al fijar la cotización: ' + error.message);
+      return;
     }
+
+    this.toastService.undo(
+      nuevoEstado ? 'Cotización fijada' : 'Cotización desfijada',
+      () => {
+        this.patchQuote(quote.id, { fijada: !nuevoEstado });
+        this.supabase.client
+          .from('quotes')
+          .update({ fijada: !nuevoEstado })
+          .eq('id', quote.id);
+      }
+    );
   }
 
   // ===================== TOOLTIP =====================

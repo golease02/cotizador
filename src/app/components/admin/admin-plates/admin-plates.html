@@ -8,23 +8,34 @@
         <button class="btn-primary" (click)="openNewPlate()"><span class="button-icon">+</span> Nueva Placa</button>
     </div>
 
-    <div class="search-bar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por nombre de placa..."
-            class="search-input" />
-        <select [(ngModel)]="costFilter" (change)="onSearch()" name="costFilter" class="filter-select"
-            aria-label="Filtrar por costo">
-            <option value="all">Todos los costos</option>
-            <option value="withCost">Con costo</option>
-        </select>
-        <select [(ngModel)]="estadoFilter" (change)="onSearch()" name="estadoFilter" class="filter-select"
-            aria-label="Filtrar por estado">
-            <option value="">Todos los estados</option>
-            <option *ngFor="let estado of estadosMexico" [value]="estado">{{ estado }}</option>
-        </select>
+    <!-- TOOLBAR: BÚSQUEDA + FILTROS -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por nombre de placa..."
+                class="search-input" />
+            <button *ngIf="searchTerm" type="button" class="search-clear" (click)="searchTerm=''; onSearch()"
+                aria-label="Limpiar búsqueda">×</button>
+        </div>
+
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1v22"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <select [(ngModel)]="costFilter" (change)="onSearch()" name="costFilter" aria-label="Filtrar por costo">
+                <option value="all">Todos los costos</option>
+                <option value="withCost">Con costo</option>
+            </select>
+        </label>
+
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <select [(ngModel)]="estadoFilter" (change)="onSearch()" name="estadoFilter" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option *ngFor="let estado of estadosMexico" [value]="estado">{{ estado }}</option>
+            </select>
+        </label>
+
         <span class="results-count" *ngIf="!loading">{{ filteredPlates().length }} placa(s)</span>
     </div>
-
-    <div *ngIf="loadError" class="error catalog-error" role="alert">{{ loadError }}</div>
 
     <div class="plates-grid" *ngIf="!loading && filteredPlates().length > 0">
         <article class="plate-card" *ngFor="let plate of filteredPlates()">
@@ -71,7 +82,9 @@
         </article>
     </div>
 
-    <div *ngIf="loading" class="catalog-state loading">Cargando placas...</div>
+    <div *ngIf="loading" class="skeleton-grid" aria-label="Cargando placas">
+        <div class="skeleton-card" *ngFor="let i of [0,1,2,3,4,5]"></div>
+    </div>
     <div *ngIf="!loading && filteredPlates().length === 0" class="catalog-state empty-state">
         <span class="empty-state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h10M7 14h5"></path></svg></span>
         <strong>No se encontraron placas</strong>
@@ -99,61 +112,79 @@
     </div>
 </div>
 
-<!-- MODAL DE FORMULARIO (CREAR/EDITAR) -->
-<div class="modal-overlay" *ngIf="showFormModal" (click)="closeFormModal()">
-    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
-        <h3>{{ isEditMode ? 'Editar Placa' : 'Nueva Placa' }}</h3>
-
-        <div *ngIf="formSuccess" class="success">{{ formSuccess }}</div>
-        <div *ngIf="formError" class="error">{{ formError }}</div>
-
-        <div *ngIf="formLoading" class="loading">Cargando...</div>
-
-        <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
-            <!-- Nombre -->
-            <div class="form-group">
-                <label>Nombre *</label>
-                <input type="text" [(ngModel)]="plateForm.name" name="name" required
-                    placeholder="Ej. Alta de placas CDMX" />
+<!-- DRAWER: FORMULARIO (CREAR / EDITAR) -->
+<div class="drawer-overlay" *ngIf="showFormDrawer" (click)="closeFormDrawer()">
+    <aside class="drawer form-drawer" (click)="$event.stopPropagation()" role="dialog"
+        [attr.aria-label]="isEditMode ? 'Editar placa' : 'Nueva placa'">
+        <div class="drawer-header">
+            <div>
+                <span class="page-kicker">{{ isEditMode ? 'Edición de placa' : 'Nuevo registro' }}</span>
+                <h3>{{ isEditMode ? 'Editar Placa' : 'Nueva Placa' }}</h3>
             </div>
+            <button class="drawer-close" (click)="closeFormDrawer()" aria-label="Cerrar formulario">×</button>
+        </div>
 
-            <!-- Estado -->
-            <div class="form-group">
-                <label>Estado *</label>
-                <select [(ngModel)]="plateForm.estado" name="estado" required>
-                    <option value="" disabled>Selecciona un estado...</option>
-                    <option *ngFor="let estado of estadosMexico" [value]="estado">{{ estado }}</option>
-                </select>
-                <small>Elige el estado de la República Mexicana al que corresponde la placa.</small>
-            </div>
+        <div class="drawer-body">
+            <div *ngIf="formError" class="form-banner error">{{ formError }}</div>
+            <div *ngIf="formLoading" class="drawer-loading"><span class="catalog-spinner"></span> Cargando...</div>
 
-            <!-- Disponibilidad -->
-            <div class="form-group">
-                <label>Disponibilidad *</label>
-                <select [(ngModel)]="plateForm.disponible" name="disponible" required>
-                    <option [ngValue]="true">Disponible</option>
-                    <option [ngValue]="false">No disponible</option>
-                </select>
-                <small>Si está "No disponible", la placa no aparecerá en el formulario del cotizador.</small>
-            </div>
-
-            <!-- Costo Neto -->
-            <div class="form-group">
-                <label>Costo Neto (con IVA) *</label>
-                <div class="currency-input-wrapper">
-                    <span class="currency-symbol">$</span>
-                    <input type="number" [(ngModel)]="plateForm.costnet" name="costnet"
-                        required min="0" placeholder="Ej. 1432" />
+            <form (ngSubmit)="submitForm()" *ngIf="!formLoading" novalidate>
+                <!-- Nombre -->
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" [(ngModel)]="plateForm.name" name="name" required
+                        placeholder="Ej. Alta de placas CDMX" />
                 </div>
-                <small>Costo en Pesos MXN incluyendo IVA. Usa 0 para opciones "pendientes por cotizar".</small>
-            </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" (click)="closeFormModal()">Cancelar</button>
-                <button type="submit" class="btn-confirm" [disabled]="formLoading">
-                    {{ isEditMode ? 'Actualizar' : 'Crear' }}
-                </button>
-            </div>
-        </form>
+                <!-- Estado -->
+                <div class="form-group">
+                    <label>Estado *</label>
+                    <select [(ngModel)]="plateForm.estado" name="estado" required>
+                        <option value="" disabled>Selecciona un estado...</option>
+                        <option *ngFor="let estado of estadosMexico" [value]="estado">{{ estado }}</option>
+                    </select>
+                    <small>Elige el estado de la República Mexicana al que corresponde la placa.</small>
+                </div>
+
+                <!-- Disponibilidad -->
+                <div class="form-group">
+                    <label>Disponibilidad *</label>
+                    <select [(ngModel)]="plateForm.disponible" name="disponible" required>
+                        <option [ngValue]="true">Disponible</option>
+                        <option [ngValue]="false">No disponible</option>
+                    </select>
+                    <small>Si está "No disponible", la placa no aparecerá en el formulario del cotizador.</small>
+                </div>
+
+                <!-- Costo Neto -->
+                <div class="form-group">
+                    <label>Costo Neto (con IVA) *</label>
+                    <div class="currency-input-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" [(ngModel)]="plateForm.costnet" name="costnet"
+                            required min="0" placeholder="Ej. 1432" />
+                    </div>
+                    <small>Costo en Pesos MXN incluyendo IVA. Usa 0 para opciones "pendientes por cotizar".</small>
+                </div>
+
+                <div class="drawer-actions">
+                    <button type="button" class="btn-cancel" (click)="closeFormDrawer()">Cancelar</button>
+                    <button type="submit" class="btn-confirm" [disabled]="formLoading">
+                        {{ formLoading ? 'Guardando...' : isEditMode ? 'Actualizar' : 'Crear' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </aside>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-host">
+    <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
+        (click)="handleToast(t)">
+        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+        <span class="toast-msg">{{ t.message }}</span>
+        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+        <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()" aria-label="Cerrar">×</button>
     </div>
 </div>
