@@ -8,34 +8,61 @@
         <button class="btn-primary" (click)="openNewVehicle()"><span class="button-icon">+</span> Nuevo Vehículo</button>
     </div>
 
-    <div class="search-bar">
-        <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por marca o modelo"
-            class="search-input" />
+    <!-- TOOLBAR: BÚSQUEDA + FILTROS -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Buscar por marca o modelo"
+                class="search-input" />
+            <button *ngIf="searchTerm" type="button" class="search-clear" (click)="searchTerm=''; onSearch()"
+                aria-label="Limpiar búsqueda">×</button>
+        </div>
 
-        <select [(ngModel)]="brandFilter" (change)="onSearch()" name="brandFilter" class="filter-select"
-            aria-label="Filtrar por marca">
-            <option value="all">Todas las marcas</option>
-            <option *ngFor="let brand of brandOptions" [value]="brand">{{ brand }}</option>
-        </select>
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle><path d="M9.3 17H6V6h5v11z"></path><path d="M8 10h6"></path><path d="M4 6V4"></path><path d="M15 6V4"></path></svg>
+            <select [(ngModel)]="brandFilter" (change)="onSearch()" name="brandFilter" aria-label="Filtrar por marca">
+                <option value="all">Todas las marcas</option>
+                <option *ngFor="let brand of brandOptions" [value]="brand">{{ brand }}</option>
+            </select>
+        </label>
 
-        <select [(ngModel)]="yearFilter" (change)="onSearch()" name="yearFilter" class="filter-select"
-            aria-label="Filtrar por año">
-            <option value="all">Todos los años</option>
-            <option *ngFor="let year of yearOptions" [value]="year">{{ year }}</option>
-        </select>
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>
+            <select [(ngModel)]="yearFilter" (change)="onSearch()" name="yearFilter" aria-label="Filtrar por año">
+                <option value="all">Todos los años</option>
+                <option *ngFor="let year of yearOptions" [value]="year">{{ year }}</option>
+            </select>
+        </label>
 
-        <select [(ngModel)]="typeFilter" (change)="onSearch()" name="typeFilter" class="filter-select"
-            aria-label="Filtrar por tipo">
-            <option value="all">Todos los tipos</option>
-            <option value="hybrid">Híbridos / Eléctricos</option>
-            <option value="combustion">Combustión</option>
-        </select>
+        <label class="toolbar-select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <select [(ngModel)]="typeFilter" (change)="onSearch()" name="typeFilter" aria-label="Filtrar por tipo">
+                <option value="all">Todos los tipos</option>
+                <option value="hybrid">Híbridos / Eléctricos</option>
+                <option value="combustion">Combustión</option>
+            </select>
+        </label>
 
         <button *ngIf="hasActiveFilters" type="button" class="filter-reset" (click)="resetFilters()">Limpiar filtros</button>
         <span class="results-count" *ngIf="!loading">{{ filteredVehicles().length }} vehículo(s)</span>
     </div>
 
-    <div *ngIf="loadError" class="error catalog-error" role="alert">{{ loadError }}</div>
+    <!-- ESTADO DE CARGA: Skeleton -->
+    <div *ngIf="loading" class="skeleton-grid" aria-label="Cargando vehículos">
+        <div class="skeleton-card" *ngFor="let _ of [1,2,3,4,5,6]"></div>
+    </div>
+
+    <!-- ESTADO VACÍO -->
+    <div *ngIf="!loading && filteredVehicles().length === 0" class="empty-state catalog-state">
+        <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="17" r="2"></circle><circle cx="17" cy="17" r="2"></circle><path d="M9.3 17H6V6h5v11z"></path><path d="M8 10h6"></path><path d="M4 6V4"></path><path d="M15 6V4"></path></svg>
+        </div>
+        <h3 class="empty-state-title">No hay vehículos disponibles</h3>
+        <p class="empty-state-text">Añade un vehículo para que aparezca en las opciones de autocompletado del cotizador.</p>
+        <button class="btn-primary btn-add-vehicle" (click)="openNewVehicle()">
+            <span class="button-icon">+</span> Crear primer vehículo
+        </button>
+    </div>
 
     <div class="vehicle-catalog" *ngIf="!loading && filteredVehicles().length > 0">
         <aside class="brand-index" aria-label="Marcas del catálogo">
@@ -89,9 +116,6 @@
             </section>
         </div>
     </div>
-
-    <div *ngIf="loading" class="catalog-state loading">Cargando vehículos...</div>
-    <div *ngIf="!loading && filteredVehicles().length === 0" class="catalog-state empty-state">No se encontraron vehículos</div>
 </div>
 
 <!-- MODAL DE CONFIRMACIÓN -->
@@ -110,70 +134,94 @@
     </div>
 </div>
 
-<!-- MODAL DE FORMULARIO (CREAR/EDITAR) -->
-<div class="modal-overlay" *ngIf="showFormModal" (click)="closeFormModal()">
-    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
-        <h3>{{ isEditMode ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h3>
+<!-- DRAWER LATERAL: FORMULARIO CREAR/EDITAR VEHÍCULO -->
+<div class="drawer-overlay" *ngIf="showFormDrawer" (click)="closeFormDrawer()">
+    <aside class="drawer form-drawer" (click)="$event.stopPropagation()" role="dialog"
+        [attr.aria-label]="isEditMode ? 'Editar vehículo' : 'Nuevo vehículo'">
+        <div class="drawer-header">
+            <div>
+                <span class="page-kicker">{{ isEditMode ? 'Edición de vehículo' : 'Nuevo registro' }}</span>
+                <h3>{{ isEditMode ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h3>
+            </div>
+            <button class="drawer-close" (click)="closeFormDrawer()" aria-label="Cerrar formulario">×</button>
+        </div>
 
-        <div *ngIf="formSuccess" class="success">{{ formSuccess }}</div>
-        <div *ngIf="formError" class="error">{{ formError }}</div>
-
-        <div *ngIf="formLoading" class="loading">Cargando...</div>
-
-        <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
-            <!-- Marca -->
-            <div class="form-group">
-                <label>Marca *</label>
-                <input type="text" [(ngModel)]="vehicleForm.brand" name="brand" required
-                    placeholder="Ej. HINO, Audi, Toyota" />
+        <div class="drawer-body">
+            <div *ngIf="formError" class="form-banner error">{{ formError }}</div>
+            <div *ngIf="formLoading" class="drawer-loading">
+                <div class="catalog-spinner"></div>
+                <span>Guardando...</span>
             </div>
 
-            <!-- Modelo -->
-            <div class="form-group">
-                <label>Modelo *</label>
-                <input type="text" [(ngModel)]="vehicleForm.model" name="model" required
-                    placeholder="Ej. 616 LONG, Q3 Sportback" />
-            </div>
-
-            <!-- Año -->
-            <div class="form-group">
-                <label>Año Modelo *</label>
-                <input type="number" [(ngModel)]="vehicleForm.year" name="year" required
-                    min="2010" max="2030" placeholder="Ej. 2026" />
-                <small>Año del vehículo. Valores menores a 2024 se consideran seminuevos.</small>
-            </div>
-
-            <!-- Precio Neto -->
-            <div class="form-group">
-                <label>Precio Neto (con IVA) *</label>
-                <div class="currency-input-wrapper">
-                    <span class="currency-symbol">$</span>
-                    <input type="number" [(ngModel)]="vehicleForm.suggestedPriceNet" name="suggestedPriceNet"
-                        required min="1" placeholder="Ej. 407900" />
+            <form (ngSubmit)="submitForm()" *ngIf="!formLoading">
+                <!-- Marca -->
+                <div class="form-group">
+                    <label>Marca *</label>
+                    <input type="text" [(ngModel)]="vehicleForm.brand" name="brand" required
+                        placeholder="Ej. HINO, Audi, Toyota" />
                 </div>
-                <small>Precio de lista del vehículo. Este valor aparece preseleccionado en el cotizador.</small>
-            </div>
 
-            <!-- Híbrido / Eléctrico -->
-            <div class="form-group">
-                <label>¿Es híbrido o eléctrico?</label>
-                <div class="toggle-group">
-                    <button type="button" class="toggle-btn"
-                        [class.active]="!vehicleForm.isHybridOrElectric" (click)="vehicleForm.isHybridOrElectric = false">
-                        No (Renta básica $6,000 + IVA)</button>
-                    <button type="button" class="toggle-btn"
-                        [class.active]="vehicleForm.isHybridOrElectric" (click)="vehicleForm.isHybridOrElectric = true">
-                        Sí (Renta básica $8,550 + IVA)</button>
+                <!-- Modelo -->
+                <div class="form-group">
+                    <label>Modelo *</label>
+                    <input type="text" [(ngModel)]="vehicleForm.model" name="model" required
+                        placeholder="Ej. 616 LONG, Q3 Sportback" />
                 </div>
-                <small>Este atributo afecta el cálculo de la renta mensual básica.</small>
-            </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" (click)="closeFormModal()">Cancelar</button>
-                <button type="submit" class="btn-confirm" [disabled]="formLoading">
-                    {{ isEditMode ? 'Actualizar' : 'Crear' }}
-                </button>
-            </div>
-        </form>
+                <!-- Año -->
+                <div class="form-group">
+                    <label>Año Modelo *</label>
+                    <input type="number" [(ngModel)]="vehicleForm.year" name="year" required
+                        min="2010" max="2030" placeholder="Ej. 2026" />
+                    <small>Año del vehículo. Valores menores a 2024 se consideran seminuevos.</small>
+                </div>
+
+                <!-- Precio Neto -->
+                <div class="form-group">
+                    <label>Precio Neto (con IVA) *</label>
+                    <div class="currency-input-wrapper">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" [(ngModel)]="vehicleForm.suggestedPriceNet"
+                            name="suggestedPriceNet" required min="1" placeholder="Ej. 407900" />
+                    </div>
+                    <small>Precio de lista del vehículo. Este valor aparece preseleccionado en el cotizador.</small>
+                </div>
+
+                <!-- Híbrido / Eléctrico -->
+                <div class="form-group">
+                    <label>¿Es híbrido o eléctrico?</label>
+                    <div class="toggle-group">
+                        <button type="button" class="toggle-btn"
+                            [class.active]="!vehicleForm.isHybridOrElectric"
+                            (click)="vehicleForm.isHybridOrElectric = false">
+                            No (Renta básica $6,000 + IVA)</button>
+                        <button type="button" class="toggle-btn"
+                            [class.active]="vehicleForm.isHybridOrElectric"
+                            (click)="vehicleForm.isHybridOrElectric = true">
+                            Sí (Renta básica $8,550 + IVA)</button>
+                    </div>
+                    <small>Este atributo afecta el cálculo de la renta mensual básica.</small>
+                </div>
+
+                <div class="drawer-actions">
+                    <button type="button" class="btn-cancel" (click)="closeFormDrawer()">Cancelar</button>
+                    <button type="submit" class="btn-confirm" [disabled]="formLoading">
+                        {{ isEditMode ? 'Actualizar' : 'Crear' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </aside>
+</div>
+
+<!-- TOAST HOST -->
+<div class="toast-host">
+    <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
+        (click)="handleToast(t)">
+        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+        <span class="toast-msg">{{ t.message }}</span>
+        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+        <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()"
+            aria-label="Cerrar">×</button>
     </div>
 </div>

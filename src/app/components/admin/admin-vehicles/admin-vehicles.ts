@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SupabaseService, VehicleCatalogItem } from '../../../services/supabase.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-admin-vehicles',
@@ -13,6 +14,7 @@ import { SupabaseService, VehicleCatalogItem } from '../../../services/supabase.
 export class AdminVehiclesComponent implements OnInit {
   private supabase = inject(SupabaseService);
   private cdr = inject(ChangeDetectorRef);
+  readonly toastService = inject(ToastService);
 
   // Listado
   vehicles = signal<VehicleCatalogItem[]>([]);
@@ -26,12 +28,10 @@ export class AdminVehiclesComponent implements OnInit {
   // Modales
   showConfirmModal = false;
   selectedVehicleId: string | null = null;
-  showFormModal = false;
+  showFormDrawer = false;
   isEditMode = false;
   formLoading = false;
   formError = '';
-  formSuccess = '';
-  loadError = '';
 
   // Formulario
   vehicleForm = {
@@ -47,14 +47,24 @@ export class AdminVehiclesComponent implements OnInit {
     await this.loadVehicles();
   }
 
+  @HostListener('document:keydown.escape')
+  onEscapeKey() {
+    if (this.showConfirmModal) this.cancelModal();
+    if (this.showFormDrawer) this.closeFormDrawer();
+  }
+
+  handleToast(t: any) {
+    if (t.action) t.action();
+    this.toastService.dismiss(t.id);
+  }
+
   // ===================== LISTADO =====================
 
   async loadVehicles() {
     this.loading = true;
-    this.loadError = '';
     const { data, error } = await this.supabase.getAllVehicles();
     if (error) {
-      this.loadError = 'No fue posible cargar los vehículos. ' + error.message;
+      this.toastService.error('No fue posible cargar los vehículos: ' + error.message);
     } else {
       this.vehicles.set(data || []);
       this.applyFilters();
@@ -152,15 +162,21 @@ export class AdminVehiclesComponent implements OnInit {
 
   async confirmActionHandler() {
     if (!this.selectedVehicleId) return;
-    this.loading = true;
+    this.formLoading = true;
+    let succeeded = false;
     const { error } = await this.supabase.deleteVehicle(this.selectedVehicleId);
     if (error) {
-      alert('Error al eliminar: ' + error.message);
+      this.toastService.error('Error al eliminar: ' + error.message);
+    } else {
+      this.toastService.success('Vehículo eliminado correctamente');
+      succeeded = true;
     }
     this.showConfirmModal = false;
     this.selectedVehicleId = null;
-    await this.loadVehicles();
-    this.loading = false;
+    this.formLoading = false;
+    if (succeeded) {
+      await this.loadVehicles();
+    }
     this.cdr.detectChanges();
   }
 
@@ -169,7 +185,7 @@ export class AdminVehiclesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ===================== MODAL DE FORMULARIO =====================
+  // ===================== DRAWER DE FORMULARIO =====================
 
   openNewVehicle() {
     this.isEditMode = false;
@@ -182,8 +198,7 @@ export class AdminVehiclesComponent implements OnInit {
       isHybridOrElectric: false,
     };
     this.formError = '';
-    this.formSuccess = '';
-    this.showFormModal = true;
+    this.showFormDrawer = true;
     this.cdr.detectChanges();
   }
 
@@ -198,13 +213,12 @@ export class AdminVehiclesComponent implements OnInit {
       isHybridOrElectric: vehicle.isHybridOrElectric,
     };
     this.formError = '';
-    this.formSuccess = '';
-    this.showFormModal = true;
+    this.showFormDrawer = true;
     this.cdr.detectChanges();
   }
 
-  closeFormModal() {
-    this.showFormModal = false;
+  closeFormDrawer() {
+    this.showFormDrawer = false;
     this.cdr.detectChanges();
   }
 
@@ -212,7 +226,6 @@ export class AdminVehiclesComponent implements OnInit {
     if (this.formLoading) return;
     this.formLoading = true;
     this.formError = '';
-    this.formSuccess = '';
     let operationSucceeded = false;
 
     if (!this.vehicleForm.brand || !this.vehicleForm.model) {
@@ -243,7 +256,6 @@ export class AdminVehiclesComponent implements OnInit {
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
         } else {
-          this.formSuccess = '✅ Vehículo actualizado correctamente';
           operationSucceeded = true;
         }
       } else {
@@ -257,7 +269,6 @@ export class AdminVehiclesComponent implements OnInit {
         if (error) {
           this.formError = 'Error al crear: ' + error.message;
         } else {
-          this.formSuccess = '✅ Vehículo creado correctamente';
           operationSucceeded = true;
         }
       }
@@ -267,10 +278,9 @@ export class AdminVehiclesComponent implements OnInit {
       this.formLoading = false;
       this.cdr.detectChanges();
       if (operationSucceeded) {
-        setTimeout(() => {
-          this.showFormModal = false;
-          this.loadVehicles();
-        }, 1500);
+        this.closeFormDrawer();
+        this.toastService.success(this.isEditMode ? 'Vehículo actualizado correctamente' : 'Vehículo creado correctamente');
+        await this.loadVehicles();
       }
     }
   }
