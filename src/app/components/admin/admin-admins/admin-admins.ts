@@ -295,10 +295,10 @@ export class AdminAdminsComponent implements OnInit {
     const numberField = this.adminForm.seller_number.trim();
 
     if (!numberField) {
-      this.fieldErrors['seller_number'] = 'El número de identificación es obligatorio.';
+      this.fieldErrors['seller_number'] = 'El N° de contacto es obligatorio.';
       valid = false;
     } else if (!/^\d+$/.test(numberField) || numberField.length < 3) {
-      this.fieldErrors['seller_number'] = 'Ingresa un número de identificación válido.';
+      this.fieldErrors['seller_number'] = 'Ingresa un N° de contacto válido.';
       valid = false;
     }
 

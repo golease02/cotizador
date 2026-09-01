@@ -67,7 +67,7 @@
     <div class="table-wrapper" *ngIf="!loading && filteredAdmins().length > 0">
         <table class="users-table">
             <thead>
-                <tr><th>Administrador</th><th>Identificación</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
+                <tr><th>Administrador</th><th>N° de contacto</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
             </thead>
             <tbody>
                 <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="showDetailDrawer && detailAdmin?.id === admin.id"
@@ -171,7 +171,7 @@
 
             <form (ngSubmit)="submitForm()" *ngIf="!formLoading" novalidate>
                 <div class="form-group" [class.has-error]="formValidated && fieldErrors['seller_number']">
-                    <label>Número de identificación *</label>
+                    <label>N° de contacto *</label>
                     <input type="text" [(ngModel)]="adminForm.seller_number" name="seller_number"
                         [disabled]="isEditMode" placeholder="Ej. 001" inputmode="numeric" />
                     <small class="field-error" *ngIf="formValidated && fieldErrors['seller_number']">{{ fieldErrors['seller_number'] }}</small>
@@ -248,7 +248,7 @@
                 <h4>Información de acceso</h4>
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <small>Número de identificación</small>
+                        <small>N° de contacto</small>
                         <strong>{{ detailAdmin.seller_number || '—' }}</strong>
                     </div>
                     <div class="detail-item">
