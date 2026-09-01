@@ -20,6 +20,7 @@
   background: linear-gradient(135deg, rgba(32, 176, 56, 0.14), rgba(16, 37, 31, 0.07));
   clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%);
   pointer-events: none;
+  z-index: 0;
 }
 
 /* ===== CABECERA ===== */
@@ -1419,4 +1420,9 @@ button.stat-card:hover {
 @media (max-width: 520px) {
   .detail-grid { grid-template-columns: 1fr; }
   .detail-hero { flex-direction: column; align-items: flex-start; }
+}
+
+.admins-container > *:not(.toast-host) {
+  position: relative;
+  z-index: 1;
 }

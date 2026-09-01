@@ -200,6 +200,9 @@ export class AdminAdminsComponent implements OnInit {
     this.applyFilters();
   }
 
+
+
+
   // ===================== ELIMINAR (CON CONFIRMACIÓN) =====================
 
   deleteAdmin(adminId: string) {
