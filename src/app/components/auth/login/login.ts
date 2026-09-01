@@ -18,12 +18,75 @@ export class LoginComponent {
   password = '';
   errorMessage = '';
 
-  async onLogin() {
-    if (!this.phoneNumber || !this.password) {
-      this.errorMessage = 'Todos los campos son obligatorios';
-      return;
-    }
+  // Errores de validación por campo
+  phoneError = '';
+  passwordError = '';
 
+  // Estado de UI
+  isLoading = false;
+  showPassword = false;
+
+  private readonly phoneRegex = /^\d{10}$/;
+
+  /** Filtra en vivo: solo dígitos, máximo 10 caracteres. */
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.replace(/\D/g, '').slice(0, 10);
+    this.phoneNumber = input.value;
+    if (this.phoneError) this.validatePhone();
+  }
+
+  onPhoneBlur(): void {
+    this.validatePhone();
+  }
+
+  validatePhone(): boolean {
+    if (!this.phoneNumber) {
+      this.phoneError = 'El número de celular es obligatorio.';
+      return false;
+    }
+    if (!this.phoneRegex.test(this.phoneNumber)) {
+      this.phoneError = 'Ingresa un número válido de 10 dígitos.';
+      return false;
+    }
+    this.phoneError = '';
+    return true;
+  }
+
+  onPasswordInput(): void {
+    if (this.passwordError) this.validatePassword();
+  }
+
+  onPasswordBlur(): void {
+    this.validatePassword();
+  }
+
+  validatePassword(): boolean {
+    if (!this.password) {
+      this.passwordError = 'La contraseña es obligatoria.';
+      return false;
+    }
+    if (this.password.length < 6) {
+      this.passwordError = 'La contraseña debe tener al menos 6 caracteres.';
+      return false;
+    }
+    this.passwordError = '';
+    return true;
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  async onLogin(): Promise<void> {
+    this.errorMessage = '';
+
+    // Validar ambos campos antes de contactar al backend
+    const phoneOk = this.validatePhone();
+    const passwordOk = this.validatePassword();
+    if (!phoneOk || !passwordOk) return;
+
+    this.isLoading = true;
     try {
       const { data: profile, error: profileError } = await this.supabase.getProfileBySellerNumber(this.phoneNumber);
       if (profileError || !profile) {
@@ -52,9 +115,11 @@ export class LoginComponent {
       } else {
         this.router.navigate(['/']);
       }
-    } catch (error) {
+    } catch {
       // Error silencioso: no se muestra en consola
       this.errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
+    } finally {
+      this.isLoading = false;
     }
   }
 }

@@ -205,4 +205,35 @@
   .btn-search {
     width: 100%;
   }
+
+  .password-checklist {
+    grid-template-columns: 1fr;
+  }
 }
+
+/* ─── Entrada escalonada de secciones y botón ─── */
+.auth-section { animation: fieldIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.auth-section:nth-of-type(1) { animation-delay: 0.05s; }
+.auth-section:nth-of-type(2) { animation-delay: 0.13s; }
+.auth-section:nth-of-type(3) { animation-delay: 0.21s; }
+.auth-section .form-group { animation: fieldIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.24s; }
+.register-card form > .btn-primary { animation: fieldIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 0.3s; }
+
+/* ─── Medidor de fortaleza de contraseña ─── */
+.strength-meter { display: flex; align-items: center; gap: 0.65rem; margin-top: 0.6rem; animation: fieldIn 0.3s ease both; }
+.strength-bars { display: flex; gap: 0.3rem; flex: 1; }
+.strength-bar { height: 5px; flex: 1; border-radius: 999px; background: #e2e8f0; transition: background 0.3s ease; }
+.strength-meter.level-1 .strength-bar.active { background: #ef4444; }
+.strength-meter.level-2 .strength-bar.active { background: #f59e0b; }
+.strength-meter.level-3 .strength-bar.active { background: #22c55e; }
+.strength-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; min-width: 4.2rem; text-align: right; }
+.strength-meter.level-1 .strength-label { color: #dc2626; }
+.strength-meter.level-2 .strength-label { color: #d97706; }
+.strength-meter.level-3 .strength-label { color: #16a34a; }
+
+/* ─── Checklist de requisitos de la contraseña ─── */
+.password-checklist { list-style: none; margin: 0.55rem 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.8rem; animation: fieldIn 0.3s ease both; }
+.password-checklist li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: #94a3b8; transition: color 0.25s ease; }
+.password-checklist li::before { content: '○'; font-size: 0.85rem; line-height: 1; }
+.password-checklist li.met { color: #16a34a; }
+.password-checklist li.met::before { content: '✓'; font-weight: 700; }
