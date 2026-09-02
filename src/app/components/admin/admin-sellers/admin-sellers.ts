@@ -406,7 +406,6 @@ export class AdminSellersComponent implements OnInit {
       this.formError = 'Escribe una dirección para buscar';
       return;
     }
-    // Asegurar que el mapa esté inicializado antes de usarlo
     if (!this.map) this.initMap();
     if (!this.map || !this.marker) {
       this.formError = 'El mapa aún se está cargando. Intenta de nuevo.';

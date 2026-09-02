@@ -8,6 +8,8 @@ import {
   InitialCostsBreakdown,
   MonthlyCostsBreakdown,
   ResidualValueBreakdown,
+  getMinimumExtraordinaryRentPct,
+  isExtraordinaryRentAndResidualValid,
 } from '../models/leasing.model';
 
 @Injectable({
@@ -95,8 +97,19 @@ export class FinancialCalculatorService {
   ): LeasingOptionResult {
     const priceNoIva = input.priceNet / 1.16;
 
-    // 1. Initial Costs Breakdown
-    const extraordinaryRentPct = Math.max(0.10, input.extraordinaryRentPct || 0.10);
+    // 1. Validar renta extraordinaria contra reglas de negocio
+    const minimumRentPct = getMinimumExtraordinaryRentPct(input.priceNet);
+    const userRentPct = input.extraordinaryRentPct || 0.10;
+
+    // Aplicar validación: nunca permitir menos que el mínimo requerido
+    let extraordinaryRentPct = Math.max(minimumRentPct, userRentPct);
+
+    // Validar que renta + residual no superen 75%
+    if (!isExtraordinaryRentAndResidualValid(extraordinaryRentPct, residualPct)) {
+      // Si excede, reducir renta al máximo permitido para esta opción
+      extraordinaryRentPct = 0.75 - residualPct;
+    }
+
     const extraordinaryRentNoIva = priceNoIva * extraordinaryRentPct;
 
     const adminFeeInitialNet = input.customAdminFeeInitial ?? (2565 * 1.3); // $3,334.50

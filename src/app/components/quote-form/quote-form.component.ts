@@ -1,7 +1,11 @@
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { VehicleQuoteInput, StatePlateOption } from '../../models/leasing.model';
+import {
+  VehicleQuoteInput,
+  StatePlateOption,
+  getMinimumExtraordinaryRentPct,
+} from '../../models/leasing.model';
 import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.service';
 
 @Component({
@@ -72,6 +76,36 @@ export class QuoteFormComponent implements OnInit {
     return y ? y < 2024 : false;
   }
 
+  get vehiclePrice(): number {
+    return Number(this.quoteForm?.get('priceNet')?.value) || 0;
+  }
+
+  get minimumExtraordinaryRentPct(): number {
+    return getMinimumExtraordinaryRentPct(this.vehiclePrice);
+  }
+
+  get maximumExtraordinaryRentPct(): number {
+    // Opción 1 tiene el residual más alto (35%), por lo que define el máximo global.
+    return 0.75 - 0.35;
+  }
+
+  get extraordinaryRentPct(): number {
+    return Number(this.quoteForm?.get('extraordinaryRentPct')?.value) || 0;
+  }
+
+  get hasExtraordinaryRentAdjustment(): boolean {
+    return this.extraordinaryRentPct < this.minimumExtraordinaryRentPct
+      || this.extraordinaryRentPct > this.maximumExtraordinaryRentPct;
+  }
+
+  get extraordinaryRentAdjustmentMessage(): string {
+    if (this.extraordinaryRentPct < this.minimumExtraordinaryRentPct) {
+      return `La renta se ajustará a ${this.minimumExtraordinaryRentPct * 100}% (mínimo para este precio).`;
+    }
+
+    return `La renta se ajustará a ${this.maximumExtraordinaryRentPct * 100}% (máximo: renta + valor residual no puede superar 75%).`;
+  }
+
   public applyPresetVehicle(v: VehicleCatalogItem): void {
     const price = Number(v.suggestedPriceNet) || 0;
     this.quoteForm.patchValue({
@@ -110,7 +144,11 @@ export class QuoteFormComponent implements OnInit {
   }
 
   public setExtraordinaryRent(pct: number): void {
-    this.quoteForm.patchValue({ extraordinaryRentPct: pct });
+    const boundedPct = Math.min(
+      this.maximumExtraordinaryRentPct,
+      Math.max(this.minimumExtraordinaryRentPct, pct)
+    );
+    this.quoteForm.patchValue({ extraordinaryRentPct: boundedPct });
   }
 
   public setDeposit(depositPct: number): void {

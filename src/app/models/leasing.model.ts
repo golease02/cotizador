@@ -70,6 +70,51 @@ export const TERM_RATES_MATRIX: Record<number, TermRatesOption> = {
   48: { termMonths: 48, option1Rate: 0.405, option2Rate: 0.420, option3Rate: 0.435 },
 };
 
+/**
+ * Calcula el porcentaje mínimo de renta extraordinaria basado en el precio del vehículo
+ *
+ * BASES:
+ * - MINIMO 10%
+ * - 10% PARA VEHÍCULOS DE MENOS DE 650 MIL
+ * - 15% SI EL PRECIO ESTA ENTRE 650 MIL Y $1.5 MILLONES
+ * - 20% ARRIBA DE PRECIOS DE $1.5 MILLONES
+ */
+export function getMinimumExtraordinaryRentPct(priceNet: number): number {
+  if (priceNet < 650000) {
+    return 0.10; // 10%
+  } else if (priceNet < 1500000) {
+    return 0.15; // 15%
+  } else {
+    return 0.20; // 20%
+  }
+}
+
+/**
+ * Residual values para las 3 opciones
+ */
+export const RESIDUAL_PERCENTAGES = {
+  option1: 0.35, // 35%
+  option2: 0.20, // 20%
+  option3: 0.05, // 5%
+};
+
+/**
+ * Valida que la suma de renta extraordinaria + valor residual no exceda 75%
+ *
+ * LA SUMA DE LA RENTA EXTRA Y EL VALOR RESIDUAL NO DEBE SER MAYOR AL 75%
+ *
+ * @param extraordinaryRentPct Porcentaje de renta extraordinaria (ej: 0.10)
+ * @param residualPct Porcentaje de valor residual (ej: 0.35)
+ * @returns boolean true si es válido, false si excede 75%
+ */
+export function isExtraordinaryRentAndResidualValid(
+  extraordinaryRentPct: number,
+  residualPct: number
+): boolean {
+  const sum = extraordinaryRentPct + residualPct;
+  return sum <= 0.75; // No debe ser mayor a 75%
+}
+
 export interface VehicleQuoteInput {
   clientName?: string;
   brand: string;
