@@ -712,7 +712,7 @@ export class SupabaseService {
     // Always issue the same client response to avoid revealing whether a number exists.
     if (!error && accepted) {
       await this.supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: `${window.location.origin}/reset-password`
+  redirectTo: `${window.location.origin}/#/reset-password`  
       });
     }
 
