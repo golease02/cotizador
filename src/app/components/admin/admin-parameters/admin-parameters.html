@@ -1,22 +1,341 @@
-<section class="parameters-container">
-  <header class="page-header">
-    <div><span class="page-kicker">Configuración operativa</span><h2>Panel de administración para parámetros del cotizador</h2><p>Modifica cifras del cálculo sin desplegar código. Los cambios se aplican al cargar cada cotización.</p></div>
-    <button class="btn-primary" type="button" (click)="save()" [disabled]="loading || saving">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
-  </header>
-  <div class="state" *ngIf="loading">Cargando configuración...</div>
-  <form *ngIf="!loading" (ngSubmit)="save()" novalidate>
-    <div class="group"><h3>Impuestos y cargos</h3><div class="fields">
-      <label>IVA (%)<input type="number" [ngModel]="percent(config.ivaPct)" (ngModelChange)="setPercent('ivaPct', $event)" name="iva"></label>
-      <label>Asesoría (%)<input type="number" [ngModel]="percent(config.advisoryFeePct)" (ngModelChange)="setPercent('advisoryFeePct', $event)" name="advisory"></label>
-      <label>Seguro estimado (%)<input type="number" [ngModel]="percent(config.insurancePct)" (ngModelChange)="setPercent('insurancePct', $event)" name="insurance"></label>
-      <label>Cuota inicial neta<input type="number" [(ngModel)]="config.adminFeeInitialNet" name="adminFee"></label>
-    </div></div>
-    <div class="group"><h3>Renta extraordinaria y residuales</h3><div class="fields">
-      <label>Umbral 1<input type="number" [(ngModel)]="config.minimumRentThreshold1" name="threshold1"></label><label>Umbral 2<input type="number" [(ngModel)]="config.minimumRentThreshold2" name="threshold2"></label>
-      <label>Mínimo menor (%)<input type="number" [ngModel]="percent(config.minimumRentPct1)" (ngModelChange)="setPercent('minimumRentPct1', $event)" name="min1"></label><label>Mínimo medio (%)<input type="number" [ngModel]="percent(config.minimumRentPct2)" (ngModelChange)="setPercent('minimumRentPct2', $event)" name="min2"></label><label>Mínimo mayor (%)<input type="number" [ngModel]="percent(config.minimumRentPct3)" (ngModelChange)="setPercent('minimumRentPct3', $event)" name="min3"></label><label>Máximo renta + residual (%)<input type="number" [ngModel]="percent(config.maxRentAndResidualPct)" (ngModelChange)="setPercent('maxRentAndResidualPct', $event)" name="maxSum"></label>
-      <label>Residual opción 1 (%)<input type="number" [ngModel]="percent(config.residualOption1Pct)" (ngModelChange)="setPercent('residualOption1Pct', $event)" name="res1"></label><label>Residual opción 2 (%)<input type="number" [ngModel]="percent(config.residualOption2Pct)" (ngModelChange)="setPercent('residualOption2Pct', $event)" name="res2"></label><label>Residual opción 3 (%)<input type="number" [ngModel]="percent(config.residualOption3Pct)" (ngModelChange)="setPercent('residualOption3Pct', $event)" name="res3"></label>
-    </div></div>
-    <div class="group"><h3>Renta mensual y tasas anuales (%)</h3><div class="fields"><label>Renta estándar<input type="number" [(ngModel)]="config.basicRentStandard" name="standard"></label><label>Renta híbrida / eléctrica<input type="number" [(ngModel)]="config.basicRentHybrid" name="hybrid"></label><label>Administración de flotilla (%)<input type="number" [ngModel]="percent(config.fleetManagementPct)" (ngModelChange)="setPercent('fleetManagementPct', $event)" name="fleet"></label><label>Administración (%)<input type="number" [ngModel]="percent(config.adminManagementPct)" (ngModelChange)="setPercent('adminManagementPct', $event)" name="management"></label></div><div class="rates"><div *ngFor="let term of terms" class="rate-row"><strong>{{ term }} meses</strong><label>Opción 1<input type="number" step="0.001" [(ngModel)]="config.termRates[term].option1Rate" [name]="'o1-' + term"></label><label>Opción 2<input type="number" step="0.001" [(ngModel)]="config.termRates[term].option2Rate" [name]="'o2-' + term"></label><label>Opción 3<input type="number" step="0.001" [(ngModel)]="config.termRates[term].option3Rate" [name]="'o3-' + term"></label></div></div></div>
-    <p class="error" *ngIf="error">{{ error }}</p><button class="btn-secondary" type="button" (click)="reset()">Restaurar valores iniciales</button>
-  </form>
-</section>
+<div class="parameters-container">
+    <!-- CABECERA -->
+    <div class="page-header">
+        <div class="page-heading">
+            <span class="page-kicker">Configuración operativa</span>
+            <h2>Parámetros del Cotizador</h2>
+            <p>Modifica las cifras del cálculo. Los cambios se aplican al cargar cada nueva cotización.</p>
+        </div>
+        <button class="btn-primary" type="button" (click)="save()" [disabled]="loading || saving || !isDirty" [title]="isDirty ? '' : 'No hay cambios por guardar'">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path></svg>
+            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+    </div>
+
+    <!-- RESUMEN EN VIVO (MÉTRICAS) -->
+    <div class="stats-grid" *ngIf="!loading">
+        <div class="stat-card stat-plain">
+            <span class="stat-icon tone-green">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+            </span>
+            <span class="stat-body"><strong>{{ percent(config.ivaPct) | number:'1.0-2' }}%</strong><small>IVA aplicado</small></span>
+        </div>
+        <div class="stat-card stat-plain">
+            <span class="stat-icon tone-blue">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1v22"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ formatMoney(config.adminFeeInitialNet) }}</strong><small>Cuota inicial neta</small></span>
+        </div>
+        <div class="stat-card stat-plain">
+            <span class="stat-icon tone-slate">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ formatMoney(config.basicRentStandard) }}</strong><small>Renta estándar mensual</small></span>
+        </div>
+        <div class="stat-card stat-plain">
+            <span class="stat-icon tone-amber">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            </span>
+            <span class="stat-body"><strong>{{ percent(config.residualOption1Pct) | number:'1.0-1' }}%</strong><small>Residual opción 1</small></span>
+        </div>
+    </div>
+
+    <!-- MENÚ DE SECCIONES (TOOLBAR) -->
+    <div class="toolbar" *ngIf="!loading">
+        <div class="chip-group" role="group" aria-label="Secciones de configuración">
+            <button type="button" class="chip" [class.is-active]="activeSection === 'todos'" (click)="setSection('todos')">Todos</button>
+            <button type="button" class="chip" [class.is-active]="activeSection === 'impuestos'" (click)="setSection('impuestos')">Impuestos y cargos</button>
+            <button type="button" class="chip" [class.is-active]="activeSection === 'renta'" (click)="setSection('renta')">Renta extraordinaria</button>
+            <button type="button" class="chip" [class.is-active]="activeSection === 'mensual'" (click)="setSection('mensual')">Renta mensual</button>
+            <button type="button" class="chip" [class.is-active]="activeSection === 'tasas'" (click)="setSection('tasas')">Tasas por plazo</button>
+        </div>
+        <span class="results-count">
+            <span class="dirty-pill" *ngIf="isDirty">Cambios sin guardar</span>
+            <span class="clean-note" *ngIf="!isDirty">✓ Todo guardado</span>
+        </span>
+    </div>
+
+    <!-- CARGANDO -->
+    <div class="state" *ngIf="loading"><span class="spinner"></span> Cargando configuración...</div>
+
+    <form *ngIf="!loading" (ngSubmit)="save()" novalidate>
+        <!-- SECCIÓN: IMPUESTOS Y CARGOS -->
+        <section class="config-card" *ngIf="isVisible('impuestos')">
+            <div class="config-card-header">
+                <span class="config-icon tone-green">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>
+                </span>
+                <div>
+                    <h3>Impuestos y cargos</h3>
+                    <p>Porcentajes e importes que se aplican sobre el precio neto del vehículo.</p>
+                </div>
+            </div>
+            <div class="fields">
+                <label class="field">
+                    <span class="field-label">IVA</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.1" [ngModel]="percent(config.ivaPct)" (ngModelChange)="setPercent('ivaPct', $event)" name="iva">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Impuesto agregado al total de cada cotización.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Asesoría</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.1" [ngModel]="percent(config.advisoryFeePct)" (ngModelChange)="setPercent('advisoryFeePct', $event)" name="advisory">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Comisión de asesoría sobre el precio neto.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Seguro estimado</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.1" [ngModel]="percent(config.insurancePct)" (ngModelChange)="setPercent('insurancePct', $event)" name="insurance">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Se estima como porcentaje del precio neto.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Cuota inicial neta</span>
+                    <span class="input-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" min="0" step="0.01" [(ngModel)]="config.adminFeeInitialNet" name="adminFee">
+                    </span>
+                    <small class="field-help">Cargo administrativo del pago inicial (sin IVA).</small>
+                </label>
+            </div>
+        </section>
+        <!-- SECCIÓN: RENTA EXTRAORDINARIA Y RESIDUALES -->
+        <section class="config-card" *ngIf="isVisible('renta')">
+            <div class="config-card-header">
+                <span class="config-icon tone-amber">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 6l-9.5 9.5-5-5L1 18"></path><path d="M17 6h6v6"></path></svg>
+                </span>
+                <div>
+                    <h3>Renta extraordinaria y residuales</h3>
+                    <p>Mínimos exigidos según el precio del vehículo y valores residuales por opción.</p>
+                </div>
+            </div>
+            <div class="fields">
+                <label class="field">
+                    <span class="field-label">Umbral 1</span>
+                    <span class="input-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" min="0" step="1000" [(ngModel)]="config.minimumRentThreshold1" name="threshold1">
+                    </span>
+                    <small class="field-help">Precios menores a {{ formatMoney(config.minimumRentThreshold1) }} usan el mínimo menor.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Umbral 2</span>
+                    <span class="input-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" min="0" step="1000" [(ngModel)]="config.minimumRentThreshold2" name="threshold2">
+                    </span>
+                    <small class="field-help">Precios mayores a {{ formatMoney(config.minimumRentThreshold2) }} usan el mínimo mayor.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Mínimo menor</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.minimumRentPct1)" (ngModelChange)="setPercent('minimumRentPct1', $event)" name="min1">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Renta extraordinaria mínima por debajo del umbral 1.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Mínimo medio</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.minimumRentPct2)" (ngModelChange)="setPercent('minimumRentPct2', $event)" name="min2">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Renta extraordinaria mínima entre el umbral 1 y el umbral 2.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Mínimo mayor</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.minimumRentPct3)" (ngModelChange)="setPercent('minimumRentPct3', $event)" name="min3">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Renta extraordinaria mínima por encima del umbral 2.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Máximo renta + residual</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.maxRentAndResidualPct)" (ngModelChange)="setPercent('maxRentAndResidualPct', $event)" name="maxSum">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Límite para la suma de renta extraordinaria y residual.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Residual opción 1</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.residualOption1Pct)" (ngModelChange)="setPercent('residualOption1Pct', $event)" name="res1">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Valor residual propuesto en la opción 1.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Residual opción 2</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.residualOption2Pct)" (ngModelChange)="setPercent('residualOption2Pct', $event)" name="res2">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Valor residual propuesto en la opción 2.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Residual opción 3</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="0.5" [ngModel]="percent(config.residualOption3Pct)" (ngModelChange)="setPercent('residualOption3Pct', $event)" name="res3">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Valor residual propuesto en la opción 3.</small>
+                </label>
+
+                <!-- BARRAS VISUALES DE RESIDUALES -->
+                <div class="residual-visual">
+                    <div class="residual-row" *ngFor="let item of residualRows">
+                        <span class="residual-name">Opción {{ item.n }}</span>
+                        <div class="residual-track">
+                            <span class="residual-fill" [style.width.%]="percent(item.value)"></span>
+                            <span class="residual-max" [style.left.%]="percent(config.maxRentAndResidualPct)"></span>
+                        </div>
+                        <strong class="residual-value">{{ percent(item.value) | number:'1.0-1' }}%</strong>
+                    </div>
+                    <div class="residual-caption">
+                        <span class="max-mark"></span>
+                        <span>Máximo permitido para renta + residual: {{ percent(config.maxRentAndResidualPct) | number:'1.0-1' }}%</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- SECCIÓN: RENTA MENSUAL -->
+        <section class="config-card" *ngIf="isVisible('mensual')">
+            <div class="config-card-header">
+                <span class="config-icon tone-blue">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </span>
+                <div>
+                    <h3>Renta mensual y administración</h3>
+                    <p>Rentas base mensuales y distribución del cargo de administración.</p>
+                </div>
+            </div>
+            <div class="fields">
+                <label class="field">
+                    <span class="field-label">Renta estándar</span>
+                    <span class="input-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" min="0" step="50" [(ngModel)]="config.basicRentStandard" name="standard">
+                    </span>
+                    <small class="field-help">Renta base mensual para vehículos de combustión.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Renta híbrida / eléctrica</span>
+                    <span class="input-prefix">
+                        <span class="prefix">$</span>
+                        <input type="number" min="0" step="50" [(ngModel)]="config.basicRentHybrid" name="hybrid">
+                    </span>
+                    <small class="field-help">Renta base mensual para vehículos híbridos o eléctricos.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Administración de flotilla</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="1" [ngModel]="percent(config.fleetManagementPct)" (ngModelChange)="setPercent('fleetManagementPct', $event)" name="fleet">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Parte del cargo mensual asignada a flotilla.</small>
+                </label>
+                <label class="field">
+                    <span class="field-label">Administración</span>
+                    <span class="input-suffix">
+                        <input type="number" min="0" max="100" step="1" [ngModel]="percent(config.adminManagementPct)" (ngModelChange)="setPercent('adminManagementPct', $event)" name="management">
+                        <span class="suffix">%</span>
+                    </span>
+                    <small class="field-help">Parte del cargo mensual asignada a administración.</small>
+                </label>
+
+                <!-- DISTRIBUCIÓN VISUAL -->
+                <div class="distribution">
+                    <div class="distribution-bar">
+                        <span class="seg seg-fleet" [style.width.%]="percent(config.fleetManagementPct)"></span>
+                        <span class="seg seg-admin" [style.width.%]="percent(config.adminManagementPct)"></span>
+                    </div>
+                    <div class="distribution-legend">
+                        <span><i class="dot dot-green"></i>Flotilla: {{ percent(config.fleetManagementPct) | number:'1.0-2' }}%</span>
+                        <span><i class="dot dot-dark"></i>Administración: {{ percent(config.adminManagementPct) | number:'1.0-2' }}%</span>
+                    </div>
+                    <small class="distribution-sum" [class.is-invalid]="distributionSum !== 100">Suma total: {{ distributionSum | number:'1.0-2' }}% — debe ser exactamente 100%.</small>
+                </div>
+            </div>
+        </section>
+        <!-- SECCIÓN: TASAS POR PLAZO -->
+        <section class="config-card" *ngIf="isVisible('tasas')">
+            <div class="config-card-header">
+                <span class="config-icon tone-slate">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="19" y1="5" x2="5" y2="19"></line><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>
+                </span>
+                <div>
+                    <h3>Tasas anuales por plazo</h3>
+                    <p>Tasa anual aplicada a cada plazo y opción, en formato decimal (0.405 = 40.5%).</p>
+                </div>
+            </div>
+            <div class="rates">
+                <div class="rate-row" *ngFor="let term of terms">
+                    <span class="term-badge" [class]="'tone-' + termTone(term)">{{ term }} meses</span>
+                    <label class="field">
+                        <span class="field-label">Opción 1</span>
+                        <input type="number" min="0" max="2" step="0.001" [(ngModel)]="config.termRates[term].option1Rate" [name]="'o1-' + term">
+                        <small class="rate-eq">= {{ percent(config.termRates[term].option1Rate) | number:'1.0-2' }}% anual</small>
+                    </label>
+                    <label class="field">
+                        <span class="field-label">Opción 2</span>
+                        <input type="number" min="0" max="2" step="0.001" [(ngModel)]="config.termRates[term].option2Rate" [name]="'o2-' + term">
+                        <small class="rate-eq">= {{ percent(config.termRates[term].option2Rate) | number:'1.0-2' }}% anual</small>
+                    </label>
+                    <label class="field">
+                        <span class="field-label">Opción 3</span>
+                        <input type="number" min="0" max="2" step="0.001" [(ngModel)]="config.termRates[term].option3Rate" [name]="'o3-' + term">
+                        <small class="rate-eq">= {{ percent(config.termRates[term].option3Rate) | number:'1.0-2' }}% anual</small>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <p class="error" *ngIf="error">{{ error }}</p>
+
+        <!-- ACCIONES DEL FORMULARIO -->
+        <div class="form-actions">
+            <div class="actions-left">
+                <span class="actions-title">¿Listo para aplicar los cambios?</span>
+                <span class="actions-hint">Al guardar, las nuevas cotizaciones usarán estos valores de inmediato.</span>
+            </div>
+            <div class="actions-right">
+                <button class="btn-cancel" type="button" (click)="askReset()">Restaurar valores iniciales</button>
+                <button class="btn-confirm" type="submit" [disabled]="saving || !isDirty" [title]="isDirty ? '' : 'No hay cambios por guardar'">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN (RESTAURAR VALORES) -->
+<div class="modal-overlay" *ngIf="showResetModal" (click)="closeResetModal()">
+    <div class="modal-content confirm-modal" (click)="$event.stopPropagation()">
+        <div class="confirm-icon warning">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <h3>Restaurar valores iniciales</h3>
+        <p>El formulario volverá a los valores por defecto. Esta acción no guarda cambios y puedes deshacerla desde el aviso que aparecerá.</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" type="button" (click)="closeResetModal()">Cancelar</button>
+            <button class="btn-confirm" type="button" (click)="confirmReset()">Restaurar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOASTS (mismo estilo que admin-sellers / admin-admins) -->
+<div class="toast-host">
+    <div *ngFor="let t of toast.toasts()" class="toast" [class]="'toast-' + t.type" (click)="handleToast(t)">
+        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+        <span class="toast-msg">{{ t.message }}</span>
+        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+        <button class="toast-close" (click)="toast.dismiss(t.id); $event.stopPropagation()" aria-label="Cerrar">×</button>
+    </div>
+</div>

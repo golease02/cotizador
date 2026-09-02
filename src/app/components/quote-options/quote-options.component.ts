@@ -28,12 +28,8 @@ export class QuoteOptionsComponent {
   }
 
   getVR(key: string): string {
-    const map: Record<string, string> = {
-      'OPCION_1': '35%',
-      'OPCION_2': '20%',
-      'OPCION_3': '5%'
-    };
-    return map[key] || '';
+    const option = this.getOption(key);
+    return option ? `${(option.residualValue.percentage * 100).toFixed(1).replace('.0', '')}%` : '';
   }
 
   selectOption(key: 'OPCION_1' | 'OPCION_2' | 'OPCION_3'): void {

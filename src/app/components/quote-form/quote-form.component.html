@@ -107,7 +107,7 @@
             {{ extraordinaryRentAdjustmentMessage }}
           </div>
           <div class="chip-group">
-            <button type="button" *ngFor="let pct of [0.10, 0.15, 0.20, 0.30, 0.40]" class="chip-btn"
+            <button type="button" *ngFor="let pct of [0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70]" class="chip-btn"
               [class.active]="extraordinaryRentPct === pct"
               [disabled]="pct < minimumExtraordinaryRentPct || pct > maximumExtraordinaryRentPct"
               (click)="setExtraordinaryRent(pct)">{{ (pct * 100) }}%</button>

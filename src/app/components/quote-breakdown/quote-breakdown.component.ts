@@ -26,7 +26,7 @@ export class QuoteBreakdownComponent {
     return this.calculation?.options?.option1 || {
       initialCosts: { extraordinaryRentPct: 0, extraordinaryRentNoIva: 0, adminFeeInitialNet: 0, advisoryFeeNoIva: 0, plateRegistrationNoIva: 0, insuranceNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalInitialPayment: 0 },
       monthlyCosts: { basicRentNoIva: 0, fleetManagementFeeNoIva: 0, adminManagementFeeNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalMonthlyRentNet: 0 },
-      residualValue: { valueNet: 0 }
+      residualValue: { percentage: 0, valueNet: 0 }
     };
   }
 
@@ -34,7 +34,7 @@ export class QuoteBreakdownComponent {
     return this.calculation?.options?.option2 || {
       initialCosts: { extraordinaryRentPct: 0, extraordinaryRentNoIva: 0, adminFeeInitialNet: 0, advisoryFeeNoIva: 0, plateRegistrationNoIva: 0, insuranceNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalInitialPayment: 0 },
       monthlyCosts: { basicRentNoIva: 0, fleetManagementFeeNoIva: 0, adminManagementFeeNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalMonthlyRentNet: 0 },
-      residualValue: { valueNet: 0 }
+      residualValue: { percentage: 0, valueNet: 0 }
     };
   }
 
@@ -42,7 +42,7 @@ export class QuoteBreakdownComponent {
     return this.calculation?.options?.option3 || {
       initialCosts: { extraordinaryRentPct: 0, extraordinaryRentNoIva: 0, adminFeeInitialNet: 0, advisoryFeeNoIva: 0, plateRegistrationNoIva: 0, insuranceNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalInitialPayment: 0 },
       monthlyCosts: { basicRentNoIva: 0, fleetManagementFeeNoIva: 0, adminManagementFeeNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalMonthlyRentNet: 0 },
-      residualValue: { valueNet: 0 }
+      residualValue: { percentage: 0, valueNet: 0 }
     };
   }
 

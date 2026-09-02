@@ -268,13 +268,13 @@
                     <!-- Valor residual Section -->
                     <tr class="row-vr-section">
                         <td class="col-concept-bold">Valor residual Neto</td>
-                        <td class="col-pct-vr">35%</td>
+                        <td class="col-pct-vr">{{ opt1.residualValue.percentage * 100 | number:'1.0-1' }}%</td>
                         <td class="col-sym-bold">$</td>
                         <td class="col-val-bold">{{ opt1.residualValue.valueNet | number:'1.0-0' }}</td>
-                        <td class="col-pct-vr">20%</td>
+                        <td class="col-pct-vr">{{ opt2.residualValue.percentage * 100 | number:'1.0-1' }}%</td>
                         <td class="col-sym-bold">$</td>
                         <td class="col-val-bold">{{ opt2.residualValue.valueNet | number:'1.0-0' }}</td>
-                        <td class="col-pct-vr">5%</td>
+                        <td class="col-pct-vr">{{ opt3.residualValue.percentage * 100 | number:'1.0-1' }}%</td>
                         <td class="col-sym-bold">$</td>
                         <td class="col-val-bold">{{ opt3.residualValue.valueNet | number:'1.0-0' }}</td>
                     </tr>

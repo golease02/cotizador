@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import {
   VehicleQuoteInput,
   StatePlateOption,
-  getMinimumExtraordinaryRentPct,
+  CalculatorConfig,
 } from '../../models/leasing.model';
 import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.service';
 
@@ -50,7 +50,10 @@ export class QuoteFormComponent implements OnInit {
       isInsuranceEstimated: [false],
     });
 
-    await this.supabaseService.loadStatePlates();
+    await Promise.all([
+      this.supabaseService.loadStatePlates(),
+      this.supabaseService.loadCalculatorConfig(),
+    ]);
     // Solo mostrar placas disponibles (las "no disponibles" no aparecen en el cotizador)
     this.statePlates = this.supabaseService.getStatePlates().filter(p => p.disponible !== false);
     this.presetVehicles = await this.supabaseService.getVehicleCatalog();
@@ -80,13 +83,21 @@ export class QuoteFormComponent implements OnInit {
     return Number(this.quoteForm?.get('priceNet')?.value) || 0;
   }
 
+  get calculatorConfig(): CalculatorConfig {
+    return this.supabaseService.getCalculatorConfig();
+  }
+
   get minimumExtraordinaryRentPct(): number {
-    return getMinimumExtraordinaryRentPct(this.vehiclePrice);
+    const config = this.calculatorConfig;
+    if (this.vehiclePrice < config.minimumRentThreshold1) return config.minimumRentPct1;
+    if (this.vehiclePrice < config.minimumRentThreshold2) return config.minimumRentPct2;
+    return config.minimumRentPct3;
   }
 
   get maximumExtraordinaryRentPct(): number {
-    // Opción 1 tiene el residual más alto (35%), por lo que define el máximo global.
-    return 0.75 - 0.35;
+    const config = this.calculatorConfig;
+    // La opción 1 tiene el residual más alto y define el máximo común del formulario.
+    return config.maxRentAndResidualPct - config.residualOption1Pct;
   }
 
   get extraordinaryRentPct(): number {
