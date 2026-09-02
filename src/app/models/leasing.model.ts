@@ -63,11 +63,53 @@ export interface TermRatesOption {
   option3Rate: number; // e.g. 0.435 for 48m
 }
 
+export interface CalculatorConfig {
+  ivaPct: number;
+  advisoryFeePct: number;
+  insurancePct: number;
+  adminFeeInitialNet: number;
+  maxRentAndResidualPct: number;
+  minimumRentThreshold1: number;
+  minimumRentThreshold2: number;
+  minimumRentPct1: number;
+  minimumRentPct2: number;
+  minimumRentPct3: number;
+  basicRentStandard: number;
+  basicRentHybrid: number;
+  fleetManagementPct: number;
+  adminManagementPct: number;
+  residualOption1Pct: number;
+  residualOption2Pct: number;
+  residualOption3Pct: number;
+  termRates: Record<number, TermRatesOption>;
+}
+
 export const TERM_RATES_MATRIX: Record<number, TermRatesOption> = {
   12: { termMonths: 12, option1Rate: 0.750, option2Rate: 0.830, option3Rate: 0.900 },
   24: { termMonths: 24, option1Rate: 0.520, option2Rate: 0.550, option3Rate: 0.590 },
   36: { termMonths: 36, option1Rate: 0.445, option2Rate: 0.465, option3Rate: 0.490 },
   48: { termMonths: 48, option1Rate: 0.405, option2Rate: 0.420, option3Rate: 0.435 },
+};
+
+export const DEFAULT_CALCULATOR_CONFIG: CalculatorConfig = {
+  ivaPct: 0.16,
+  advisoryFeePct: 0.02,
+  insurancePct: 0.035,
+  adminFeeInitialNet: 3334.5,
+  maxRentAndResidualPct: 0.75,
+  minimumRentThreshold1: 650000,
+  minimumRentThreshold2: 1500000,
+  minimumRentPct1: 0.10,
+  minimumRentPct2: 0.15,
+  minimumRentPct3: 0.20,
+  basicRentStandard: 6000,
+  basicRentHybrid: 8550,
+  fleetManagementPct: 0.60,
+  adminManagementPct: 0.40,
+  residualOption1Pct: 0.35,
+  residualOption2Pct: 0.20,
+  residualOption3Pct: 0.05,
+  termRates: TERM_RATES_MATRIX,
 };
 
 /**
@@ -109,10 +151,11 @@ export const RESIDUAL_PERCENTAGES = {
  */
 export function isExtraordinaryRentAndResidualValid(
   extraordinaryRentPct: number,
-  residualPct: number
+  residualPct: number,
+  maxPct = 0.75
 ): boolean {
   const sum = extraordinaryRentPct + residualPct;
-  return sum <= 0.75; // No debe ser mayor a 75%
+  return sum <= maxPct;
 }
 
 export interface VehicleQuoteInput {

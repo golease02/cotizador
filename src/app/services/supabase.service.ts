@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 import { BehaviorSubject } from 'rxjs';
-import { StatePlateOption, STATE_PLATES_CATALOG, QuoteCalculationResult } from '../models/leasing.model';
+import { StatePlateOption, STATE_PLATES_CATALOG, QuoteCalculationResult, CalculatorConfig, DEFAULT_CALCULATOR_CONFIG } from '../models/leasing.model';
 
 export interface VehicleCatalogItem {
   id: string;
@@ -47,6 +47,7 @@ export class SupabaseService {
 
   // ✅ Catálogo de placas de estado — cacheado desde la base de datos
   private statePlatesSignal = signal<StatePlateOption[]>([...STATE_PLATES_CATALOG]);
+  private calculatorConfigSignal = signal<CalculatorConfig>(DEFAULT_CALCULATOR_CONFIG);
 
   private refreshProfileSubject = new BehaviorSubject<void>(undefined);
   public refreshProfile$ = this.refreshProfileSubject.asObservable();
@@ -72,6 +73,7 @@ export class SupabaseService {
     this.loadSession();
     this.loadFromLocalStorage();
     this.loadStatePlates();
+    this.loadCalculatorConfig();
   }
 
   private async loadSession(): Promise<void> {
@@ -312,6 +314,45 @@ export class SupabaseService {
     public getStatePlates(): StatePlateOption[] {
     return this.statePlatesSignal();
   }
+
+    public getCalculatorConfig(): CalculatorConfig {
+      return this.calculatorConfigSignal();
+    }
+
+    public async loadCalculatorConfig(): Promise<void> {
+      try {
+        const { data, error } = await this.supabase
+          .from('calculator_settings')
+          .select('settings')
+          .eq('id', 1)
+          .maybeSingle();
+        if (!error && data?.settings) {
+          this.calculatorConfigSignal.set(this.mergeCalculatorConfig(data.settings));
+        }
+      } catch (error) {
+        console.warn('No se pudo cargar la configuración del cotizador:', error);
+      }
+    }
+
+    public async updateCalculatorConfig(settings: CalculatorConfig): Promise<{ error: any }> {
+      const profile = this.currentProfileSignal();
+      if (!this.currentUserSignal() || profile?.role !== 'admin' || profile.active === false) {
+        return { error: { message: 'Solo un administrador puede modificar estos parámetros.' } };
+      }
+      const { error } = await this.supabase
+        .from('calculator_settings')
+        .upsert({ id: 1, settings, updated_by: this.currentUserSignal()?.id }, { onConflict: 'id' });
+      if (!error) this.calculatorConfigSignal.set(this.mergeCalculatorConfig(settings));
+      return { error };
+    }
+
+    private mergeCalculatorConfig(value: Partial<CalculatorConfig>): CalculatorConfig {
+      return {
+        ...DEFAULT_CALCULATOR_CONFIG,
+        ...value,
+        termRates: { ...DEFAULT_CALCULATOR_CONFIG.termRates, ...(value.termRates || {}) },
+      };
+    }
 
   /**
    * Carga el catálogo de placas de estado desde la base de datos y lo cachea.

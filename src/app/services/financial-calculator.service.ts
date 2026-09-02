@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
 import {
   VehicleQuoteInput,
   LeasingOptionResult,
@@ -8,14 +8,17 @@ import {
   InitialCostsBreakdown,
   MonthlyCostsBreakdown,
   ResidualValueBreakdown,
-  getMinimumExtraordinaryRentPct,
   isExtraordinaryRentAndResidualValid,
+  CalculatorConfig,
+  DEFAULT_CALCULATOR_CONFIG,
 } from '../models/leasing.model';
+import { SupabaseService } from './supabase.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FinancialCalculatorService {
+  constructor(@Optional() private readonly supabase: SupabaseService | null = null) {}
   /**
    * Calculates PMT (Periodic Payment) matching Excel's PMT(rate, nper, pv, fv, type)
    * Formula:
@@ -44,7 +47,8 @@ export class FinancialCalculatorService {
   }
 
   public calculateQuote(input: VehicleQuoteInput): QuoteCalculationResult {
-    const termConfig = TERM_RATES_MATRIX[input.termMonths] || TERM_RATES_MATRIX[48];
+    const config = this.supabase?.getCalculatorConfig() ?? DEFAULT_CALCULATOR_CONFIG;
+    const termConfig = config.termRates[input.termMonths] || config.termRates[48] || TERM_RATES_MATRIX[48];
     const selectedPlate =
       STATE_PLATES_CATALOG.find((p) => p.id === input.selectedStatePlateId) ||
       STATE_PLATES_CATALOG[STATE_PLATES_CATALOG.length - 1]; // Default to 'pendiente'
@@ -53,7 +57,7 @@ export class FinancialCalculatorService {
       'OPCION_1',
       'OPCIÓN 1',
       termConfig.option1Rate,
-      0.35,
+      config.residualOption1Pct,
       input,
       selectedPlate.costNet
     );
@@ -62,7 +66,7 @@ export class FinancialCalculatorService {
       'OPCION_2',
       'OPCIÓN 2',
       termConfig.option2Rate,
-      0.20,
+      config.residualOption2Pct,
       input,
       selectedPlate.costNet
     );
@@ -71,7 +75,7 @@ export class FinancialCalculatorService {
       'OPCION_3',
       'OPCIÓN 3',
       termConfig.option3Rate,
-      0.05,
+      config.residualOption3Pct,
       input,
       selectedPlate.costNet
     );
@@ -95,27 +99,28 @@ export class FinancialCalculatorService {
     input: VehicleQuoteInput,
     plateCostNet: number
   ): LeasingOptionResult {
-    const priceNoIva = input.priceNet / 1.16;
+    const config = this.supabase?.getCalculatorConfig() ?? DEFAULT_CALCULATOR_CONFIG;
+    const priceNoIva = input.priceNet / (1 + config.ivaPct);
 
     // 1. Validar renta extraordinaria contra reglas de negocio
-    const minimumRentPct = getMinimumExtraordinaryRentPct(input.priceNet);
+    const minimumRentPct = this.getMinimumRentPct(input.priceNet, config);
     const userRentPct = input.extraordinaryRentPct || 0.10;
 
     // Aplicar validación: nunca permitir menos que el mínimo requerido
     let extraordinaryRentPct = Math.max(minimumRentPct, userRentPct);
 
     // Validar que renta + residual no superen 75%
-    if (!isExtraordinaryRentAndResidualValid(extraordinaryRentPct, residualPct)) {
+    if (!isExtraordinaryRentAndResidualValid(extraordinaryRentPct, residualPct, config.maxRentAndResidualPct)) {
       // Si excede, reducir renta al máximo permitido para esta opción
-      extraordinaryRentPct = 0.75 - residualPct;
+      extraordinaryRentPct = config.maxRentAndResidualPct - residualPct;
     }
 
     const extraordinaryRentNoIva = priceNoIva * extraordinaryRentPct;
 
-    const adminFeeInitialNet = input.customAdminFeeInitial ?? (2565 * 1.3); // $3,334.50
-    const advisoryFeeNoIva = priceNoIva * 0.02; // 2% Advisory & management
-    const plateRegistrationNoIva = plateCostNet / 1.16;
-    const insuranceNoIva = input.isInsuranceEstimated ? input.priceNet * 0.035 : 0;
+    const adminFeeInitialNet = input.customAdminFeeInitial ?? config.adminFeeInitialNet;
+    const advisoryFeeNoIva = priceNoIva * config.advisoryFeePct;
+    const plateRegistrationNoIva = plateCostNet / (1 + config.ivaPct);
+    const insuranceNoIva = input.isInsuranceEstimated ? input.priceNet * config.insurancePct : 0;
 
     const subtotalNoIva =
       extraordinaryRentNoIva +
@@ -124,7 +129,7 @@ export class FinancialCalculatorService {
       plateRegistrationNoIva +
       insuranceNoIva;
 
-    const ivaAmount = subtotalNoIva * 0.16;
+    const ivaAmount = subtotalNoIva * config.ivaPct;
     const securityDepositAmount = input.priceNet * (input.securityDepositPct || 0);
     const totalInitialPayment = subtotalNoIva + ivaAmount + securityDepositAmount;
 
@@ -146,7 +151,7 @@ export class FinancialCalculatorService {
 
     // 3. Residual Value Breakdown
     const vrNet = input.priceNet * residualPct;
-    const vrNoIva = vrNet / 1.16;
+    const vrNoIva = vrNet / (1 + config.ivaPct);
     const residualValue: ResidualValueBreakdown = {
       percentage: residualPct,
       valueNet: vrNet,
@@ -164,13 +169,13 @@ export class FinancialCalculatorService {
     );
 
     // 5. Monthly Breakdown
-    const totalMonthlyRentNoIva = totalMonthlyRentNet / 1.16;
-    const basicRentNoIva = input.isHybridOrElectric ? 8550 : 6000;
+    const totalMonthlyRentNoIva = totalMonthlyRentNet / (1 + config.ivaPct);
+    const basicRentNoIva = input.isHybridOrElectric ? config.basicRentHybrid : config.basicRentStandard;
     const remainderNoIva = totalMonthlyRentNoIva - basicRentNoIva;
-    const fleetManagementFeeNoIva = remainderNoIva * 0.60;
-    const adminManagementFeeNoIva = remainderNoIva * 0.40;
+    const fleetManagementFeeNoIva = remainderNoIva * config.fleetManagementPct;
+    const adminManagementFeeNoIva = remainderNoIva * config.adminManagementPct;
     const monthlySubtotalNoIva = basicRentNoIva + fleetManagementFeeNoIva + adminManagementFeeNoIva;
-    const monthlyIva = monthlySubtotalNoIva * 0.16;
+    const monthlyIva = monthlySubtotalNoIva * config.ivaPct;
 
     const monthlyCosts: MonthlyCostsBreakdown = {
       basicRentNoIva,
@@ -190,5 +195,11 @@ export class FinancialCalculatorService {
       initialCosts,
       monthlyCosts,
     };
+  }
+
+  private getMinimumRentPct(priceNet: number, config: CalculatorConfig): number {
+    if (priceNet < config.minimumRentThreshold1) return config.minimumRentPct1;
+    if (priceNet < config.minimumRentThreshold2) return config.minimumRentPct2;
+    return config.minimumRentPct3;
   }
 }

@@ -70,6 +70,10 @@ export const routes: Routes = [
             {
                 path: 'plates',
                 loadComponent: () => import('./components/admin/admin-plates/admin-plates').then(m => m.AdminPlatesComponent)
+            },
+            {
+                path: 'parameters',
+                loadComponent: () => import('./components/admin/admin-parameters/admin-parameters').then(m => m.AdminParametersComponent)
             }
         ]
     },

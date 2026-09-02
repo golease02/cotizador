@@ -1,0 +1,22 @@
+<section class="parameters-container">
+  <header class="page-header">
+    <div><span class="page-kicker">Configuración operativa</span><h2>Panel de administración para parámetros del cotizador</h2><p>Modifica cifras del cálculo sin desplegar código. Los cambios se aplican al cargar cada cotización.</p></div>
+    <button class="btn-primary" type="button" (click)="save()" [disabled]="loading || saving">{{ saving ? 'Guardando...' : 'Guardar cambios' }}</button>
+  </header>
+  <div class="state" *ngIf="loading">Cargando configuración...</div>
+  <form *ngIf="!loading" (ngSubmit)="save()" novalidate>
+    <div class="group"><h3>Impuestos y cargos</h3><div class="fields">
+      <label>IVA (%)<input type="number" [ngModel]="percent(config.ivaPct)" (ngModelChange)="setPercent('ivaPct', $event)" name="iva"></label>
+      <label>Asesoría (%)<input type="number" [ngModel]="percent(config.advisoryFeePct)" (ngModelChange)="setPercent('advisoryFeePct', $event)" name="advisory"></label>
+      <label>Seguro estimado (%)<input type="number" [ngModel]="percent(config.insurancePct)" (ngModelChange)="setPercent('insurancePct', $event)" name="insurance"></label>
+      <label>Cuota inicial neta<input type="number" [(ngModel)]="config.adminFeeInitialNet" name="adminFee"></label>
+    </div></div>
+    <div class="group"><h3>Renta extraordinaria y residuales</h3><div class="fields">
+      <label>Umbral 1<input type="number" [(ngModel)]="config.minimumRentThreshold1" name="threshold1"></label><label>Umbral 2<input type="number" [(ngModel)]="config.minimumRentThreshold2" name="threshold2"></label>
+      <label>Mínimo menor (%)<input type="number" [ngModel]="percent(config.minimumRentPct1)" (ngModelChange)="setPercent('minimumRentPct1', $event)" name="min1"></label><label>Mínimo medio (%)<input type="number" [ngModel]="percent(config.minimumRentPct2)" (ngModelChange)="setPercent('minimumRentPct2', $event)" name="min2"></label><label>Mínimo mayor (%)<input type="number" [ngModel]="percent(config.minimumRentPct3)" (ngModelChange)="setPercent('minimumRentPct3', $event)" name="min3"></label><label>Máximo renta + residual (%)<input type="number" [ngModel]="percent(config.maxRentAndResidualPct)" (ngModelChange)="setPercent('maxRentAndResidualPct', $event)" name="maxSum"></label>
+      <label>Residual opción 1 (%)<input type="number" [ngModel]="percent(config.residualOption1Pct)" (ngModelChange)="setPercent('residualOption1Pct', $event)" name="res1"></label><label>Residual opción 2 (%)<input type="number" [ngModel]="percent(config.residualOption2Pct)" (ngModelChange)="setPercent('residualOption2Pct', $event)" name="res2"></label><label>Residual opción 3 (%)<input type="number" [ngModel]="percent(config.residualOption3Pct)" (ngModelChange)="setPercent('residualOption3Pct', $event)" name="res3"></label>
+    </div></div>
+    <div class="group"><h3>Renta mensual y tasas anuales (%)</h3><div class="fields"><label>Renta estándar<input type="number" [(ngModel)]="config.basicRentStandard" name="standard"></label><label>Renta híbrida / eléctrica<input type="number" [(ngModel)]="config.basicRentHybrid" name="hybrid"></label><label>Administración de flotilla (%)<input type="number" [ngModel]="percent(config.fleetManagementPct)" (ngModelChange)="setPercent('fleetManagementPct', $event)" name="fleet"></label><label>Administración (%)<input type="number" [ngModel]="percent(config.adminManagementPct)" (ngModelChange)="setPercent('adminManagementPct', $event)" name="management"></label></div><div class="rates"><div *ngFor="let term of terms" class="rate-row"><strong>{{ term }} meses</strong><label>Opción 1<input type="number" step="0.001" [(ngModel)]="config.termRates[term].option1Rate" [name]="'o1-' + term"></label><label>Opción 2<input type="number" step="0.001" [(ngModel)]="config.termRates[term].option2Rate" [name]="'o2-' + term"></label><label>Opción 3<input type="number" step="0.001" [(ngModel)]="config.termRates[term].option3Rate" [name]="'o3-' + term"></label></div></div></div>
+    <p class="error" *ngIf="error">{{ error }}</p><button class="btn-secondary" type="button" (click)="reset()">Restaurar valores iniciales</button>
+  </form>
+</section>
