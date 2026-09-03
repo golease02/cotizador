@@ -1,11 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { ThemeService } from './theme.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class PdfExportService {
+
+    private theme = inject(ThemeService);
 
     /**
      * Exporta un elemento HTML a PDF
@@ -18,6 +21,11 @@ export class PdfExportService {
             console.error(`Elemento con ID "${elementId}" no encontrado.`);
             return;
         }
+
+        // Fuerza temporalmente el tema claro para que el PDF siempre salga con la
+        // presentación clara/brandeada, independientemente del tema activo.
+        const previousTheme = this.theme.theme();
+        this.theme.theme.set('light');
 
         try {
             // Capturar el elemento como canvas
@@ -40,6 +48,9 @@ export class PdfExportService {
 
         } catch (error) {
             console.error('Error al generar el PDF:', error);
+        } finally {
+            // Restaurar el tema que tenía el usuario.
+            this.theme.theme.set(previousTheme);
         }
     }
 }

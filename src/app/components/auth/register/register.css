@@ -10,9 +10,9 @@
 .auth-section {
   margin: 0 0 1.5rem;
   padding: 1.35rem 1.25rem 0.6rem;
-  border: 1px solid #e6edf0;
+  border: 1px solid var(--input-border);
   border-radius: 16px;
-  background: #fbfdfc;
+  background: var(--surface-card);
 }
 
 .section-head {
@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #15803d, #20b038);
+  background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
   color: #fff;
   font-weight: 700;
   font-size: 0.86rem;
@@ -40,14 +40,14 @@
 .section-name {
   font-size: 0.95rem;
   margin: 0;
-  color: #1e293b;
+  color: var(--accent-slate);
   letter-spacing: 0.4px;
 }
 
 .section-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, #dbe4ec, transparent);
+  background: linear-gradient(90deg, var(--input-border), transparent);
 }
 
 .select-wrapper select {
@@ -62,12 +62,12 @@
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  color: #94a3b8;
+  color: var(--accent-silver);
   pointer-events: none;
 }
 
 .select-wrapper:focus-within .select-arrow {
-  color: #20b038;
+  color: var(--accent-green);
 }
 
 .brand-other,
@@ -75,12 +75,12 @@
   width: 100%;
   min-height: 48px;
   padding: 0.75rem 1rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border-color);
   border-radius: 12px;
   font-size: 0.98rem;
   font-family: var(--font-body);
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--text-main);
+  background: var(--surface-subtle);
   box-sizing: border-box;
 }
 
@@ -107,8 +107,8 @@
 .brand-other:focus,
 .search-input:focus {
   outline: none;
-  border-color: #20b038;
-  background: #fff;
+  border-color: var(--accent-green);
+  background: var(--surface-card);
   box-shadow: 0 0 0 4px rgba(32, 176, 56, 0.12);
 }
 
@@ -121,7 +121,7 @@
   padding: 0.75rem 1.1rem;
   border: 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #15803d, #20b038);
+  background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
   color: #fff;
   font-weight: 700;
   font-size: 0.9rem;
@@ -143,7 +143,7 @@
 
 .map-hint {
   margin-top: 0.4rem;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.74rem;
   font-style: italic;
 }
@@ -151,11 +151,11 @@
 .map-container {
   width: 100%;
   height: 300px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border-color);
   border-radius: 14px;
   overflow: hidden;
   cursor: crosshair;
-  box-shadow: inset 0 0 0 4px #f8fafc;
+  box-shadow: inset 0 0 0 4px var(--surface-subtle);
 }
 
 .coords-info {
@@ -166,7 +166,7 @@
   padding: 0.65rem 0.85rem;
   border: 1px solid #bbf7d0;
   border-radius: 10px;
-  background: #f0fdf4;
+  background: var(--accent-green-light);
   font-size: 0.85rem;
 }
 
@@ -177,7 +177,7 @@
 }
 
 .coord-value {
-  color: #0f172a;
+  color: var(--text-main);
   word-break: break-all;
 }
 
@@ -189,7 +189,7 @@
 .btn-search:focus-visible,
 .search-input:focus-visible,
 .brand-other:focus-visible {
-  outline: 2px solid #20b038;
+  outline: 2px solid var(--accent-green);
   outline-offset: 3px;
 }
 
@@ -222,18 +222,18 @@
 /* ─── Medidor de fortaleza de contraseña ─── */
 .strength-meter { display: flex; align-items: center; gap: 0.65rem; margin-top: 0.6rem; animation: fieldIn 0.3s ease both; }
 .strength-bars { display: flex; gap: 0.3rem; flex: 1; }
-.strength-bar { height: 5px; flex: 1; border-radius: 999px; background: #e2e8f0; transition: background 0.3s ease; }
-.strength-meter.level-1 .strength-bar.active { background: #ef4444; }
+.strength-bar { height: 5px; flex: 1; border-radius: 999px; background: var(--border-color); transition: background 0.3s ease; }
+.strength-meter.level-1 .strength-bar.active { background: var(--danger-bright); }
 .strength-meter.level-2 .strength-bar.active { background: #f59e0b; }
-.strength-meter.level-3 .strength-bar.active { background: #22c55e; }
+.strength-meter.level-3 .strength-bar.active { background: var(--accent-green); }
 .strength-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; min-width: 4.2rem; text-align: right; }
-.strength-meter.level-1 .strength-label { color: #dc2626; }
+.strength-meter.level-1 .strength-label { color: var(--danger); }
 .strength-meter.level-2 .strength-label { color: #d97706; }
 .strength-meter.level-3 .strength-label { color: #16a34a; }
 
 /* ─── Checklist de requisitos de la contraseña ─── */
 .password-checklist { list-style: none; margin: 0.55rem 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 0.8rem; animation: fieldIn 0.3s ease both; }
-.password-checklist li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: #94a3b8; transition: color 0.25s ease; }
+.password-checklist li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600; color: var(--accent-silver); transition: color 0.25s ease; }
 .password-checklist li::before { content: '○'; font-size: 0.85rem; line-height: 1; }
 .password-checklist li.met { color: #16a34a; }
 .password-checklist li.met::before { content: '✓'; font-weight: 700; }

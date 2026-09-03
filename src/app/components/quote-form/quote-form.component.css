@@ -1,6 +1,6 @@
 .form-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1.5rem 1.6rem;
   box-shadow: none;
@@ -15,7 +15,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  border-bottom: 2px solid #15803d;
+  border-bottom: 2px solid var(--accent-green-dark);
   padding-bottom: 0.75rem;
   margin-bottom: 1.25rem;
 }
@@ -23,14 +23,14 @@
 .card-header h2 {
   font-family: 'Fjalla One', sans-serif;
   font-size: 1.3rem;
-  color: #0f172a;
+  color: var(--text-main);
   margin: 0;
   letter-spacing: 0.5px;
 }
 
 .subtitle {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 
 .preset-section {
@@ -45,7 +45,7 @@
   display: block;
   font-size: 0.7rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--text-silver);
   text-transform: uppercase;
   margin-bottom: 0.3rem;
 }
@@ -59,18 +59,18 @@
 .preset-select {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: white;
+  background: var(--input-bg);
   font-weight: 600;
   font-size: 0.9rem;
-  color: #0f172a;
+  color: var(--text-main);
   transition: 0.2s;
 }
 
 .preset-select:focus {
   outline: none;
-  border-color: #20b038;
+  border-color: var(--accent-green);
   box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.15);
 }
 
@@ -87,17 +87,17 @@
 label {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-silver);
 }
 
 input,
 select {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   font-size: 0.9rem;
   transition: 0.2s;
-  background: #fbfcfd;
+  background: var(--input-bg);
   width: 100%;
   box-sizing: border-box;
 }
@@ -105,15 +105,15 @@ select {
 input:focus,
 select:focus {
   outline: none;
-  border-color: #20b038;
+  border-color: var(--accent-green);
   box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.15);
 }
 
 .warning {
   display: block;
   font-size: 0.75rem;
-  color: #9a6700;
-  background: #fffbea;
+  color: var(--warning);
+  background: var(--warning-bg);
   border-left: 3px solid #eab308;
   padding: 0.45rem 0.6rem;
   margin-top: 0.35rem;
@@ -123,7 +123,7 @@ select:focus {
 .range-limits {
   display: flex;
   justify-content: space-between;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.7rem;
   margin-top: -0.2rem;
 }
@@ -143,7 +143,7 @@ select:focus {
   left: 0.8rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #15803d;
+  color: var(--accent-green-dark);
   font-weight: 700;
   font-size: 1.1rem;
 }
@@ -151,7 +151,7 @@ select:focus {
 .currency-input-wrapper input {
   padding-left: 2rem;
   font-weight: 700;
-  color: #15803d;
+  color: var(--accent-green-dark);
   font-size: 1.1rem;
 }
 
@@ -164,13 +164,13 @@ select:focus {
 
 .quick-amounts span {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--text-muted);
   margin-right: 0.2rem;
 }
 
 .quick-amounts button {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-strong);
   padding: 0.1rem 0.6rem;
   border-radius: 5px;
   font-size: 0.7rem;
@@ -180,16 +180,16 @@ select:focus {
 }
 
 .quick-amounts button:hover {
-  background: #20b038;
-  color: white;
-  border-color: #15803d;
+  background: var(--accent-green);
+  color: var(--text-on-accent);
+  border-color: var(--accent-green-dark);
 }
 
 .toggle-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.4rem;
-  background: #f1f5f9;
+  background: var(--surface-hover);
   padding: 0.2rem;
   border-radius: 8px;
 }
@@ -201,15 +201,15 @@ select:focus {
   border-radius: 8px;
   font-weight: 600;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-muted);
   transition: 0.2s;
   cursor: pointer;
 }
 
 .toggle-btn.active {
-  background: white;
-  color: #15803d;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  background: var(--surface-card);
+  color: var(--accent-green-dark);
+  box-shadow: 0 1px 4px var(--shadow-medium);
   border: 1px solid #bbf7d0;
 }
 
@@ -220,8 +220,8 @@ select:focus {
 }
 
 .term-btn {
-  background: white;
-  border: 1px solid #cbd5e1;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   padding: 0.5rem 0;
   display: flex;
@@ -232,13 +232,13 @@ select:focus {
 }
 
 .term-btn:hover {
-  border-color: #20b038;
+  border-color: var(--accent-green);
 }
 
 .term-btn.active {
-  background: #15803d;
-  border-color: #15803d;
-  color: white;
+  background: var(--accent-green-dark);
+  border-color: var(--accent-green-dark);
+  color: var(--text-on-accent);
   box-shadow: 0 4px 12px rgba(32, 176, 56, 0.3);
 }
 
@@ -261,13 +261,13 @@ select:focus {
 
 .slider-value {
   font-weight: 700;
-  color: #15803d;
+  color: var(--accent-green-dark);
   font-size: 0.9rem;
 }
 
 .range-slider {
   width: 100%;
-  accent-color: #20b038;
+  accent-color: var(--accent-green);
   height: 6px;
   background: #dcebe0;
   border-radius: 4px;
@@ -282,8 +282,8 @@ select:focus {
 
 .chip-btn {
   flex: 1;
-  background: white;
-  border: 1px solid #cbd5e1;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
   border-radius: 5px;
   padding: 0.3rem;
   font-weight: 600;
@@ -294,15 +294,15 @@ select:focus {
 }
 
 .chip-btn.active {
-  background: #15803d;
-  border-color: #15803d;
-  color: white;
+  background: var(--accent-green-dark);
+  border-color: var(--accent-green-dark);
+  color: var(--text-on-accent);
 }
 
 .chip-btn:disabled {
-  color: #94a3b8;
-  background: #f8fafc;
-  border-color: #e2e8f0;
+  color: var(--accent-silver);
+  background: var(--surface-subtle);
+  border-color: var(--border-color);
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -310,7 +310,7 @@ select:focus {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid #20b038;
+  outline: 2px solid var(--accent-green);
   outline-offset: 2px;
 }
 

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angula
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
+import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -9,10 +10,11 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.css']
+  styleUrls: ['./header.component.css'],
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   public supabase = inject(SupabaseService);
+  public theme = inject(ThemeService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -26,7 +28,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Suscribirse a los eventos de refresco de perfil
     this.refreshSubscription = this.supabase.refreshProfile$.subscribe(async () => {
       const user = this.supabase.currentUser();
       if (user) {
@@ -34,6 +35,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  toggleTheme(): void {
+    this.theme.toggle();
   }
 
   async logout(): Promise<void> {

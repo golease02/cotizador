@@ -186,7 +186,68 @@
   stroke: currentColor;
 }
 
+/* ===== Botón toggle modo oscuro ===== */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-silver);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    color 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  transform: scale(1.08);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 2px;
+}
+
+.theme-toggle svg {
+  stroke: currentColor;
+  position: absolute;
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Por defecto (tema claro): se muestra la luna (invita a ir a oscuro) */
+.theme-toggle .icon-moon {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+.theme-toggle .icon-sun {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+/* Cuando el tema está en oscuro: se muestra el sol (invita a ir a claro) */
+:host-context(html[data-theme='dark']) .theme-toggle .icon-moon {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+:host-context(html[data-theme='dark']) .theme-toggle .icon-sun {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
 /* Responsive */
+.theme-toggle {
+  width: 38px;
+  height: 38px;
+}
+
 @media (max-width: 768px) {
   .app-header {
     padding: 0.55rem 1rem;

@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    Dashboard de Cotizaciones
    ============================================ */
 .dashboard-cotizaciones {
@@ -6,7 +6,7 @@
     margin: 0 auto;
     padding: 2rem;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    color: #0f172a;
+    color: var(--text-main);
 }
 
 /* ============================================
@@ -32,7 +32,7 @@
     font-size: 2.2rem;
     letter-spacing: -0.5px;
     margin: 0;
-    color: #0f172a;
+    color: var(--text-main);
 }
 
 .header-actions {
@@ -44,8 +44,8 @@
 }
 
 .counter {
-    background: #e2e8f0;
-    color: #475569;
+    background: var(--border-color);
+    color: var(--text-silver);
     padding: 0.2rem 0.9rem;
     border-radius: 30px;
     font-size: 0.8rem;
@@ -56,8 +56,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, #15803d, #20b038);
-    color: white;
+    background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
+    color: var(--text-on-accent);
     padding: 0.7rem 1.6rem;
     border-radius: 40px;
     font-weight: 700;
@@ -73,7 +73,7 @@
 }
 
 .admin-link {
-    background: #0f172a;
+    background: var(--text-main);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
 }
 
@@ -90,11 +90,11 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 1.2rem;
-    background: #ffffff;
+    background: var(--surface-card);
     padding: 0.7rem 1.5rem;
     /* Más padding */
     border-radius: 60px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     margin-bottom: 2.5rem;
 }
@@ -110,7 +110,7 @@
     left: 0.8rem;
     top: 50%;
     transform: translateY(-50%);
-    color: #94a3b8;
+    color: var(--accent-silver);
 }
 
 .search-input {
@@ -120,14 +120,14 @@
     border: 1px solid transparent;
     border-radius: 40px;
     font-size: 0.9rem;
-    background: #f1f5f9;
+    background: var(--surface-hover);
     transition: all 0.25s;
 }
 
 .search-input:focus {
     outline: none;
-    background: #ffffff;
-    border-color: #20b038;
+    background: var(--surface-card);
+    border-color: var(--accent-green);
     box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.1);
 }
 
@@ -139,24 +139,24 @@
 
 .period-btn {
     padding: 0.3rem 1.2rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 40px;
     background: transparent;
     font-weight: 600;
     font-size: 0.8rem;
-    color: #475569;
+    color: var(--text-silver);
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .period-btn:hover {
-    background: #f1f5f9;
+    background: var(--surface-hover);
 }
 
 .period-btn.active {
-    background: #15803d;
-    border-color: #15803d;
-    color: white;
+    background: var(--accent-green-dark);
+    border-color: var(--accent-green-dark);
+    color: var(--text-on-accent);
 }
 
 /* ============================================
@@ -168,14 +168,14 @@
     align-items: center;
     justify-content: center;
     padding: 5rem 2rem;
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #e2e8f0;
-    border-top-color: #20b038;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--accent-green);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
     margin-bottom: 1rem;
@@ -193,9 +193,9 @@
     align-items: center;
     justify-content: center;
     padding: 5rem 2rem;
-    background: #f8fafc;
+    background: var(--surface-subtle);
     border-radius: 24px;
-    border: 1px dashed #cbd5e1;
+    border: 1px dashed var(--border-strong);
     text-align: center;
 }
 
@@ -211,7 +211,7 @@
 }
 
 .empty-state p {
-    color: #64748b;
+    color: var(--text-muted);
     margin: 0.2rem 0;
 }
 
@@ -227,9 +227,9 @@
 }
 
 .quote-card {
-    background: #ffffff;
+    background: var(--surface-card);
     border-radius: 20px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     padding: 2rem;
     /* Más padding interno */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
@@ -242,7 +242,7 @@
 .quote-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
-    border-color: #20b038;
+    border-color: var(--accent-green);
 }
 
 @keyframes fadeInUp {
@@ -270,8 +270,8 @@
 .client-initial {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, #20b038, #15803d);
-    color: white;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-green-dark));
+    color: var(--text-on-accent);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -284,21 +284,21 @@
 .client-name {
     font-weight: 700;
     font-size: 1rem;
-    color: #0f172a;
+    color: var(--text-main);
 }
 
 .vehicle-name {
     font-size: 0.85rem;
-    color: #475569;
+    color: var(--text-silver);
 }
 
 .date-badge {
-    background: #f1f5f9;
+    background: var(--surface-hover);
     padding: 0.2rem 0.8rem;
     border-radius: 30px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #475569;
+    color: var(--text-silver);
     white-space: nowrap;
 }
 
@@ -321,7 +321,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: #94a3b8;
+    color: var(--accent-silver);
     font-weight: 600;
 }
 
@@ -329,15 +329,15 @@
     font-weight: 700;
     font-size: 1.05rem;
     /* Ligeramente más grande */
-    color: #0f172a;
+    color: var(--text-main);
 }
 
 .detail-value.price {
-    color: #15803d;
+    color: var(--accent-green-dark);
 }
 
 .card-footer {
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border-color);
     padding-top: 1.2rem;
     /* Más espacio */
     display: flex;
@@ -350,7 +350,7 @@
     gap: 0.5rem;
     background: transparent;
     border: none;
-    color: #15803d;
+    color: var(--accent-green-dark);
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
@@ -360,7 +360,7 @@
 }
 
 .btn-view-detail:hover {
-    background: #f0fdf4;
+    background: var(--accent-green-light);
 }
 
 .btn-view-detail svg {
@@ -386,19 +386,19 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface-card);
+    border: 1px solid var(--border-color);
     border-radius: 40px;
     padding: 0.5rem 1.5rem;
     font-weight: 600;
-    color: #334155;
+    color: var(--text-silver);
     cursor: pointer;
     transition: all 0.25s;
 }
 
 .btn-back:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: var(--surface-subtle);
+    border-color: var(--border-strong);
 }
 
 .btn-back svg {
@@ -406,7 +406,7 @@
 }
 
 .detail-content {
-    background: #ffffff;
+    background: var(--surface-card);
     border-radius: 24px;
     padding: 2rem;
     /* Más padding */
@@ -565,9 +565,9 @@
     gap: 0.9rem;
     margin-bottom: 1.25rem;
     padding: 0.85rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 14px;
-    background: #ffffff;
+    background: var(--surface-card);
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 
@@ -581,12 +581,12 @@
     min-height: 42px;
     border: 1px solid #dbe4ec;
     border-radius: 9px;
-    background: #f8fafc;
+    background: var(--surface-subtle);
 }
 
 .dashboard-cotizaciones .search-input:focus {
-    background: #ffffff;
-    border-color: #20b038;
+    background: var(--surface-card);
+    border-color: var(--accent-green);
 }
 
 .dashboard-cotizaciones .period-selector {
@@ -594,9 +594,9 @@
     align-items: center;
     gap: 0.35rem;
     padding: 0.25rem;
-    border: 1px solid #eef2f6;
+    border: 1px solid var(--surface-muted);
     border-radius: 9px;
-    background: #f8fafc;
+    background: var(--surface-subtle);
 }
 
 .dashboard-cotizaciones .period-btn {
@@ -624,9 +624,9 @@
 
 .dashboard-cotizaciones .quote-card {
     padding: 1.35rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 13px;
-    background: #ffffff;
+    background: var(--surface-card);
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 
@@ -637,22 +637,22 @@
 
 .dashboard-cotizaciones .client-initial {
     border-radius: 11px;
-    background: #eaf8ee;
-    color: #15803d;
+    background: var(--accent-green-light);
+    color: var(--accent-green-dark);
 }
 
 .dashboard-cotizaciones .date-badge {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    background: #f8fafc;
+    background: var(--surface-subtle);
 }
 
 .dashboard-cotizaciones .card-body {
     margin: 1rem 0 1.15rem;
     padding: 0.9rem;
-    border: 1px solid #eef2f6;
+    border: 1px solid var(--surface-muted);
     border-radius: 9px;
-    background: #f8fafc;
+    background: var(--surface-subtle);
 }
 
 .dashboard-cotizaciones .client-name {
@@ -660,29 +660,29 @@
 }
 
 .dashboard-cotizaciones .vehicle-name {
-    color: #64748b;
+    color: var(--text-muted);
 }
 
 .dashboard-cotizaciones .detail-label {
-    color: #94a3b8;
+    color: var(--accent-silver);
 }
 
 .dashboard-cotizaciones .detail-value {
-    color: #334155;
+    color: var(--text-silver);
 }
 
 .dashboard-cotizaciones .card-footer {
     padding-top: 0.9rem;
-    border-top-color: #eef2f6;
+    border-top-color: var(--surface-muted);
 }
 
 .dashboard-cotizaciones .btn-view-detail {
     min-height: 36px;
     padding: 0.5rem 0.7rem;
-    border: 1px solid #dcebe0;
+    border: 1px solid #8bd39a;
     border-radius: 7px;
-    background: #f0fdf4;
-    color: #15803d;
+    background: var(--accent-green-light);
+    color: var(--accent-green-dark);
     font-weight: 700;
 }
 
@@ -693,12 +693,12 @@
 .dashboard-cotizaciones .empty-state {
     min-height: 240px;
     border-radius: 14px;
-    background: #ffffff;
+    background: var(--surface-card);
 }
 
 .dashboard-cotizaciones .detail-content {
     padding: 1.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-color);
     border-radius: 14px;
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }

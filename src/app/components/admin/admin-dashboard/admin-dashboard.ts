@@ -2,6 +2,7 @@ import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import { SupabaseService } from '../../../services/supabase.service';
+import { ThemeService } from '../../../services/theme.service';
 import { Subscription, filter } from 'rxjs';
 
 @Component({
@@ -9,14 +10,14 @@ import { Subscription, filter } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterModule],
   templateUrl: './admin-dashboard.component.html',
-  styleUrls: ['./admin-dashboard.component.css']
+  styleUrls: ['./admin-dashboard.component.css'],
 })
 export class AdminDashboardComponent implements OnDestroy {
   public supabase = inject(SupabaseService);
+  public theme = inject(ThemeService);
   private router = inject(Router);
   private routerEventsSub: Subscription;
 
-  /** Controla el drawer lateral en pantallas móviles/tablets. */
   sidebarOpen = signal(false);
 
   constructor() {
@@ -35,6 +36,10 @@ export class AdminDashboardComponent implements OnDestroy {
 
   closeSidebar(): void {
     this.sidebarOpen.set(false);
+  }
+
+  toggleTheme(): void {
+    this.theme.toggle();
   }
 
   async logout(): Promise<void> {

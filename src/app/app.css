@@ -36,8 +36,8 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background: linear-gradient(135deg, #15803d 0%, #20b038 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--accent-green-dark) 0%, var(--accent-green) 100%);
+  color: var(--text-on-accent);
   padding: 0.85rem 1.5rem;
   border-radius: 12px;
   font-weight: 700;

@@ -20,6 +20,298 @@
   --font-heading: 'Fjalla One', sans-serif;
   --font-body: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Variables semánticas derivadas de la paleta dominante (para el modo oscuro). */
+  --surface-page: var(--bg-primary);
+  --surface-card: var(--card-bg);
+  --surface-subtle: #f8fafc;
+  --surface-muted: #eef2f6;
+  --surface-hover: #f1f5f9;
+  --input-bg: #ffffff;
+  --input-border: #dbe4ec;
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --shadow-color: 15, 23, 42;
+  --shadow-soft: rgba(var(--shadow-color), 0.04);
+  --shadow-medium: rgba(var(--shadow-color), 0.08);
+  --shadow-strong: rgba(var(--shadow-color), 0.14);
+  --text-on-accent: #ffffff;
+  --text-inverse: var(--text-main);
+
+  --danger: #dc2626;
+  --danger-bright: #ef4444;
+  --danger-bg: #fef2f2;
+  --danger-border: #fbd3cd;
+  --warning: #b45309;
+  --warning-bg: #fffbeb;
+  --warning-border: #fde68a;
+
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --bg-primary: #0d1517;
+  --bg-secondary: #121d20;
+  --card-bg: #172326;
+  --card-border: #304348;
+
+  --accent-green: #22c55e;
+  --accent-green-bright: #4ade80;
+  --accent-green-dark: #15803d;
+  --accent-green-light: rgba(34, 197, 94, 0.14);
+  --accent-slate: #e8f1ee;
+  --accent-silver: #9fb4ae;
+
+  --text-main: #e8f1ee;
+  --text-muted: #9fb4ae;
+  --text-silver: #c8d7d2;
+
+  --surface-page: var(--bg-primary);
+  --surface-card: var(--card-bg);
+  --surface-subtle: #1d2c30;
+  --surface-muted: #223438;
+  --surface-hover: #263b3f;
+  --input-bg: #121e21;
+  --input-border: #3a5055;
+  --border-color: #304348;
+  --border-strong: #4b6469;
+  --shadow-color: 0, 0, 0;
+  --shadow-soft: rgba(var(--shadow-color), 0.45);
+  --shadow-medium: rgba(var(--shadow-color), 0.55);
+  --shadow-strong: rgba(var(--shadow-color), 0.7);
+  --text-on-accent: #ffffff;
+  --text-inverse: var(--text-main);
+
+  --danger: #f87171;
+  --danger-bright: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.16);
+  --danger-border: rgba(239, 68, 68, 0.4);
+  --warning: #fbbf24;
+  --warning-bg: rgba(245, 158, 11, 0.14);
+  --warning-border: rgba(245, 158, 11, 0.35);
+
+  color-scheme: dark;
+}
+
+html[data-theme='dark'] body {
+  background-image:
+    radial-gradient(at 0% 0%, rgba(34, 197, 94, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(66, 93, 98, 0.24) 0px, transparent 50%);
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #3b4f71;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green);
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+html[data-theme='dark'] .auth-container {
+  background: radial-gradient(900px 520px at 92% -8%, rgba(34, 197, 94, 0.1), transparent 62%),
+    radial-gradient(760px 460px at -8% 110%, rgba(34, 197, 94, 0.06), transparent 58%),
+    linear-gradient(180deg, #121d20 0%, #0d1517 100%);
+}
+
+html[data-theme='dark'] .auth-inner,
+html[data-theme='dark'] .auth-container .auth-card {
+  border-color: var(--card-border) !important;
+  background: var(--surface-card) !important;
+  box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(75, 100, 105, 0.18) !important;
+}
+
+html[data-theme='dark'] .auth-form-panel {
+  background: linear-gradient(180deg, #182629, #121d20) !important;
+}
+
+html[data-theme='dark'] .auth-container .auth-title,
+html[data-theme='dark'] .auth-container .auth-header h2 {
+  color: var(--text-main);
+}
+
+html[data-theme='dark'] .auth-container .auth-header p,
+html[data-theme='dark'] .auth-container .auth-link {
+  color: var(--text-muted);
+}
+
+html[data-theme='dark'] .auth-container .form-group label {
+  color: var(--text-silver);
+}
+
+html[data-theme='dark'] .auth-container .form-group input,
+html[data-theme='dark'] .auth-container .form-group select {
+  border-color: var(--input-border) !important;
+  background: var(--input-bg) !important;
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .auth-container .form-group input:focus,
+html[data-theme='dark'] .auth-container .form-group select:focus {
+  background: var(--surface-subtle) !important;
+}
+
+html[data-theme='dark'] .auth-container .auth-eyebrow {
+  background: var(--accent-green-light);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: var(--accent-green-bright);
+}
+
+html[data-theme='dark'] .auth-container .phone-counter {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+html[data-theme='dark'] .auth-container .error {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+html[data-theme='dark'] .auth-container .success {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: var(--accent-green-light);
+  color: var(--accent-green-bright);
+}
+
+html[data-theme='dark'] .users-table td {
+  border-top-color: var(--border-color) !important;
+}
+
+html[data-theme='dark'] .users-table tbody tr:hover td {
+  background: rgba(34, 197, 94, 0.09) !important;
+}
+
+html[data-theme='dark'] .users-table tbody tr.is-selected td {
+  background: rgba(34, 197, 94, 0.14) !important;
+  border-top-color: rgba(74, 222, 128, 0.35) !important;
+}
+
+html[data-theme='dark'] .admins-container,
+html[data-theme='dark'] .sellers-container,
+html[data-theme='dark'] .parameters-container,
+html[data-theme='dark'] .plates-container,
+html[data-theme='dark'] .vehicles-container,
+html[data-theme='dark'] .quotes-panel,
+html[data-theme='dark'] .dashboard-container,
+html[data-theme='dark'] .dashboard-cotizaciones,
+html[data-theme='dark'] .cotizador-wrapper {
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .admins-container h2,
+html[data-theme='dark'] .admins-container h3,
+html[data-theme='dark'] .admins-container h4,
+html[data-theme='dark'] .sellers-container h2,
+html[data-theme='dark'] .sellers-container h3,
+html[data-theme='dark'] .sellers-container h4,
+html[data-theme='dark'] .parameters-container h2,
+html[data-theme='dark'] .parameters-container h3,
+html[data-theme='dark'] .parameters-container h4,
+html[data-theme='dark'] .plates-container h2,
+html[data-theme='dark'] .plates-container h3,
+html[data-theme='dark'] .plates-container h4,
+html[data-theme='dark'] .vehicles-container h2,
+html[data-theme='dark'] .vehicles-container h3,
+html[data-theme='dark'] .vehicles-container h4,
+html[data-theme='dark'] .quotes-panel h2,
+html[data-theme='dark'] .quotes-panel h3,
+html[data-theme='dark'] .quotes-panel h4,
+html[data-theme='dark'] .dashboard-container h1,
+html[data-theme='dark'] .dashboard-container h2,
+html[data-theme='dark'] .dashboard-container h3,
+html[data-theme='dark'] .dashboard-cotizaciones h1,
+html[data-theme='dark'] .dashboard-cotizaciones h2,
+html[data-theme='dark'] .dashboard-cotizaciones h3,
+html[data-theme='dark'] .stat-body strong,
+html[data-theme='dark'] .metric-value,
+html[data-theme='dark'] .vehicle-name,
+html[data-theme='dark'] .plate-name,
+html[data-theme='dark'] .quote-card-mini .client-name,
+html[data-theme='dark'] .quote-card-mini .vehicle-name,
+html[data-theme='dark'] .header-left h1,
+html[data-theme='dark'] .dashboard-header h1,
+html[data-theme='dark'] .plate-card h3,
+html[data-theme='dark'] .brand-heading h3,
+html[data-theme='dark'] .vehicle-card h4,
+html[data-theme='dark'] .user-meta strong,
+html[data-theme='dark'] .attention-header h2 {
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .plate-estado {
+  border-color: rgba(134, 239, 172, 0.55) !important;
+  color: var(--accent-green-bright) !important;
+}
+
+html[data-theme='dark'] .stat-card.is-active,
+html[data-theme='dark'] .metric-card.is-active {
+  background: var(--surface-muted) !important;
+  border-color: var(--accent-green) !important;
+}
+
+html[data-theme='dark'] .tone-slate,
+html[data-theme='dark'] .tone-green,
+html[data-theme='dark'] .tone-amber,
+html[data-theme='dark'] .tone-blue {
+  background: var(--surface-muted) !important;
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .search-clear,
+html[data-theme='dark'] .btn-note:hover {
+  background: var(--surface-muted) !important;
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .alert,
+html[data-theme='dark'] .attention-item,
+html[data-theme='dark'] .empty-card,
+html[data-theme='dark'] .empty-state {
+  background: var(--surface-card) !important;
+  color: var(--text-main);
+  border-color: var(--border-color);
+}
+
+html[data-theme='dark'] .app-header {
+  background: rgba(18, 29, 32, 0.96) !important;
+  border-bottom-color: var(--border-color) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.34) !important;
+}
+
+html[data-theme='dark'] .brand-title,
+html[data-theme='dark'] .user-name {
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .user-area {
+  background: var(--surface-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme='dark'] .dashboard-cotizaciones .client-name,
+html[data-theme='dark'] .dashboard-cotizaciones .vehicle-name,
+html[data-theme='dark'] .dashboard-cotizaciones .detail-value {
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .dashboard-cotizaciones .search-input {
+  border-color: var(--input-border) !important;
+  background: var(--surface-subtle) !important;
+  color: var(--text-main) !important;
+}
+
+html[data-theme='dark'] .preset-section {
+  background: var(--surface-subtle) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme='dark'] .preset-section .preset-select {
+  background: var(--input-bg) !important;
+  color: var(--text-main) !important;
 }
 
 * {
