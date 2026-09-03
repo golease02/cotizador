@@ -8,6 +8,15 @@
     display: none;
 }
 
+/* Barra superior móvil (solo se muestra en pantallas pequeñas) */
+.admin-mobile-topbar {
+    display: none;
+}
+
+.drawer-close {
+    display: none;
+}
+
 .admin-sidebar {
     width: 272px;
     background: #10251f;
@@ -310,6 +319,43 @@
         flex-direction: column;
     }
 
+    /* ----- Barra superior móvil ----- */
+    .admin-mobile-topbar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 1090;
+        padding: 0.65rem 1rem;
+        background: #10251f;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.16);
+    }
+
+    .mobile-topbar-title {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+        min-width: 0;
+    }
+
+    .mobile-brand {
+        font-family: 'Fjalla One', sans-serif;
+        font-size: 1.05rem;
+        letter-spacing: 0.5px;
+        color: #ffffff;
+        white-space: nowrap;
+    }
+
+    .mobile-subtitle {
+        font-size: 0.62rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #9db6ab;
+    }
+
     /* ----- Botón hamburguesa ----- */
     .menu-toggle {
         display: inline-flex;
@@ -318,7 +364,6 @@
         width: 44px;
         height: 44px;
         flex-shrink: 0;
-        margin-left: auto;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.14);
         border-radius: 10px;
@@ -338,6 +383,38 @@
     }
 
     .menu-toggle svg {
+        stroke: currentColor;
+    }
+
+    /* ----- Botón de cierre del drawer ----- */
+    .drawer-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        margin-left: auto;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        color: #eafdf0;
+        cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .drawer-close:hover {
+        background: rgba(239, 68, 68, 0.16);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #fca5a5;
+    }
+
+    .drawer-close:focus-visible {
+        outline: 2px solid #8be28c;
+        outline-offset: 2px;
+    }
+
+    .drawer-close svg {
         stroke: currentColor;
     }
 

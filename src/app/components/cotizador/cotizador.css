@@ -256,11 +256,23 @@
     .left-column {
         padding: 0;
     }
+
+    /* Importante: debe venir DESPUÉS de la regla .cotizador-grid base
+       (misma especificidad, gana la última) para colapsar a 1 columna */
+    .cotizador-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
 }
 
 @media (max-width: 600px) {
     .cotizador-wrapper {
         padding: 1rem 0.75rem 1.5rem;
+    }
+
+    /* Ocultar el adorno decorativo en pantallas pequeñas */
+    .cotizador-wrapper::before {
+        display: none;
     }
 
     .cotizador-topbar {
@@ -280,6 +292,10 @@
 
     .left-column {
         border-radius: 12px;
+    }
+
+    .right-column {
+        gap: 1rem;
     }
 
     .toast {

@@ -1,4 +1,20 @@
 <div class="admin-layout">
+    <div class="admin-mobile-topbar">
+        <button class="menu-toggle" type="button" (click)="toggleSidebar()"
+            [attr.aria-expanded]="sidebarOpen()" aria-label="Abrir menú de navegación" title="Menú">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h18"></path>
+                <path d="M3 6h18"></path>
+                <path d="M3 18h18"></path>
+            </svg>
+        </button>
+        <div class="mobile-topbar-title">
+            <span class="mobile-brand">Go Lease</span>
+            <span class="mobile-subtitle">Panel Admin</span>
+        </div>
+    </div>
+
     <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen()">
         <div class="sidebar-header">
             <div class="sidebar-logo">
@@ -8,13 +24,11 @@
                     <span class="logo-subtitle">Panel Admin</span>
                 </div>
             </div>
-            <button class="menu-toggle" type="button" (click)="toggleSidebar()"
-                [attr.aria-expanded]="sidebarOpen()" aria-label="Abrir menú de navegación" title="Menú">
+            <button class="drawer-close" type="button" (click)="closeSidebar()" aria-label="Cerrar menú" title="Cerrar">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12h18"></path>
-                    <path d="M3 6h18"></path>
-                    <path d="M3 18h18"></path>
+                    <path d="M18 6 6 18"></path>
+                    <path d="m6 6 12 12"></path>
                 </svg>
             </button>
         </div>
