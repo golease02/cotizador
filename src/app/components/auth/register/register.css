@@ -1,4 +1,4 @@
-.register-inner {
+﻿.register-inner {
   max-width: 1120px;
   min-height: 620px;
 }
@@ -228,7 +228,7 @@
 .strength-meter.level-3 .strength-bar.active { background: var(--accent-green); }
 .strength-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; min-width: 4.2rem; text-align: right; }
 .strength-meter.level-1 .strength-label { color: var(--danger); }
-.strength-meter.level-2 .strength-label { color: #d97706; }
+.strength-meter.level-2 .strength-label { color: var(--warning); }
 .strength-meter.level-3 .strength-label { color: #16a34a; }
 
 /* ─── Checklist de requisitos de la contraseña ─── */

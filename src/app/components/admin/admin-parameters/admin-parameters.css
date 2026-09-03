@@ -77,7 +77,7 @@
   border: 0;
   border-radius: 9px;
   background: #8be28c;
-  color: #10251f;
+  color: var(--accent-slate);
   white-space: nowrap;
   cursor: pointer;
   font-weight: 700;
@@ -153,10 +153,10 @@
   stroke-linejoin: round;
 }
 
-.tone-slate { background: #eef2f7; color: var(--text-silver); }
-.tone-green { background: #eaf8ed; color: var(--accent-green-dark); }
-.tone-amber { background: #fef5e7; color: var(--warning); }
-.tone-blue { background: #eaf2fd; color: #1d4ed8; }
+.tone-slate { background: var(--surface-muted); color: var(--text-silver); }
+.tone-green { background: var(--accent-green-light); color: var(--accent-green-dark); }
+.tone-amber { background: var(--warning-bg); color: var(--warning); }
+.tone-blue { background: var(--info-bg); color: var(--info); }
 
 .stat-body {
   display: flex;
@@ -167,7 +167,7 @@
 .stat-body strong {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #10251f;
+  color: var(--accent-slate);
 }
 
 .stat-body small {
@@ -248,7 +248,7 @@
   gap: 0.4rem;
   padding: 0.32rem 0.75rem;
   border-radius: 999px;
-  background: #fef5e7;
+  background: var(--warning-bg);
   color: var(--warning);
   font-size: 0.72rem;
   font-weight: 800;
@@ -314,7 +314,7 @@
 .config-card-header h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: #10251f;
+  color: var(--accent-slate);
 }
 
 .config-card-header p {
@@ -521,7 +521,7 @@
 
 .residual-value {
   text-align: right;
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 0.82rem;
 }
 
@@ -609,7 +609,7 @@
 }
 
 .form-actions .actions-title {
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 0.9rem;
   font-weight: 700;
 }

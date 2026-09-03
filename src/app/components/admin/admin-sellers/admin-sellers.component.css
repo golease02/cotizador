@@ -75,7 +75,7 @@
   border: 0;
   border-radius: 9px;
   background: #8be28c;
-  color: #10251f;
+  color: var(--accent-slate);
   box-shadow: none;
   white-space: nowrap;
   cursor: pointer;
@@ -136,7 +136,7 @@ button.stat-card:hover {
 .stat-card.is-active {
   border-color: var(--accent-green);
   box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.12);
-  background: #f7fdf8;
+  background: var(--surface-hover);
 }
 
 .stat-card.stat-plain {
@@ -163,10 +163,10 @@ button.stat-card:hover {
   stroke-linejoin: round;
 }
 
-.tone-slate { background: #eef2f7; color: var(--text-silver); }
-.tone-green { background: #eaf8ed; color: var(--accent-green-dark); }
-.tone-amber { background: #fef5e7; color: var(--warning); }
-.tone-blue { background: #eaf2fd; color: #1d4ed8; }
+.tone-slate { background: var(--surface-muted); color: var(--text-silver); }
+.tone-green { background: var(--accent-green-light); color: var(--accent-green-dark); }
+.tone-amber { background: var(--warning-bg); color: var(--warning); }
+.tone-blue { background: var(--info-bg); color: var(--info); }
 
 .stat-body {
   display: flex;
@@ -177,7 +177,7 @@ button.stat-card:hover {
 .stat-body strong {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #10251f;
+  color: var(--accent-slate);
 }
 
 .stat-body small {
@@ -252,7 +252,7 @@ button.stat-card:hover {
   height: 24px;
   border: 0;
   border-radius: 50%;
-  background: #e8edf3;
+  background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 1rem;
   line-height: 1;
@@ -388,7 +388,7 @@ button.stat-card:hover {
 
 .users-table td {
   padding: 0.8rem 1rem;
-  border-top: 1px solid #edf2f5;
+  border-top: 1px solid var(--border-color);
   color: var(--text-silver);
   vertical-align: middle;
 }
@@ -399,7 +399,7 @@ button.stat-card:hover {
 }
 
 .users-table tbody tr:hover td {
-  background: #f4fbf5;
+  background: var(--surface-hover);
 }
 
 .users-table tbody tr:focus-visible {
@@ -408,7 +408,7 @@ button.stat-card:hover {
 }
 
 .users-table tbody tr.is-selected td {
-  background: #effbf1;
+  background: var(--accent-green-light);
   border-top-color: #c4eacb;
 }
 
@@ -431,7 +431,7 @@ button.stat-card:hover {
 }
 
 .user-meta strong {
-  color: #10251f;
+  color: var(--accent-slate);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -498,8 +498,8 @@ button.stat-card:hover {
   align-items: center;
   padding: 0.28rem 0.7rem;
   border-radius: 999px;
-  background: #eef7f0;
-  border: 1px solid #d7eadb;
+  background: var(--accent-green-light);
+  border: 1px solid #8bd39a;
   color: var(--accent-green-dark);
   font-size: 0.76rem;
   font-weight: 700;
@@ -531,7 +531,7 @@ button.stat-card:hover {
   min-width: 34px;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
-  background: #eef2f7;
+  background: var(--surface-muted);
   color: var(--text-silver);
   font-size: 0.85rem;
 }
@@ -612,9 +612,9 @@ button.stat-card:hover {
   stroke-linejoin: round;
 }
 
-.btn-note:hover { background: #eef7f0; color: var(--accent-green-dark); border-color: #d7eadb; }
-.btn-edit:hover { background: #eaf2fd; color: #1d4ed8; border-color: #d6e4fb; }
-.btn-delete:hover { background: #fdf0ee; color: var(--danger); border-color: var(--danger-border); }
+.btn-note:hover { background: var(--accent-green-light); color: var(--accent-green-dark); border-color: #8bd39a; }
+.btn-edit:hover { background: var(--info-bg); color: var(--info); border-color: var(--info-border); }
+.btn-delete:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
 
 /* ===== ESTADO VACÍO ===== */
 .catalog-state {
@@ -645,7 +645,7 @@ button.stat-card:hover {
   height: 52px;
   margin-bottom: 0.6rem;
   border-radius: 14px;
-  background: #eaf8ed;
+  background: var(--accent-green-light);
   color: var(--accent-green-dark);
 }
 
@@ -687,7 +687,7 @@ button.stat-card:hover {
 }
 
 .btn-secondary.danger:hover {
-  background: #fdf0ee;
+  background: var(--danger-bg);
 }
 
 .btn-block {
@@ -873,7 +873,7 @@ button.stat-card:hover {
 
 .drawer-header h3 {
   margin: 0.2rem 0 0;
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 1.25rem;
 }
 
@@ -895,7 +895,7 @@ button.stat-card:hover {
 }
 
 .drawer-close:hover {
-  background: #fdf0ee;
+  background: var(--danger-bg);
   color: var(--danger);
   border-color: var(--danger-border);
 }
@@ -960,7 +960,7 @@ button.stat-card:hover {
 }
 
 .detail-stat strong {
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 1.1rem;
 }
 
@@ -1045,7 +1045,7 @@ button.stat-card:hover {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #e8edf3;
+  background: var(--surface-muted);
   color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 800;
@@ -1077,7 +1077,7 @@ button.stat-card:hover {
   flex: 1;
   height: 3px;
   border-radius: 999px;
-  background: #e8edf3;
+  background: var(--surface-muted);
 }
 
 .step-line.is-done {
@@ -1140,7 +1140,7 @@ button.stat-card:hover {
 .form-group.has-error select,
 .form-group.has-error textarea {
   border-color: var(--danger);
-  background: #fffafa;
+  background: var(--danger-bg);
 }
 
 .form-group.has-error input:focus,
@@ -1204,7 +1204,7 @@ button.stat-card:hover {
   height: 32px;
   border: 0;
   border-radius: 8px;
-  background: #eef2f7;
+  background: var(--surface-muted);
   color: var(--text-silver);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1405,12 +1405,12 @@ button.stat-card:hover {
 }
 
 .modal-heading-warning .modal-icon {
-  background: #fef5e7;
+  background: var(--warning-bg);
   color: var(--warning);
 }
 
 .modal-heading-notes .modal-icon {
-  background: #eaf8ed;
+  background: var(--accent-green-light);
   color: var(--accent-green-dark);
 }
 
@@ -1425,7 +1425,7 @@ button.stat-card:hover {
 
 .modal-content h3 {
   margin: 0;
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 1.15rem;
 }
 
@@ -1442,8 +1442,8 @@ button.stat-card:hover {
   margin-top: 0.5rem;
   padding: 0.45rem 0.65rem;
   border-radius: 8px;
-  background: #fef5e7;
-  border: 1px solid #fde8c8;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
   color: var(--warning);
   font-size: 0.8rem;
   line-height: 1.4;
@@ -1632,7 +1632,7 @@ button.stat-card:hover {
 }
 
 .status-active {
-  background: #eaf8ed;
+  background: var(--accent-green-light);
   color: var(--accent-green-dark);
   border: 1px solid #c9ecd0;
 }

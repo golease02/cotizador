@@ -86,6 +86,7 @@ export class SupabaseService {
         return;
       }
       await this.loadQuotes();
+      await this.loadCalculatorConfig();
     }
   }
 
@@ -151,6 +152,7 @@ export class SupabaseService {
       // el enlace de recuperación al buzón personal del usuario.
       await this.updateProfile(data.user.id, { email: safeEmail });
       await this.loadProfile(data.user.id);
+      await this.loadCalculatorConfig();
     }
     return { error };
   }
@@ -165,6 +167,7 @@ export class SupabaseService {
         return { error: { message: 'Tu cuenta está inactiva. Contacta a un administrador.' } };
       }
       await this.loadQuotes();
+      await this.loadCalculatorConfig();
     }
     return { error };
   }
@@ -340,6 +343,12 @@ export class SupabaseService {
     }
 
     public async loadCalculatorConfig(): Promise<void> {
+      // La tabla calculator_settings solo es legible con rol authenticated
+      // (la migración harden_rls revocó el acceso a anon). Evitar la
+      // petición cuando no hay sesión para no generar un 401 en consola.
+      if (!this.currentUserSignal()) {
+        return;
+      }
       try {
         const { data, error } = await this.supabase
           .from('calculator_settings')

@@ -549,7 +549,7 @@
     border: 0;
     border-radius: 9px;
     background: #8be28c;
-    color: #10251f;
+    color: var(--accent-slate);
     box-shadow: none;
 }
 
@@ -608,7 +608,7 @@
 
 .dashboard-cotizaciones .period-btn.active {
     background: #10251f;
-    border-color: #10251f;
+    border-color: var(--accent-slate);
     color: #ffffff;
 }
 
@@ -656,7 +656,7 @@
 }
 
 .dashboard-cotizaciones .client-name {
-    color: #10251f;
+    color: var(--accent-slate);
 }
 
 .dashboard-cotizaciones .vehicle-name {

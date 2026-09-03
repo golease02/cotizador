@@ -69,7 +69,7 @@
   border: 0;
   border-radius: 9px;
   background: #8be28c;
-  color: #10251f;
+  color: var(--accent-slate);
   box-shadow: none;
   white-space: nowrap;
   cursor: pointer;
@@ -260,7 +260,7 @@
 .vehicles-container td {
   padding: 0.95rem 1rem;
   color: var(--text-silver);
-  border-bottom-color: #edf2f5;
+  border-bottom-color: var(--border-color);
 }
 
 .vehicles-container tbody tr:last-child td {
@@ -331,12 +331,12 @@
 }
 
 .vehicles-container .btn-delete:hover {
-  color: #ef4444;
-  background: #fee2e2;
+  color: var(--danger-bright);
+  background: var(--danger-bg);
 }
 
 .vehicles-container .btn-edit:hover {
-  color: #3b82f6;
+  color: var(--info);
 }
 
 .page-kicker {
@@ -417,7 +417,7 @@
 }
 
 .brand-index button:hover {
-  background: #eaf8ed;
+  background: var(--accent-green-light);
   color: var(--accent-green-dark);
 }
 
@@ -452,7 +452,7 @@
 
 .brand-heading h3 {
   margin: 0.2rem 0 0.65rem;
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 1.35rem;
   line-height: 1;
 }
@@ -511,7 +511,7 @@
 .vehicle-card h4 {
   margin: 1rem 0 0.25rem;
   overflow: hidden;
-  color: #10251f;
+  color: var(--accent-slate);
   font-size: 1.05rem;
   line-height: 1.3;
   text-overflow: ellipsis;
@@ -534,7 +534,7 @@
 .vehicle-card-footer {
   justify-content: flex-end;
   padding-top: 0.75rem;
-  border-top: 1px solid #edf2f5;
+  border-top: 1px solid var(--border-color);
 }
 
 .catalog-state {
@@ -768,8 +768,8 @@
 }
 
 .modal-heading-warning .modal-icon {
-  background: #fff4e5;
-  color: #d97706;
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 .modal-content > p {
@@ -786,7 +786,7 @@
   padding: 0.7rem 0.8rem;
   border: 1px solid #fed7aa;
   border-radius: 9px;
-  background: #fff7ed;
+  background: var(--warning-bg);
   color: var(--warning);
   font-weight: 600;
 }
@@ -878,7 +878,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.25rem 1.5rem 1rem;
-  border-bottom: 1px solid #edf2f5;
+  border-bottom: 1px solid var(--border-color);
   background: linear-gradient(135deg, #10251f, #1f6840);
 }
 
@@ -939,7 +939,7 @@
   gap: 0.6rem;
   margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid #edf2f5;
+  border-top: 1px solid var(--border-color);
 }
 
 .drawer-actions .btn-cancel,

@@ -1,4 +1,4 @@
-.admin-layout {
+﻿.admin-layout {
     display: flex;
     min-height: 100vh;
     background: #f4f6f8;
@@ -63,7 +63,7 @@
     height: 42px;
     border-radius: 12px;
     background: linear-gradient(145deg, #8be28c, #20b038);
-    color: #10251f;
+    color: var(--accent-slate);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -189,7 +189,7 @@
     height: 32px;
     border-radius: 9px;
     background: #8be28c;
-    color: #10251f;
+    color: var(--accent-slate);
     display: flex;
     align-items: center;
     justify-content: center;
