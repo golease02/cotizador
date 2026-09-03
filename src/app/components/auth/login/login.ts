@@ -94,8 +94,14 @@ export class LoginComponent {
         return;
       }
 
-      const emailPrefix = profile.role === 'admin' ? 'admin' : 'vendedor';
-      const email = profile.recovery_email || `${emailPrefix}_${this.phoneNumber}@golease.com`;
+      // El email de autenticación es el "email espejo" guardado en
+      // profiles.email (mismo valor que auth.users.email). NUNCA se construye
+      // un email desde el rol/teléfono ni se usa recovery_email para loguear.
+      const email = profile.email?.trim().toLowerCase();
+      if (!email) {
+        this.errorMessage = 'La cuenta no tiene un correo de autenticación configurado.';
+        return;
+      }
       const { error } = await this.supabase.signIn(email, this.password);
       if (error) {
         this.errorMessage = error.message || 'Error al iniciar sesión.';

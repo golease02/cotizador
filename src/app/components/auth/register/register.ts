@@ -286,6 +286,9 @@ export class RegisterComponent implements AfterViewInit {
 
       // Guardar perfil
       const profileData: any = {
+        // profiles.email es el "email espejo" del email de autenticación
+        // (auth.users.email). El login lo usa como email de la cuenta.
+        email,
         seller_number: this.phoneNumber,
         full_name: this.fullName.trim(),
         agency_brand: finalBrand,

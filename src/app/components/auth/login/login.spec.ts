@@ -1,16 +1,38 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { LoginComponent } from './login';
+import { SupabaseService } from '../../../services/supabase.service';
+
+@Component({ template: '' })
+class DummyHomeComponent {}
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
 
+  const mockSupabase = {
+    getProfileBySellerNumber: vi.fn(),
+    signIn: vi.fn().mockResolvedValue({ error: null }),
+    currentUser: vi.fn().mockReturnValue({ id: 'user-1' }),
+    loadProfile: vi.fn().mockResolvedValue({
+      id: 'user-1',
+      email: 'vendedor_5512345678@golease.com',
+      role: 'seller'
+    }),
+  };
+
   beforeEach(async () => {
+    mockSupabase.getProfileBySellerNumber.mockReset();
+    mockSupabase.signIn.mockClear();
+
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([{ path: '', component: DummyHomeComponent }]),
+        { provide: SupabaseService, useValue: mockSupabase },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -50,5 +72,82 @@ describe('LoginComponent', () => {
     expect(component.showPassword).toBe(false);
     component.togglePasswordVisibility();
     expect(component.showPassword).toBe(true);
+  });
+
+  it('should sign in with profile.email (the auth mirror email), not recovery_email', async () => {
+    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+      data: {
+        id: 'user-1',
+        email: 'vendedor_5512345678@golease.com',
+        recovery_email: 'personal@gmail.com',
+        role: 'seller',
+        active: true
+      },
+      error: null
+    });
+    component.phoneNumber = '5512345678';
+    component.password = 'abc123';
+
+    await component.onLogin();
+
+    expect(mockSupabase.signIn).toHaveBeenCalledWith(
+      'vendedor_5512345678@golease.com',
+      'abc123'
+    );
+    // recovery_email sólo se usa para enviar el enlace de recuperación,
+    // jamás para autenticar.
+    expect(mockSupabase.signIn).not.toHaveBeenCalledWith(
+      'personal@gmail.com',
+      expect.anything()
+    );
+  });
+
+  it('should NOT build a synthetic email like vendedor_${phone}@golease.com', async () => {
+    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+      data: {
+        id: 'user-1',
+        email: 'marcotulio@correo.com',
+        recovery_email: null,
+        role: 'seller',
+        active: true
+      },
+      error: null
+    });
+    component.phoneNumber = '5512345678';
+    component.password = 'abc123';
+
+    await component.onLogin();
+
+    // Se usa exactamente el email espejo del perfil: no se construye ningún
+    // email a partir del rol y el teléfono.
+    expect(mockSupabase.signIn).toHaveBeenCalledWith('marcotulio@correo.com', 'abc123');
+  });
+
+  it('should show a generic error and not call signIn when profile.email is missing', async () => {
+    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+      data: { id: 'user-1', email: '', recovery_email: 'personal@gmail.com', role: 'seller' },
+      error: null
+    });
+    component.phoneNumber = '5512345678';
+    component.password = 'abc123';
+
+    await component.onLogin();
+
+    expect(component.errorMessage).toContain('correo de autenticación');
+    expect(mockSupabase.signIn).not.toHaveBeenCalled();
+  });
+
+  it('should show generic error when the seller number is not registered', async () => {
+    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'No encontrado' }
+    });
+    component.phoneNumber = '5512345678';
+    component.password = 'abc123';
+
+    await component.onLogin();
+
+    expect(component.errorMessage).toBe('Número de celular no registrado.');
+    expect(mockSupabase.signIn).not.toHaveBeenCalled();
   });
 });

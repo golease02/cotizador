@@ -400,6 +400,7 @@ export class AdminAdminsComponent implements OnInit {
 
       if (!created.error && created.data?.id) {
         const { error: profileError } = await this.supabase.updateProfile(created.data.id, {
+          email,
           seller_number: this.adminForm.seller_number.trim(),
           full_name: this.adminForm.full_name.trim(),
           active: true,
@@ -441,6 +442,7 @@ export class AdminAdminsComponent implements OnInit {
       }
 
       const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
+        email,
         seller_number: this.adminForm.seller_number.trim(),
         full_name: this.adminForm.full_name.trim(),
         active: true,

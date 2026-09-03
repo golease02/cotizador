@@ -104,6 +104,11 @@ export class SupabaseService {
     return normalized.slice(0, limit);
   }
 
+  /** Validación de formato de email (sin exponer adónde va dirigido). */
+  private isValidEmail(value: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+  }
+
   public canManageProfile(targetUserId: string): boolean {
     const currentUser = this.currentUserSignal();
     const currentProfile = this.currentProfileSignal();
@@ -123,6 +128,14 @@ export class SupabaseService {
     const safeEmail = this.sanitizeText(email, 'email', 160).toLowerCase();
     const safeName = this.sanitizeText(fullName, 'full_name', 120);
 
+    // Defensa en profundidad antes de contactar Auth.
+    if (!safeEmail || !this.isValidEmail(safeEmail)) {
+      return { error: { message: 'El correo electrónico es inválido.' } };
+    }
+    if (!password || password.length < 6) {
+      return { error: { message: 'La contraseña debe tener al menos 6 caracteres.' } };
+    }
+
     const { data, error } = await this.supabase.auth.signUp({
       email: safeEmail,
       password,
@@ -130,6 +143,13 @@ export class SupabaseService {
     });
     if (!error && data.user) {
       this.currentUserSignal.set(data.user);
+      // IMPORTANTE: se guarda el email ORIGINAL de la cuenta (el que se usó
+      // para registrarse) en profiles.email. Este campo es el "email espejo"
+      // del email de autenticación que usa el login (phone -> profile.email ->
+      // signIn). Al mantenerlo sincronizado, la recuperación de contraseña
+      // NUNCA rompe el login, aunque auth.users.email cambie para poder enviar
+      // el enlace de recuperación al buzón personal del usuario.
+      await this.updateProfile(data.user.id, { email: safeEmail });
       await this.loadProfile(data.user.id);
     }
     return { error };
@@ -663,7 +683,18 @@ export class SupabaseService {
 
     const safeData: Record<string, any> = {};
     for (const [key, value] of Object.entries(data ?? {})) {
-      if (key === 'id' || key === 'email') {
+      if (key === 'id') {
+        continue;
+      }
+
+      // email espejo: solo se permite guardar un email bien formado, porque es
+      // el email real de autenticación (auth.users.email) que usa el login.
+      if (key === 'email') {
+        if (typeof value !== 'string') continue;
+        const clean = this.sanitizeText(value, 'email', 160).toLowerCase();
+        if (this.isValidEmail(clean)) {
+          safeData['email'] = clean;
+        }
         continue;
       }
 
@@ -694,7 +725,14 @@ export class SupabaseService {
       return { data: null, error };
     }
 
-    const profile = data && data.length > 0 ? data[0] : null;
+    // La RPC devuelve array (setof profiles) o, por compatibilidad, un objeto.
+    const profile = Array.isArray(data) && data.length > 0 ? data[0] : (data ?? null);
+
+    // profile.email es el espejo del email de autenticación (auth.users.email).
+    // El login usará SIEMPRE profile.email; aquí se obtiene del perfil devuelto.
+    if (!profile || typeof profile.email !== 'string' || !profile.email.trim()) {
+      return { data: null, error: { message: 'Perfil sin email de autenticación.' } };
+    }
 
     return { data: profile, error: null };
   }
@@ -703,16 +741,28 @@ export class SupabaseService {
     sellerNumber: string,
     recoveryEmail: string
   ): Promise<{ error: any }> {
+    const normalizedSeller = sellerNumber.trim();
     const normalizedEmail = recoveryEmail.trim().toLowerCase();
+
+    // Defensa en profundidad: mismas reglas que aplica la RPC en SQL.
+    if (!/^\d{10}$/.test(normalizedSeller)) {
+      return { error: { message: 'Número de celular inválido.' } };
+    }
+    if (!this.isValidEmail(normalizedEmail) || normalizedEmail.length > 160) {
+      return { error: { message: 'Correo de recuperación inválido.' } };
+    }
+
     const { data: accepted, error } = await this.supabase.rpc('request_password_recovery', {
-      seller_number_input: sellerNumber.trim(),
+      seller_number_input: normalizedSeller,
       recovery_email_input: normalizedEmail
     });
 
-    // Always issue the same client response to avoid revealing whether a number exists.
+    // Siempre emite la misma respuesta para no revelar si un número existe.
+    // El correo personal (profiles.recovery_email) se usa SOLO para enviar el
+    // enlace de recuperación; nunca participa en el login.
     if (!error && accepted) {
       await this.supabase.auth.resetPasswordForEmail(normalizedEmail, {
-  redirectTo: `${window.location.origin}/#/reset-password`  
+        redirectTo: `${window.location.origin}/#/reset-password`
       });
     }
 
