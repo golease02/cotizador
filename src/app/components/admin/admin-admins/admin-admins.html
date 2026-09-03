@@ -73,7 +73,7 @@
                 <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="showDetailDrawer && detailAdmin?.id === admin.id"
                     (click)="openDetail(admin)" tabindex="0" (keydown.enter)="openDetail(admin)"
                     (keydown.space)="openDetail(admin); $event.preventDefault()">
-                    <td class="user-cell">
+                    <td class="user-cell" data-label="Administrador">
                         <span class="avatar" [class]="getAvatarClass(admin.full_name)" aria-hidden="true">
                             {{ getInitials(admin.full_name) }}
                             <span class="avatar-dot" [class.is-on]="admin.active ?? true"></span>
@@ -83,8 +83,8 @@
                             <small>Administrador</small>
                         </span>
                     </td>
-                    <td><span class="id-chip">{{ admin.seller_number || '-' }}</span></td>
-                    <td>
+                    <td data-label="N° de contacto"><span class="id-chip">{{ admin.seller_number || '-' }}</span></td>
+                    <td data-label="Estado">
                         <button type="button" class="switch" [class.is-on]="admin.active ?? true" role="switch"
                             [attr.aria-checked]="admin.active ?? true"
                             [title]="'Cambiar estado (' + getStatusLabel(admin.active ?? true) + ')'"
@@ -93,7 +93,7 @@
                         </button>
                         <span class="switch-label">{{ getStatusLabel(admin.active ?? true) }}</span>
                     </td>
-                    <td class="actions-column" (click)="$event.stopPropagation()">
+                    <td class="actions-column" data-label="Acciones" (click)="$event.stopPropagation()">
                         <div class="action-buttons">
                             <button class="btn-icon btn-edit" (click)="openEditAdmin(admin)" title="Editar" aria-label="Editar administrador">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>

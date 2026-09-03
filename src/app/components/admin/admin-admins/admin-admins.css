@@ -1184,6 +1184,106 @@ button.stat-card:hover {
   }
 }
 
+/* ===== TABLA → TARJETAS (móvil) ===== */
+@media (max-width: 768px) {
+  .table-wrapper {
+    overflow: visible;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .users-table {
+    display: block;
+    min-width: 0;
+    background: transparent;
+  }
+
+  .users-table thead {
+    display: none;
+  }
+
+  .users-table tbody {
+    display: block;
+  }
+
+  .users-table tr {
+    display: block;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #ffffff;
+    border: 1px solid #dbe4ec;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  }
+
+  .users-table tr:hover td {
+    background: transparent;
+  }
+
+  .users-table tr.is-selected {
+    border-color: #8bd39a;
+  }
+
+  .users-table tr.is-selected td {
+    background: transparent;
+    border-top-color: transparent;
+  }
+
+  .users-table tr.is-selected td:first-child {
+    box-shadow: none;
+  }
+
+  .users-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    min-width: 0;
+    padding: 0.5rem 0;
+    border: 0;
+    color: #334155;
+  }
+
+  .users-table td + td {
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .users-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .users-table td.user-cell::before {
+    display: none;
+  }
+
+  .user-cell {
+    justify-content: flex-start;
+    min-width: 0;
+    gap: 0.75rem;
+  }
+
+  .actions-column {
+    justify-content: flex-start;
+  }
+
+  .action-buttons {
+    margin-left: auto;
+    gap: 0.45rem;
+  }
+
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
 /* ===== FOCUS VISIBLE ===== */
 .admins-container .btn-primary:focus-visible,
 .btn-primary:focus-visible,
@@ -1420,6 +1520,16 @@ button.stat-card:hover {
 @media (max-width: 520px) {
   .detail-grid { grid-template-columns: 1fr; }
   .detail-hero { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-actions {
+    flex-wrap: wrap;
+  }
 }
 
 .admins-container > *:not(.toast-host) {

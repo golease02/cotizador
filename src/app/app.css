@@ -68,3 +68,16 @@
     padding: 1rem 1rem 2rem 1rem;
   }
 }
+
+@media (max-width: 600px) {
+  .toast-notification {
+    left: 1rem;
+    right: 1rem;
+    bottom: 14px;
+    width: auto;
+    max-width: none;
+    padding: 0.8rem 1rem;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+}

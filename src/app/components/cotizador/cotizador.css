@@ -281,4 +281,14 @@
     .left-column {
         border-radius: 12px;
     }
+
+    .toast {
+        right: 1rem;
+        left: 1rem;
+        bottom: 1rem;
+        width: auto;
+        max-width: none;
+        padding: 0.8rem;
+        text-align: center;
+    }
 }

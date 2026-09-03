@@ -275,3 +275,28 @@
     width: 100%;
   }
 }
+
+@media (max-width: 480px) {
+  .profile-shell {
+    padding: 0 0 1.5rem;
+  }
+
+  .profile-hero {
+    padding: 1.25rem 1rem;
+  }
+
+  .profile-avatar {
+    width: 54px;
+    height: 54px;
+    font-size: 1.4rem;
+    border-radius: 14px;
+  }
+
+  .hero-copy h2 {
+    font-size: 1.6rem;
+  }
+
+  .profile-card {
+    padding: 1rem 0.9rem;
+  }
+}

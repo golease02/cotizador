@@ -1,5 +1,5 @@
 <div class="admin-layout">
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen()">
         <div class="sidebar-header">
             <div class="sidebar-logo">
                 <span class="logo-mark">GL</span>
@@ -8,6 +8,15 @@
                     <span class="logo-subtitle">Panel Admin</span>
                 </div>
             </div>
+            <button class="menu-toggle" type="button" (click)="toggleSidebar()"
+                [attr.aria-expanded]="sidebarOpen()" aria-label="Abrir menú de navegación" title="Menú">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12h18"></path>
+                    <path d="M3 6h18"></path>
+                    <path d="M3 18h18"></path>
+                </svg>
+            </button>
         </div>
 
         <nav>
@@ -138,6 +147,9 @@
             </a>
         </div>
     </aside>
+
+    <button class="sidebar-overlay" *ngIf="sidebarOpen()" (click)="closeSidebar()"
+        aria-label="Cerrar menú"></button>
 
     <main class="admin-content">
         <router-outlet></router-outlet>

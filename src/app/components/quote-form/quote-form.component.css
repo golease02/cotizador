@@ -331,3 +331,17 @@ select:focus-visible {
     padding: 1rem;
   }
 }
+
+@media (max-width: 480px) {
+  .term-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-card {
+    padding: 0.85rem;
+  }
+
+  .term-btn {
+    padding: 0.65rem 0;
+  }
+}

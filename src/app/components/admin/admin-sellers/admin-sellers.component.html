@@ -87,7 +87,7 @@
                     (click)="openDetail(seller)" tabindex="0" (keydown.enter)="openDetail(seller)"
                     (keydown.space)="openDetail(seller); $event.preventDefault()"
                     [attr.aria-label]="'Ver detalle de ' + seller.full_name">
-                    <td class="user-cell">
+                    <td class="user-cell" data-label="Vendedor">
                         <span class="avatar" [class]="getAvatarClass(seller.full_name)" aria-hidden="true">
                             {{ getInitials(seller.full_name) }}
                             <span class="avatar-dot" [class.is-on]="seller.active ?? true"></span>
@@ -97,13 +97,13 @@
                             <small>{{ seller.seller_number || '-' }}</small>
                         </span>
                     </td>
-                    <td><span class="brand-chip">{{ seller.agency_brand || '—' }}</span></td>
-                    <td class="location-cell" [title]="seller.agency_location || '-'">
+                    <td data-label="Agencia"><span class="brand-chip">{{ seller.agency_brand || '—' }}</span></td>
+                    <td class="location-cell" data-label="Ubicación" [title]="seller.agency_location || '-'">
                         <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                         {{ seller.agency_location || '-' }}
                     </td>
-                    <td><strong class="quote-count">{{ seller.quote_count || 0 }}</strong></td>
-                    <td>
+                    <td data-label="Cotizaciones"><strong class="quote-count">{{ seller.quote_count || 0 }}</strong></td>
+                    <td data-label="Estado">
                         <button type="button" class="switch" [class.is-on]="seller.active ?? true" role="switch"
                             [attr.aria-checked]="seller.active ?? true"
                             [title]="'Cambiar estado (' + getStatusLabel(seller.active ?? true) + ')'"
@@ -112,7 +112,7 @@
                         </button>
                         <span class="switch-label">{{ getStatusLabel(seller.active ?? true) }}</span>
                     </td>
-                    <td class="actions-column" (click)="$event.stopPropagation()">
+                    <td class="actions-column" data-label="Acciones" (click)="$event.stopPropagation()">
                         <div class="action-buttons">
                             <button class="btn-icon btn-note" (click)="abrirNotas(seller)" title="Notas" aria-label="Ver notas del vendedor">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
