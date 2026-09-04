@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService } from '../../../services/supabase.service';
+import { CatalogService } from '../../../services/catalog.service';
 import { ToastService } from '../../../services/toast.service';
 import { StatePlateOption, ESTADOS_MEXICO } from '../../../models/leasing.model';
 
@@ -13,7 +13,7 @@ import { StatePlateOption, ESTADOS_MEXICO } from '../../../models/leasing.model'
   styleUrls: ['./admin-plates.css']
 })
 export class AdminPlatesComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private catalog = inject(CatalogService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
@@ -65,7 +65,7 @@ export class AdminPlatesComponent implements OnInit {
 
   async loadPlates() {
     this.loading = true;
-    const { data, error } = await this.supabase.getAllStatePlates();
+    const { data, error } = await this.catalog.getAllStatePlates();
     if (error) {
       this.toastService.error('No fue posible cargar las placas: ' + error.message);
     } else {
@@ -128,7 +128,7 @@ export class AdminPlatesComponent implements OnInit {
     let succeeded = false;
 
     if (this.confirmAction === 'delete') {
-      const { error } = await this.supabase.deleteStatePlate(this.selectedPlateId);
+      const { error } = await this.catalog.deleteStatePlate(this.selectedPlateId);
       if (error) {
         this.toastService.error('Error al eliminar la placa: ' + error.message);
       } else {
@@ -139,7 +139,7 @@ export class AdminPlatesComponent implements OnInit {
       const plate = this.plates().find(p => p.id === this.selectedPlateId);
       if (plate) {
         const current = plate.disponible !== false;
-        const { error } = await this.supabase.toggleStatePlateAvailability(this.selectedPlateId, !current);
+        const { error } = await this.catalog.toggleStatePlateAvailability(this.selectedPlateId, !current);
         if (error) {
           this.toastService.error('Error al cambiar la disponibilidad: ' + error.message);
         } else {
@@ -230,7 +230,7 @@ export class AdminPlatesComponent implements OnInit {
           this.formLoading = false;
           return;
         }
-        const { error } = await this.supabase.updateStatePlate(this.editingPlateId, {
+        const { error } = await this.catalog.updateStatePlate(this.editingPlateId, {
           name: normalizedName,
           costnet: this.plateForm.costnet,
           estado: this.plateForm.estado,
@@ -242,7 +242,7 @@ export class AdminPlatesComponent implements OnInit {
           operationSucceeded = true;
         }
       } else {
-        const { error } = await this.supabase.createStatePlate({
+        const { error } = await this.catalog.createStatePlate({
           name: normalizedName,
           costnet: this.plateForm.costnet,
           estado: this.plateForm.estado,

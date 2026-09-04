@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AdminService } from '../../../services/admin.service';
 
 @Component({
   selector: 'app-admin-stats',
@@ -11,7 +11,7 @@ import { SupabaseService } from '../../../services/supabase.service';
   styleUrls: ['./admin-stats.component.css']
 })
 export class AdminStatsComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private admin = inject(AdminService);
 
   today = new Date();
 
@@ -40,148 +40,30 @@ export class AdminStatsComponent implements OnInit {
   async loadStats() {
     this.loading.set(true);
     try {
-      // --- Métricas ---
-      const { count: sellersCount } = await this.supabase.client
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'seller');
-      this.totalSellers.set(sellersCount || 0);
-
-      const { count: quotesCount } = await this.supabase.client
-        .from('quotes')
-        .select('*', { count: 'exact', head: true });
-      this.totalQuotes.set(quotesCount || 0);
-
-      const { count: fijadasCount } = await this.supabase.client
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('fijada', true);
-      this.totalFijadas.set(fijadasCount || 0);
-
-      const { count: urgentesCount } = await this.supabase.client
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('color', 'rojo');
-      this.totalUrgentes.set(urgentesCount || 0);
-
-      const { count: recientesCount } = await this.supabase.client
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('color', 'reciente');
-      this.totalRecientes.set(recientesCount || 0);
-
-      const { count: revisadasCount } = await this.supabase.client
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('color', 'verde');
-      this.totalRevisadas.set(revisadasCount || 0);
-
-      const { count: pendientesCount } = await this.supabase.client
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .eq('color', 'amarillo');
-      this.totalPendientes.set(pendientesCount || 0);
-
-      const { count: inactiveSellersCount } = await this.supabase.client
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'seller')
-        .eq('active', false);
-
-      // --- Top vehículos ---
-      const { data: vehiclesData } = await this.supabase.client
-        .from('quotes')
-        .select('brand, model');
-      if (vehiclesData) {
-        const counts: Record<string, number> = {};
-        vehiclesData.forEach((q: any) => {
-          const key = `${q.brand} ${q.model}`;
-          counts[key] = (counts[key] || 0) + 1;
-        });
-        const sorted = Object.entries(counts)
-          .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-        this.topVehicles.set(sorted);
+      // Una sola llamada RPC en lugar de 10+ consultas + agregaciones en cliente.
+      const { data, error } = await this.admin.getStats();
+      if (error || !data) {
+        throw error || new Error('Sin datos de estadísticas');
       }
 
-      // --- Top vendedores ---
-      const { data: quotesWithSeller } = await this.supabase.client
-        .from('quotes')
-        .select(`
-          seller_id,
-          profiles!seller_id (full_name, agency_location)
-        `);
-      if (quotesWithSeller) {
-        const sellerMap: Record<string, { name: string, location: string, count: number }> = {};
-        quotesWithSeller.forEach((q: any) => {
-          const seller = q.profiles;
-          if (seller && seller.full_name) {
-            const id = q.seller_id;
-            if (!sellerMap[id]) {
-              sellerMap[id] = {
-                name: seller.full_name,
-                location: seller.agency_location || 'Sin ubicación',
-                count: 0
-              };
-            }
-            sellerMap[id].count++;
-          }
-        });
-        const sortedSellers = Object.values(sellerMap)
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5);
-        this.topSellers.set(sortedSellers);
-      }
+      this.totalSellers.set(data.totalSellers || 0);
+      this.totalQuotes.set(data.totalQuotes || 0);
+      this.totalFijadas.set(data.totalFijadas || 0);
+      this.totalUrgentes.set(data.totalUrgentes || 0);
+      this.totalRecientes.set(data.totalRecientes || 0);
+      this.totalRevisadas.set(data.totalRevisadas || 0);
+      this.totalPendientes.set(data.totalPendientes || 0);
 
-      // --- Cotizaciones destacadas (con recálculo de color) ---
-      const getQuotes = async (filter: any) => {
-        let query = this.supabase.client
-          .from('quotes')
-          .select(`
-            *,
-            profiles!seller_id (full_name)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(5);
-        if (filter) {
-          query = query.match(filter);
-        }
-        const { data } = await query;
-        if (!data) return [];
+      this.topVehicles.set(data.topVehicles || []);
+      this.topSellers.set(data.topSellers || []);
 
-        const result = [];
-        for (const q of data) {
-          const dias = this.getDiasSinActualizar(q);
-          let colorCalculado = 'reciente';
-          if (this.isQuoteReviewed(q)) {
-            colorCalculado = 'verde';
-          } else {
-            if (dias > 7) colorCalculado = 'rojo';
-            else if (dias > 2) colorCalculado = 'amarillo';
-            else colorCalculado = 'reciente';
-          }
+      this.fijadasQuotes.set(data.fijadas || []);
+      this.urgentesQuotes.set(data.urgentes || []);
+      this.recentQuotes.set(data.recientes || []);
 
-          if (q.color !== colorCalculado) {
-            await this.supabase.client
-              .from('quotes')
-              .update({ color: colorCalculado })
-              .eq('id', q.id);
-            q.color = colorCalculado;
-          }
-
-          result.push({
-            ...q,
-            seller_name: q.profiles?.full_name || 'N/A',
-            color: colorCalculado
-          });
-        }
-        return result;
-      };
-
-      this.fijadasQuotes.set(await getQuotes({ fijada: true }));
-      this.urgentesQuotes.set(await getQuotes({ color: 'rojo' }));
-      this.recentQuotes.set(await getQuotes({}));
+      const urgentesCount = this.totalUrgentes();
+      const pendientesCount = this.totalPendientes();
+      const inactiveSellersCount = data.inactiveSellers || 0;
 
       this.attentionItems.set([
         ...(urgentesCount ? [{
@@ -206,25 +88,14 @@ export class AdminStatsComponent implements OnInit {
           action: 'Gestionar equipo'
         }] : [])
       ]);
-
     } catch (error) {
-      // Error silencioso: no se muestra en consola
+      console.warn('No se pudieron cargar las estadísticas:', error);
     } finally {
       this.loading.set(false);
     }
   }
 
   // ===================== MÉTODOS AUXILIARES =====================
-
-  getDiasSinActualizar(quote: any): number {
-    const fecha = new Date(quote.ultima_actualizacion || quote.created_at);
-    const ahora = new Date();
-    return Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
-  private isQuoteReviewed(quote: any): boolean {
-    return quote.revisada === true || quote.revisada === 'true' || quote.revisada === 1;
-  }
 
   getColorClase(quote: any): string {
     return `color-${this.getEstado(quote)}`;

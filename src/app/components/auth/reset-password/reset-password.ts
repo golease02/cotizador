@@ -2,7 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AuthService } from '../../../services/auth.service';
+import { getSupabaseClient } from '../../../services/supabase-client';
 
 @Component({
   selector: 'app-reset-password',
@@ -11,7 +12,8 @@ import { SupabaseService } from '../../../services/supabase.service';
   templateUrl: './reset-password.html',
 })
 export class ResetPasswordComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
+  private client = getSupabaseClient();
   private router = inject(Router);
 
   password = '';
@@ -47,7 +49,7 @@ export class ResetPasswordComponent implements OnInit {
     }
 
     if (accessToken) {
-      this.supabase.client.auth.setSession({
+      this.client.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken || ''
       }).then(({ error }) => {
@@ -126,7 +128,7 @@ export class ResetPasswordComponent implements OnInit {
     this.loading = true;
     try {
       // 1️⃣ Verificar que haya una sesión activa (sin exponer emails en logs)
-      const { data: { session } } = await this.supabase.client.auth.getSession();
+      const { data: { session } } = await this.client.auth.getSession();
       if (!session) {
         this.errorMessage = 'El enlace no es válido o ya expiró.';
         this.loading = false;
@@ -134,7 +136,7 @@ export class ResetPasswordComponent implements OnInit {
       }
 
       // 2️⃣ Actualizar la contraseña
-      const { error } = await this.supabase.client.auth.updateUser({ password: this.password });
+      const { error } = await this.client.auth.updateUser({ password: this.password });
 
       if (error) {
         this.errorMessage = 'No se pudo actualizar la contraseña.';
@@ -143,7 +145,7 @@ export class ResetPasswordComponent implements OnInit {
       }
 
       // 3️⃣ Cerrar sesión para forzar al usuario a iniciar sesión con la nueva contraseña
-      await this.supabase.signOut();
+      await this.auth.signOut();
 
       this.successMessage = 'Contraseña actualizada. Ahora puedes iniciar sesión con tu nueva contraseña.';
       setTimeout(() => this.router.navigate(['/login']), 1500);

@@ -5,7 +5,8 @@ import { QuoteOptionsComponent } from '../quote-options/quote-options.component'
 import { RouterModule } from '@angular/router';
 import { QuoteBreakdownComponent } from '../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../services/financial-calculator.service';
-import { SupabaseService } from '../../services/supabase.service';
+import { QuotesService } from '../../services/quotes.service';
+import { AuthService } from '../../services/auth.service';
 import { VehicleQuoteInput, QuoteCalculationResult } from '../../models/leasing.model';
 
 @Component({
@@ -23,7 +24,8 @@ import { VehicleQuoteInput, QuoteCalculationResult } from '../../models/leasing.
 })
 export class CotizadorComponent implements OnDestroy {
   private calculator = inject(FinancialCalculatorService);
-  private supabase = inject(SupabaseService);
+  private quotes = inject(QuotesService);
+  private auth = inject(AuthService);
 
   public calculationResult = signal<QuoteCalculationResult | null>(null);
   public selectedOptionKey = signal<'OPCION_1' | 'OPCION_2' | 'OPCION_3'>('OPCION_1');
@@ -49,7 +51,7 @@ export class CotizadorComponent implements OnDestroy {
   public onSaveQuote(): void {
     const calc = this.calculationResult();
     if (calc) {
-      this.supabase.saveQuote(calc, this.currentQuoteId ?? undefined)
+      this.quotes.saveQuote(calc, this.currentQuoteId ?? undefined)
         .then(({ id, error }) => {
           if (error) {
             this.showToast('Error al guardar cotización');
@@ -77,7 +79,7 @@ export class CotizadorComponent implements OnDestroy {
   }
 
   private autoSave(quote: QuoteCalculationResult): void {
-    if (!this.supabase.currentUser()) return;
+    if (!this.auth.currentUser()) return;
 
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -86,7 +88,7 @@ export class CotizadorComponent implements OnDestroy {
     this.saveTimeout = setTimeout(() => {
       if (!this.isSaving) {
         this.isSaving = true;
-        this.supabase.saveQuote(quote, this.currentQuoteId ?? undefined)
+        this.quotes.saveQuote(quote, this.currentQuoteId ?? undefined)
           .then(({ id, error }) => {
             this.isSaving = false;
             if (error) {

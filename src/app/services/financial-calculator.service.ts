@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@angular/core';
+import { Injectable, Optional, inject } from '@angular/core';
 import {
   VehicleQuoteInput,
   LeasingOptionResult,
@@ -12,13 +12,17 @@ import {
   CalculatorConfig,
   DEFAULT_CALCULATOR_CONFIG,
 } from '../models/leasing.model';
-import { SupabaseService } from './supabase.service';
+import { CatalogService } from './catalog.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class FinancialCalculatorService {
-  constructor(@Optional() private readonly supabase: SupabaseService | null = null) {}
+  private catalog: CatalogService;
+
+  constructor(@Optional() catalog?: CatalogService) {
+    this.catalog = catalog ?? inject(CatalogService);
+  }
   /**
    * Calculates PMT (Periodic Payment) matching Excel's PMT(rate, nper, pv, fv, type)
    * Formula:
@@ -47,11 +51,12 @@ export class FinancialCalculatorService {
   }
 
   public calculateQuote(input: VehicleQuoteInput): QuoteCalculationResult {
-    const config = this.supabase?.getCalculatorConfig() ?? DEFAULT_CALCULATOR_CONFIG;
+    const config = this.catalog.getCalculatorConfig();
     const termConfig = config.termRates[input.termMonths] || config.termRates[48] || TERM_RATES_MATRIX[48];
     const selectedPlate =
+      this.catalog.getStatePlates().find((p) => p.id === input.selectedStatePlateId) ||
       STATE_PLATES_CATALOG.find((p) => p.id === input.selectedStatePlateId) ||
-      STATE_PLATES_CATALOG[STATE_PLATES_CATALOG.length - 1]; // Default to 'pendiente'
+      STATE_PLATES_CATALOG[STATE_PLATES_CATALOG.length - 1];
 
     const option1 = this.calculateOption(
       'OPCION_1',
@@ -99,7 +104,7 @@ export class FinancialCalculatorService {
     input: VehicleQuoteInput,
     plateCostNet: number
   ): LeasingOptionResult {
-    const config = this.supabase?.getCalculatorConfig() ?? DEFAULT_CALCULATOR_CONFIG;
+    const config = this.catalog.getCalculatorConfig();
     const priceNoIva = input.priceNet / (1 + config.ivaPct);
 
     // 1. Validar renta extraordinaria contra reglas de negocio

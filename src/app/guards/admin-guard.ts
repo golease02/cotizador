@@ -1,17 +1,18 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { SupabaseService } from '../services/supabase.service';
+import { AuthService } from '../services/auth.service';
 
 export const adminGuard = async () => {
-  const supabase = inject(SupabaseService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  // Cargar perfil si no está disponible
-  let profile = supabase.currentProfile();
+  await auth.waitForSession();
+
+  let profile = auth.currentProfile();
   if (!profile) {
-    const user = supabase.currentUser();
+    const user = auth.currentUser();
     if (user) {
-      profile = await supabase.loadProfile(user.id);
+      profile = await auth.loadProfile(user.id);
     }
   }
 
@@ -19,7 +20,7 @@ export const adminGuard = async () => {
     return true;
   } else {
     if (profile?.active === false) {
-      await supabase.signOut();
+      await auth.signOut();
       router.navigate(['/login']);
       return false;
     }

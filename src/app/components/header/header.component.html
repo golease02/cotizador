@@ -36,12 +36,12 @@
         </svg>
       </button>
 
-      <div *ngIf="supabase.currentUser()" class="user-area">
+      <div *ngIf="auth.currentUser()" class="user-area">
         <a class="user-profile-link" routerLink="/perfil" title="Ver perfil">
-          <span class="user-avatar">{{ (supabase.currentProfile()?.full_name || 'V').charAt(0).toUpperCase() }}</span>
+          <span class="user-avatar">{{ (auth.currentProfile()?.full_name || 'V').charAt(0).toUpperCase() }}</span>
           <div class="user-info">
-            <span class="user-name">{{ supabase.currentProfile()?.full_name || 'Vendedor' }}</span>
-            <span class="user-role">{{ supabase.isAdmin() ? 'Administrador' : 'Vendedor' }}</span>
+            <span class="user-name">{{ auth.currentProfile()?.full_name || 'Vendedor' }}</span>
+            <span class="user-role">{{ auth.isAdmin() ? 'Administrador' : 'Vendedor' }}</span>
           </div>
         </a>
         <button class="logout-btn" (click)="logout()" title="Cerrar sesión">

@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -11,7 +11,7 @@ import { SupabaseService } from '../../../services/supabase.service';
   templateUrl: './login.html',
 })
 export class LoginComponent {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
   private router = inject(Router);
 
   phoneNumber = '';
@@ -88,7 +88,7 @@ export class LoginComponent {
 
     this.isLoading = true;
     try {
-      const { data: profile, error: profileError } = await this.supabase.getProfileBySellerNumber(this.phoneNumber);
+      const { data: profile, error: profileError } = await this.auth.getProfileBySellerNumber(this.phoneNumber);
       if (profileError || !profile) {
         this.errorMessage = 'Número de celular no registrado.';
         return;
@@ -102,19 +102,19 @@ export class LoginComponent {
         this.errorMessage = 'La cuenta no tiene un correo de autenticación configurado.';
         return;
       }
-      const { error } = await this.supabase.signIn(email, this.password);
+      const { error } = await this.auth.signIn(email, this.password);
       if (error) {
         this.errorMessage = error.message || 'Error al iniciar sesión.';
         return;
       }
 
-      const user = this.supabase.currentUser();
+      const user = this.auth.currentUser();
       if (!user) {
         this.errorMessage = 'No se pudo obtener el usuario.';
         return;
       }
 
-      const loggedProfile = await this.supabase.loadProfile(user.id);
+      const loggedProfile = await this.auth.loadProfile(user.id);
 
       if (loggedProfile?.role === 'admin') {
         this.router.navigate(['/admin']);

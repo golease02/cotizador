@@ -1,9 +1,11 @@
 import { Component, inject, signal, OnInit, ChangeDetectorRef, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AdminService } from '../../../services/admin.service';
+import { AuthService } from '../../../services/auth.service';
+import { getSupabaseClient } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
-import * as L from 'leaflet';
+import type * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-admin-sellers',
@@ -13,7 +15,9 @@ import * as L from 'leaflet';
   styleUrls: ['./admin-sellers.component.css']
 })
 export class AdminSellersComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private admin = inject(AdminService);
+  private auth = inject(AuthService);
+  private client = getSupabaseClient();
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
@@ -74,8 +78,8 @@ export class AdminSellersComponent implements OnInit {
   // ------------------- DRAWER DE DETALLE -------------------
   showDetailDrawer = false;
   detailSeller: any = null;
-  private detailMap: L.Map | null = null;
-  private detailMarker: L.Marker | null = null;
+  private detailMap: Leaflet.Map | null = null;
+  private detailMarker: Leaflet.Marker | null = null;
 
     // ------------------- NOTAS -------------------
   showNotasModal = false;
@@ -95,8 +99,8 @@ export class AdminSellersComponent implements OnInit {
   selectedCoords: { lat: number; lng: number } | null = null;
   addressText = '';
   isSearching = false;
-  private map!: L.Map;
-  private marker!: L.Marker;
+  private map!: Leaflet.Map;
+  private marker!: Leaflet.Marker;
 
   // ------------------- MARCAS -------------------
   brands = [
@@ -130,7 +134,7 @@ export class AdminSellersComponent implements OnInit {
 
   async loadSellers() {
     this.loading = true;
-    const { data, error } = await this.supabase.getSellersWithQuoteCount();
+    const { data, error } = await this.admin.getSellersWithQuoteCount();
     if (!error) {
       this.sellers.set(data || []);
       this.applyFilters();
@@ -219,7 +223,7 @@ export class AdminSellersComponent implements OnInit {
     const next = !previous;
     this.patchSeller(seller.id, { active: next });
 
-    const { error } = await this.supabase.updateProfile(seller.id, { active: next });
+    const { error } = await this.auth.updateProfile(seller.id, { active: next });
     if (error) {
       this.patchSeller(seller.id, { active: previous });
       this.toastService.error('No se pudo cambiar el estado: ' + error.message);
@@ -230,7 +234,7 @@ export class AdminSellersComponent implements OnInit {
       next ? `${seller.full_name} ahora está activo` : `${seller.full_name} quedó inactivo`,
       () => {
         this.patchSeller(seller.id, { active: previous });
-        this.supabase.updateProfile(seller.id, { active: previous });
+        this.auth.updateProfile(seller.id, { active: previous });
       }
     );
   }
@@ -266,7 +270,7 @@ export class AdminSellersComponent implements OnInit {
     if (!this.selectedSellerId) return;
     this.actionLoading = true;
     this.cdr.detectChanges();
-    this.supabase.deleteUserFromAuth(this.selectedSellerId).then(({ error }) => {
+    this.auth.deleteUserFromAuth(this.selectedSellerId).then(({ error }) => {
       this.actionLoading = false;
       if (error) {
         this.toastService.error('Error al eliminar: ' + error.message);
@@ -310,9 +314,10 @@ export class AdminSellersComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  initDetailMap() {
+  async initDetailMap() {
     if (!this.detailMapContainer || this.detailMap) return;
-    this.setupLeafletIcons();
+    const L = await import('leaflet');
+    await this.setupLeafletIcons();
     const seller = this.detailSeller || {};
     let lat = 20.5921, lng = -100.3947;
     if (seller.latitude && seller.longitude) {
@@ -336,7 +341,8 @@ export class AdminSellersComponent implements OnInit {
 
   // ===================== MAPA Y GEOLOCALIZACIÓN (FORMULARIO) =====================
 
-  private setupLeafletIcons() {
+  private async setupLeafletIcons() {
+    const L = await import('leaflet');
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
@@ -345,11 +351,12 @@ export class AdminSellersComponent implements OnInit {
     } as any);
   }
 
-  initMap() {
+  async initMap() {
     if (!this.mapContainer || this.map) return;
-    this.setupLeafletIcons();
+    const L = await import('leaflet');
+    await this.setupLeafletIcons();
 
-    const queretaroCoords: L.LatLngExpression = [20.5921, -100.3947];
+    const queretaroCoords: Leaflet.LatLngExpression = [20.5921, -100.3947];
     this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -357,13 +364,12 @@ export class AdminSellersComponent implements OnInit {
 
     this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
 
-    // Si ya hay coordenadas seleccionadas (modo edición), centrar el mapa ahí
     if (this.selectedCoords) {
       this.map.setView([this.selectedCoords.lat, this.selectedCoords.lng], 16);
       this.marker.setLatLng([this.selectedCoords.lat, this.selectedCoords.lng]);
     }
 
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
+    this.map.on('click', (e: Leaflet.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       this.setMarkerAndReverseGeocode(lat, lng);
     });
@@ -470,7 +476,7 @@ export class AdminSellersComponent implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      const { data, error } = await this.supabase.getProfileById(seller.id);
+      const { data, error } = await this.auth.getProfileById(seller.id);
       if (error || !data) {
         this.formError = 'Error al cargar datos del vendedor';
         this.formLoading = false;
@@ -668,7 +674,7 @@ export class AdminSellersComponent implements OnInit {
     try {
       // ---------- EDICIÓN ----------
       if (this.isEditMode) {
-        const { error } = await this.supabase.updateProfile(this.sellerForm.id, {
+        const { error } = await this.auth.updateProfile(this.sellerForm.id, {
           full_name: this.sellerForm.full_name.trim(),
           agency_brand: finalBrand,
           agency_location: finalLocation,
@@ -684,7 +690,7 @@ export class AdminSellersComponent implements OnInit {
           return;
         }
         if (this.sellerForm.password) {
-          const { error: pwdError } = await this.supabase.updateUserPassword(
+          const { error: pwdError } = await this.auth.updateUserPassword(
             this.sellerForm.id,
             this.sellerForm.password
           );
@@ -705,7 +711,7 @@ export class AdminSellersComponent implements OnInit {
       const email = `vendedor_${this.sellerForm.seller_number.trim()}@golease.com`;
 
       // 1) Camino preferido: RPC create_user (no cambia sesión, sin recargar)
-      const created = await this.supabase.createUserAsAdmin({
+      const created = await this.auth.createUserAsAdmin({
         email,
         password: this.sellerForm.password,
         full_name: this.sellerForm.full_name.trim(),
@@ -713,7 +719,7 @@ export class AdminSellersComponent implements OnInit {
       });
 
       if (!created.error && created.data?.id) {
-        const { error: profileError } = await this.supabase.updateProfile(created.data.id, {
+        const { error: profileError } = await this.auth.updateProfile(created.data.id, {
           email,
           seller_number: this.sellerForm.seller_number.trim(),
           full_name: this.sellerForm.full_name.trim(),
@@ -736,8 +742,8 @@ export class AdminSellersComponent implements OnInit {
       }
 
       // 2) Fallback: signUp + restaurar sesión (base sin migrar la RPC)
-      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
-      const { error: authError } = await this.supabase.signUp(
+      const { data: { session: adminSession } } = await this.client.auth.getSession();
+      const { error: authError } = await this.auth.signUp(
         email,
         this.sellerForm.password || '12345678',
         this.sellerForm.full_name
@@ -749,7 +755,7 @@ export class AdminSellersComponent implements OnInit {
         return;
       }
 
-      const newUser = this.supabase.currentUser();
+      const newUser = this.auth.currentUser();
       if (!newUser) {
         this.formError = 'No se pudo obtener el usuario';
         this.formLoading = false;
@@ -757,7 +763,13 @@ export class AdminSellersComponent implements OnInit {
         return;
       }
 
-      const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
+      // CRÍTICO: restaurar la sesión del administrador ANTES de actualizar el
+      // perfil. El trigger secure_profiles_row bloquea cambios de active/rol
+      // para no-admins; con la sesión del usuario recién creado podría
+      // rechazar la actualización.
+      await this.auth.restoreSession(adminSession);
+
+      const { error: profileError } = await this.auth.updateProfile(newUser.id, {
         email,
         seller_number: this.sellerForm.seller_number.trim(),
         full_name: this.sellerForm.full_name.trim(),
@@ -774,9 +786,6 @@ export class AdminSellersComponent implements OnInit {
         this.cdr.detectChanges();
         return;
       }
-
-      // Restaurar sesión (y señales de UI) del administrador original
-      await this.supabase.restoreSession(adminSession);
 
       this.toastService.success('Vendedor creado correctamente');
       this.closeFormDrawer();
@@ -803,7 +812,7 @@ export class AdminSellersComponent implements OnInit {
   async cargarNotas(sellerId: string) {
     this.notaLoading = true;
     try {
-      const { data, error } = await this.supabase.client
+      const { data, error } = await this.client
         .from('notas')
         .select('*')
         .eq('entidad_tipo', 'seller')
@@ -827,7 +836,7 @@ export class AdminSellersComponent implements OnInit {
     this.notaLoading = true;
     this.notaError = '';
 
-    const user = this.supabase.currentUser();
+    const user = this.auth.currentUser();
     const payload = {
       entidad_tipo: 'seller',
       entidad_id: this.selectedSellerId,
@@ -838,13 +847,13 @@ export class AdminSellersComponent implements OnInit {
 
     let error = null;
     if (this.notaEditando) {
-      const { error: updateError } = await this.supabase.client
+      const { error: updateError } = await this.client
         .from('notas')
         .update({ texto: this.notaText.trim() })
         .eq('id', this.notaEditando.id);
       error = updateError;
     } else {
-      const { error: insertError } = await this.supabase.client
+      const { error: insertError } = await this.client
         .from('notas')
         .insert([payload]);
       error = insertError;
@@ -876,7 +885,7 @@ export class AdminSellersComponent implements OnInit {
     if (!this.notaToDelete) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
-    const { error } = await this.supabase.client
+    const { error } = await this.client
       .from('notas')
       .delete()
       .eq('id', this.notaToDelete.id);
@@ -910,7 +919,7 @@ export class AdminSellersComponent implements OnInit {
   // ===================== TOOLTIP =====================
 
   mostrarNotasTooltip(event: MouseEvent, seller: any) {
-    this.supabase.client
+    this.client
       .from('notas')
       .select('texto, created_at')
       .eq('entidad_tipo', 'seller')

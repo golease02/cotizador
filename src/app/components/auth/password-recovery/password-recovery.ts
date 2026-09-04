@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-password-recovery',
@@ -11,7 +11,7 @@ import { SupabaseService } from '../../../services/supabase.service';
   templateUrl: './password-recovery.html',
 })
 export class PasswordRecoveryComponent {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
 
   phoneNumber = '';
   recoveryEmail = '';
@@ -87,7 +87,7 @@ export class PasswordRecoveryComponent {
 
     this.loading = true;
     try {
-      await this.supabase.requestPasswordRecovery(this.phoneNumber, this.recoveryEmail);
+      await this.auth.requestPasswordRecovery(this.phoneNumber, this.recoveryEmail);
       this.submitted = true;
     } catch {
       // Keep the response generic so account existence is not disclosed.

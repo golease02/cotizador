@@ -2,8 +2,8 @@ import { Component, inject, AfterViewInit, ElementRef, ViewChild, ChangeDetector
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
-import * as L from 'leaflet';
+import { AuthService } from '../../../services/auth.service';
+import type * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-register',
@@ -13,7 +13,7 @@ import * as L from 'leaflet';
   styleUrls: ['./register.css']
 })
 export class RegisterComponent implements AfterViewInit {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -112,8 +112,8 @@ export class RegisterComponent implements AfterViewInit {
     return /[A-Za-z]/.test(this.password) && /\d/.test(this.password);
   }
 
-  private map!: L.Map;
-  private marker!: L.Marker;
+  private map!: Leaflet.Map;
+  private marker!: Leaflet.Marker;
 
   brands = [
     'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
@@ -124,11 +124,12 @@ export class RegisterComponent implements AfterViewInit {
     'LEXUS', 'INFINITI', 'ACURA'
   ];
 
-  ngAfterViewInit() {
-    this.initMap();
+  async ngAfterViewInit() {
+    await this.initMap();
   }
 
-  initMap() {
+  async initMap() {
+    const L = await import('leaflet');
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
@@ -136,7 +137,7 @@ export class RegisterComponent implements AfterViewInit {
       shadowUrl: '/leaflet/marker-shadow.png',
     });
 
-    const queretaroCoords: L.LatLngExpression = [20.5921, -100.3947];
+    const queretaroCoords: Leaflet.LatLngExpression = [20.5921, -100.3947];
 
     this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
 
@@ -146,7 +147,7 @@ export class RegisterComponent implements AfterViewInit {
 
     this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
 
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
+    this.map.on('click', (e: Leaflet.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       this.setMarkerAndReverseGeocode(lat, lng);
     });
@@ -271,14 +272,14 @@ export class RegisterComponent implements AfterViewInit {
     this.isLoading = true;
     try {
       // Registrar en Supabase Auth
-      const { error: authError } = await this.supabase.signUp(email, this.password, this.fullName);
+      const { error: authError } = await this.auth.signUp(email, this.password, this.fullName);
       if (authError) {
         this.errorMessage = authError.message || 'Error al registrarse';
         return;
       }
 
       // Obtener usuario
-      const user = this.supabase.currentUser();
+      const user = this.auth.currentUser();
       if (!user) {
         this.errorMessage = 'No se pudo obtener el usuario después del registro';
         return;
@@ -300,7 +301,7 @@ export class RegisterComponent implements AfterViewInit {
         profileData.longitude = this.selectedCoords.lng;
       }
 
-      const { error: profileError } = await this.supabase.updateProfile(user.id, profileData);
+      const { error: profileError } = await this.auth.updateProfile(user.id, profileData);
 
       if (profileError) {
         this.errorMessage = `Error al guardar datos: ${profileError.message || 'desconocido'}`;

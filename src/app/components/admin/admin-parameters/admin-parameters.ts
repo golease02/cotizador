@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService } from '../../../services/supabase.service';
+import { CatalogService } from '../../../services/catalog.service';
 import { ToastService } from '../../../services/toast.service';
 import { CalculatorConfig, DEFAULT_CALCULATOR_CONFIG } from '../../../models/leasing.model';
 
@@ -13,7 +13,7 @@ import { CalculatorConfig, DEFAULT_CALCULATOR_CONFIG } from '../../../models/lea
   styleUrls: ['./admin-parameters.css']
 })
 export class AdminParametersComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly catalog = inject(CatalogService);
   readonly toast = inject(ToastService);
   config: CalculatorConfig = structuredClone(DEFAULT_CALCULATOR_CONFIG);
   private savedSnapshot = '';
@@ -25,13 +25,13 @@ export class AdminParametersComponent implements OnInit {
   showResetModal = false;
 
   async ngOnInit(): Promise<void> {
-    this.config = structuredClone(this.supabase.getCalculatorConfig());
+    this.config = structuredClone(this.catalog.getCalculatorConfig());
     this.savedSnapshot = JSON.stringify(this.config);
     this.loading = false;
 
-    this.supabase.loadCalculatorConfig()
+    this.catalog.loadCalculatorConfig()
       .then(() => {
-        this.config = structuredClone(this.supabase.getCalculatorConfig());
+        this.config = structuredClone(this.catalog.getCalculatorConfig());
         this.savedSnapshot = JSON.stringify(this.config);
       })
       .catch(loadError => {
@@ -91,7 +91,7 @@ export class AdminParametersComponent implements OnInit {
       return;
     }
     this.saving = true;
-    const { error } = await this.supabase.updateCalculatorConfig(this.config);
+    const { error } = await this.catalog.updateCalculatorConfig(this.config);
     this.saving = false;
     if (error) {
       this.error = error.message;

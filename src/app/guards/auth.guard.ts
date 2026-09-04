@@ -1,38 +1,31 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { SupabaseService } from '../services/supabase.service';
+import { AuthService } from '../services/auth.service';
 
 export const AuthGuard = async () => {
-    const supabase = inject(SupabaseService);
+    const auth = inject(AuthService);
     const router = inject(Router);
 
-    // Esperar usuario
-    let intentos = 0;
-    while (!supabase.currentUser() && intentos < 15) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        intentos++;
-    }
+    // Esperar a que la sesión se resuelva (sin polling)
+    await auth.waitForSession();
 
-    if (!supabase.currentUser()) {
+    const user = auth.currentUser();
+    if (!user) {
         router.navigate(['/login']);
         return false;
     }
 
     // Cargar perfil si no está disponible
-    let profile = supabase.currentProfile();
+    let profile = auth.currentProfile();
     if (!profile) {
-        const user = supabase.currentUser();
-        if (user) {
-            profile = await supabase.loadProfile(user.id);
-        }
+        profile = await auth.loadProfile(user.id);
     }
 
     if (profile?.active === false) {
-        await supabase.signOut();
+        await auth.signOut();
         router.navigate(['/login']);
         return false;
     }
 
-    // ✅ Permitir acceso a todas las rutas (el adminGuard se encargará de /admin)
     return true;
 };

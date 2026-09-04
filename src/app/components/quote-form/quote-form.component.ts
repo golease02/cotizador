@@ -6,7 +6,7 @@ import {
   StatePlateOption,
   CalculatorConfig,
 } from '../../models/leasing.model';
-import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.service';
+import { CatalogService, VehicleCatalogItem } from '../../services/catalog.service';
 
 @Component({
   selector: 'app-quote-form',
@@ -18,7 +18,7 @@ import { SupabaseService, VehicleCatalogItem } from '../../services/supabase.ser
 export class QuoteFormComponent implements OnInit {
 
   private fb = inject(FormBuilder);
-  private supabaseService = inject(SupabaseService);
+  private catalog = inject(CatalogService);
 
   @Output() quoteChange = new EventEmitter<VehicleQuoteInput>();
 
@@ -51,12 +51,11 @@ export class QuoteFormComponent implements OnInit {
     });
 
     await Promise.all([
-      this.supabaseService.loadStatePlates(),
-      this.supabaseService.loadCalculatorConfig(),
+      this.catalog.loadStatePlates(),
+      this.catalog.loadCalculatorConfig(),
     ]);
-    // Solo mostrar placas disponibles (las "no disponibles" no aparecen en el cotizador)
-    this.statePlates = this.supabaseService.getStatePlates().filter(p => p.disponible !== false);
-    this.presetVehicles = await this.supabaseService.getVehicleCatalog();
+    this.statePlates = this.catalog.getStatePlates().filter(p => p.disponible !== false);
+    this.presetVehicles = await this.catalog.getVehicleCatalog();
 
     const brandMap = new Map<string, VehicleCatalogItem[]>();
     for (const v of this.presetVehicles) {
@@ -84,7 +83,7 @@ export class QuoteFormComponent implements OnInit {
   }
 
   get calculatorConfig(): CalculatorConfig {
-    return this.supabaseService.getCalculatorConfig();
+    return this.catalog.getCalculatorConfig();
   }
 
   get minimumExtraordinaryRentPct(): number {

@@ -1,7 +1,9 @@
 import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AdminService } from '../../../services/admin.service';
+import { AuthService } from '../../../services/auth.service';
+import { getSupabaseClient } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
@@ -12,7 +14,9 @@ import { ToastService } from '../../../services/toast.service';
   styleUrls: ['./admin-admins.css']
 })
 export class AdminAdminsComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
+  private admin = inject(AdminService);
+  private client = getSupabaseClient();
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
@@ -102,7 +106,7 @@ export class AdminAdminsComponent implements OnInit {
 
   async loadAdmins() {
     this.loading = true;
-    const { data, error } = await this.supabase.getAdmins();
+    const { data, error } = await this.auth.getAdmins();
     if (!error) {
       this.admins.set(data || []);
       this.applyFilters();
@@ -179,7 +183,7 @@ export class AdminAdminsComponent implements OnInit {
     const next = !previous;
     this.patchAdmin(admin.id, { active: next });
 
-    const { error } = await this.supabase.updateProfile(admin.id, { active: next });
+    const { error } = await this.auth.updateProfile(admin.id, { active: next });
     if (error) {
       this.patchAdmin(admin.id, { active: previous });
       this.toastService.error('No se pudo cambiar el estado: ' + error.message);
@@ -190,7 +194,7 @@ export class AdminAdminsComponent implements OnInit {
       next ? `${admin.full_name} ahora está activo` : `${admin.full_name} quedó inactivo`,
       () => {
         this.patchAdmin(admin.id, { active: previous });
-        this.supabase.updateProfile(admin.id, { active: previous });
+        this.auth.updateProfile(admin.id, { active: previous });
       }
     );
   }
@@ -220,7 +224,7 @@ export class AdminAdminsComponent implements OnInit {
     if (!this.selectedAdminId) return;
     this.actionLoading = true;
     this.cdr.detectChanges();
-    this.supabase.deleteUserFromAuth(this.selectedAdminId).then(({ error }) => {
+    this.auth.deleteUserFromAuth(this.selectedAdminId).then(({ error }) => {
       this.actionLoading = false;
       if (error) {
         this.toastService.error('Error al eliminar: ' + error.message);
@@ -257,7 +261,7 @@ export class AdminAdminsComponent implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      const { data, error } = await this.supabase.getProfileById(admin.id);
+      const { data, error } = await this.auth.getProfileById(admin.id);
       if (error || !data || data.role !== 'admin') {
         this.formError = 'Error al cargar datos del administrador';
         this.formLoading = false;
@@ -355,7 +359,7 @@ export class AdminAdminsComponent implements OnInit {
     try {
       // ---------- EDICIÓN ----------
       if (this.isEditMode) {
-        const { error } = await this.supabase.updateProfile(this.adminForm.id, {
+        const { error } = await this.auth.updateProfile(this.adminForm.id, {
           full_name: this.adminForm.full_name.trim(),
           seller_number: this.adminForm.seller_number.trim(),
           active: this.adminForm.active,
@@ -370,7 +374,7 @@ export class AdminAdminsComponent implements OnInit {
           return;
         }
         if (this.adminForm.password) {
-          const { error: pwdError } = await this.supabase.updateUserPassword(
+          const { error: pwdError } = await this.auth.updateUserPassword(
             this.adminForm.id,
             this.adminForm.password
           );
@@ -391,7 +395,7 @@ export class AdminAdminsComponent implements OnInit {
       const email = `admin_${this.adminForm.seller_number.trim()}@golease.com`;
 
       // 1) Camino preferido: RPC create_user (no cambia sesión, sin recargar)
-      const created = await this.supabase.createUserAsAdmin({
+      const created = await this.auth.createUserAsAdmin({
         email,
         password: this.adminForm.password,
         full_name: this.adminForm.full_name.trim(),
@@ -399,7 +403,7 @@ export class AdminAdminsComponent implements OnInit {
       });
 
       if (!created.error && created.data?.id) {
-        const { error: profileError } = await this.supabase.updateProfile(created.data.id, {
+        const { error: profileError } = await this.auth.updateProfile(created.data.id, {
           email,
           seller_number: this.adminForm.seller_number.trim(),
           full_name: this.adminForm.full_name.trim(),
@@ -411,7 +415,13 @@ export class AdminAdminsComponent implements OnInit {
         if (profileError) {
           this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
         } else {
-          this.toastService.success('Administrador creado correctamente');
+          // Verificación: confirmar que el rol quedó como admin
+          const roleOk = await this.ensureRole(created.data.id, 'admin');
+          if (roleOk) {
+            this.toastService.success('Administrador creado correctamente');
+          } else {
+            this.toastService.error('El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.');
+          }
         }
         this.closeFormDrawer();
         await this.loadAdmins();
@@ -420,8 +430,8 @@ export class AdminAdminsComponent implements OnInit {
       }
 
       // 2) Fallback: signUp + restaurar sesión (base sin migrar la RPC)
-      const { data: { session: adminSession } } = await this.supabase.client.auth.getSession();
-      const { error: authError } = await this.supabase.signUp(
+      const { data: { session: adminSession } } = await this.client.auth.getSession();
+      const { error: authError } = await this.auth.signUp(
         email,
         this.adminForm.password,
         this.adminForm.full_name
@@ -433,7 +443,7 @@ export class AdminAdminsComponent implements OnInit {
         return;
       }
 
-      const newUser = this.supabase.currentUser();
+      const newUser = this.auth.currentUser();
       if (!newUser) {
         this.formError = 'No se pudo obtener el usuario';
         this.formLoading = false;
@@ -441,7 +451,13 @@ export class AdminAdminsComponent implements OnInit {
         return;
       }
 
-      const { error: profileError } = await this.supabase.updateProfile(newUser.id, {
+      // CRÍTICO: restaurar la sesión del administrador ANTES de actualizar el
+      // perfil. El trigger secure_profiles_row solo exime de cambios de rol a
+      // is_admin(); con la sesión del usuario recién creado el cambio sería
+      // rechazado y el perfil quedaría como "seller".
+      await this.auth.restoreSession(adminSession);
+
+      const { error: profileError } = await this.auth.updateProfile(newUser.id, {
         email,
         seller_number: this.adminForm.seller_number.trim(),
         full_name: this.adminForm.full_name.trim(),
@@ -457,8 +473,15 @@ export class AdminAdminsComponent implements OnInit {
         return;
       }
 
-      // Restaurar sesión (y señales de UI) del administrador original
-      await this.supabase.restoreSession(adminSession);
+      // Verificación: confirmar que el rol quedó como admin.
+      const roleOk = await this.ensureRole(newUser.id, 'admin');
+      if (!roleOk) {
+        this.formError = 'El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.';
+        this.toastService.error(this.formError);
+        this.formLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
 
       this.toastService.success('Administrador creado correctamente');
       this.closeFormDrawer();
@@ -472,6 +495,12 @@ export class AdminAdminsComponent implements OnInit {
   }
 
   // ===================== HELPERS =====================
+
+  /** Confirma que el perfil quedó con el rol esperado tras la creación. */
+  private async ensureRole(userId: string, expected: 'admin' | 'seller'): Promise<boolean> {
+    const { data } = await this.auth.getProfileById(userId);
+    return !!data && data.role === expected;
+  }
 
   getInitials(name: string): string {
     const clean = (name || '').trim().replace(/\s+/g, ' ');

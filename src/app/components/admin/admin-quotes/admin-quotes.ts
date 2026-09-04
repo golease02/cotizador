@@ -1,7 +1,10 @@
 import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService } from '../../../services/supabase.service';
+import { QuotesService } from '../../../services/quotes.service';
+import { AdminService } from '../../../services/admin.service';
+import { AuthService } from '../../../services/auth.service';
+import { getSupabaseClient } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
@@ -15,7 +18,10 @@ import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasi
   styleUrls: ['./admin-quotes.component.css']
 })
 export class AdminQuotesComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private quotesService = inject(QuotesService);
+  private admin = inject(AdminService);
+  private auth = inject(AuthService);
+  private client = getSupabaseClient();
   private calculator = inject(FinancialCalculatorService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
@@ -79,7 +85,7 @@ export class AdminQuotesComponent implements OnInit {
 
   async loadQuotes() {
     this.loading = true;
-    const { data, error } = await this.supabase.getAllQuotesWithSeller();
+    const { data, error } = await this.quotesService.getAllQuotesWithSeller();
     if (!error) {
       for (const q of data) {
         const dias = this.getDiasSinActualizar(q);
@@ -92,7 +98,7 @@ export class AdminQuotesComponent implements OnInit {
           else colorCalculado = 'reciente';
         }
         if (q.color !== colorCalculado) {
-          await this.supabase.client
+          await this.client
             .from('quotes')
             .update({ color: colorCalculado })
             .eq('id', q.id);
@@ -109,7 +115,7 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   async loadVendedores() {
-    const { data, error } = await this.supabase.getSellersWithQuoteCount();
+    const { data, error } = await this.admin.getSellersWithQuoteCount();
     if (!error && data) {
       this.vendedores = data.map((v: any) => ({
         id: v.id,
@@ -219,7 +225,7 @@ export class AdminQuotesComponent implements OnInit {
   async cargarNotasQuote(quoteId: string) {
     this.notaLoading = true;
     try {
-      const { data, error } = await this.supabase.client
+      const { data, error } = await this.client
         .from('notas')
         .select('*')
         .eq('entidad_tipo', 'quote')
@@ -243,7 +249,7 @@ export class AdminQuotesComponent implements OnInit {
     this.notaLoading = true;
     this.notaError = '';
 
-    const user = this.supabase.currentUser();
+    const user = this.auth.currentUser();
     const payload = {
       entidad_tipo: 'quote',
       entidad_id: this.selectedQuoteId,
@@ -254,13 +260,13 @@ export class AdminQuotesComponent implements OnInit {
 
     let error = null;
     if (this.notaEditando) {
-      const { error: updateError } = await this.supabase.client
+      const { error: updateError } = await this.client
         .from('notas')
         .update({ texto: this.notaText.trim() })
         .eq('id', this.notaEditando.id);
       error = updateError;
     } else {
-      const { error: insertError } = await this.supabase.client
+      const { error: insertError } = await this.client
         .from('notas')
         .insert([payload]);
       error = insertError;
@@ -295,7 +301,7 @@ export class AdminQuotesComponent implements OnInit {
     if (!this.notaToDelete) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
-    const { error } = await this.supabase.client
+    const { error } = await this.client
       .from('notas')
       .delete()
       .eq('id', this.notaToDelete.id);
@@ -331,7 +337,7 @@ export class AdminQuotesComponent implements OnInit {
   // ===================== COLOR Y SEGUIMIENTO =====================
 
   async marcarComoRevisado(quoteId: string) {
-    const { error } = await this.supabase.client
+    const { error } = await this.client
       .from('quotes')
       .update({
         revisada: true,
@@ -387,7 +393,7 @@ export class AdminQuotesComponent implements OnInit {
     // Actualización optimista (mismo patrón que sellers/admins)
     this.patchQuote(quote.id, { fijada: nuevoEstado });
 
-    const { error } = await this.supabase.client
+    const { error } = await this.client
       .from('quotes')
       .update({ fijada: nuevoEstado })
       .eq('id', quote.id);
@@ -401,7 +407,7 @@ export class AdminQuotesComponent implements OnInit {
       nuevoEstado ? 'Cotización fijada' : 'Cotización desfijada',
       () => {
         this.patchQuote(quote.id, { fijada: !nuevoEstado });
-        this.supabase.client
+        this.client
           .from('quotes')
           .update({ fijada: !nuevoEstado })
           .eq('id', quote.id);
@@ -412,7 +418,7 @@ export class AdminQuotesComponent implements OnInit {
   // ===================== TOOLTIP =====================
 
   onMouseEnter(event: MouseEvent, quote: any) {
-    this.supabase.client
+    this.client
       .from('notas')
       .select('texto, created_at')
       .eq('entidad_tipo', 'quote')

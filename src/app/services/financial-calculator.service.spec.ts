@@ -1,12 +1,16 @@
 import { FinancialCalculatorService } from './financial-calculator.service';
-import { VehicleQuoteInput } from '../models/leasing.model';
+import { VehicleQuoteInput, STATE_PLATES_CATALOG, DEFAULT_CALCULATOR_CONFIG } from '../models/leasing.model';
 import { getMinimumExtraordinaryRentPct, isExtraordinaryRentAndResidualValid } from '../models/leasing.model';
 
 describe('FinancialCalculatorService', () => {
   let service: FinancialCalculatorService;
 
   beforeEach(() => {
-    service = new FinancialCalculatorService();
+    const catalogStub = {
+      getCalculatorConfig: () => DEFAULT_CALCULATOR_CONFIG,
+      getStatePlates: () => [...STATE_PLATES_CATALOG],
+    } as any;
+    service = new FinancialCalculatorService(catalogStub);
   });
 
   it('should be created', () => {

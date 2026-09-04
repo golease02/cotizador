@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SupabaseService, VehicleCatalogItem } from '../../../services/supabase.service';
+import { CatalogService, VehicleCatalogItem } from '../../../services/catalog.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
@@ -12,7 +12,7 @@ import { ToastService } from '../../../services/toast.service';
   styleUrls: ['./admin-vehicles.css']
 })
 export class AdminVehiclesComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private catalog = inject(CatalogService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
@@ -62,7 +62,7 @@ export class AdminVehiclesComponent implements OnInit {
 
   async loadVehicles() {
     this.loading = true;
-    const { data, error } = await this.supabase.getAllVehicles();
+    const { data, error } = await this.catalog.getAllVehicles();
     if (error) {
       this.toastService.error('No fue posible cargar los vehículos: ' + error.message);
     } else {
@@ -164,7 +164,7 @@ export class AdminVehiclesComponent implements OnInit {
     if (!this.selectedVehicleId) return;
     this.formLoading = true;
     let succeeded = false;
-    const { error } = await this.supabase.deleteVehicle(this.selectedVehicleId);
+    const { error } = await this.catalog.deleteVehicle(this.selectedVehicleId);
     if (error) {
       this.toastService.error('Error al eliminar: ' + error.message);
     } else {
@@ -246,7 +246,7 @@ export class AdminVehiclesComponent implements OnInit {
 
     try {
       if (this.isEditMode) {
-        const { error } = await this.supabase.updateVehicle(this.vehicleForm.id, {
+        const { error } = await this.catalog.updateVehicle(this.vehicleForm.id, {
           brand: this.vehicleForm.brand,
           model: this.vehicleForm.model,
           year: this.vehicleForm.year,
@@ -259,7 +259,7 @@ export class AdminVehiclesComponent implements OnInit {
           operationSucceeded = true;
         }
       } else {
-        const { error } = await this.supabase.createVehicle({
+        const { error } = await this.catalog.createVehicle({
           brand: this.vehicleForm.brand,
           model: this.vehicleForm.model,
           year: this.vehicleForm.year,

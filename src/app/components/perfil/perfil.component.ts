@@ -2,8 +2,8 @@ import { AfterViewInit, ChangeDetectorRef, Component, computed, ElementRef, inje
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import * as L from 'leaflet';
-import { SupabaseService } from '../../services/supabase.service';
+import type * as Leaflet from 'leaflet';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-perfil',
@@ -13,13 +13,13 @@ import { SupabaseService } from '../../services/supabase.service';
   styleUrls: ['./perfil.component.css']
 })
 export class PerfilComponent implements OnInit, AfterViewInit {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 
-  isAdmin = computed(() => this.supabase.isAdmin());
+  isAdmin = computed(() => this.auth.isAdmin());
   loading = signal(true);
   saving = signal(false);
   successMessage = signal('');
@@ -43,15 +43,15 @@ export class PerfilComponent implements OnInit, AfterViewInit {
     'LEXUS', 'INFINITI', 'ACURA', 'Otro'
   ];
 
-  private map!: L.Map;
-  private marker!: L.Marker;
+  private map!: Leaflet.Map;
+  private marker!: Leaflet.Marker;
 
   ngOnInit(): void {
     this.loadProfile();
   }
 
-  ngAfterViewInit(): void {
-    this.initMap();
+  async ngAfterViewInit(): Promise<void> {
+    await this.initMap();
   }
 
   goBack(): void {
@@ -62,11 +62,12 @@ export class PerfilComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/']);
   }
 
-  private initMap(): void {
+  private async initMap(): Promise<void> {
     if (!this.mapContainer) {
       return;
     }
 
+    const L = await import('leaflet');
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: '/leaflet/marker-icon-2x.png',
@@ -74,7 +75,7 @@ export class PerfilComponent implements OnInit, AfterViewInit {
       shadowUrl: '/leaflet/marker-shadow.png',
     });
 
-    const queretaroCoords: L.LatLngExpression = [20.5921, -100.3947];
+    const queretaroCoords: Leaflet.LatLngExpression = [20.5921, -100.3947];
     this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -83,7 +84,7 @@ export class PerfilComponent implements OnInit, AfterViewInit {
 
     this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
 
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
+    this.map.on('click', (e: Leaflet.LeafletMouseEvent) => {
       const { lat, lng } = e.latlng;
       this.setMarkerAndReverseGeocode(lat, lng);
     });
@@ -170,15 +171,15 @@ export class PerfilComponent implements OnInit, AfterViewInit {
     this.loading.set(true);
     this.errorMessage.set('');
 
-    const user = this.supabase.currentUser();
-    const profile = this.supabase.currentProfile();
+    const user = this.auth.currentUser();
+    const profile = this.auth.currentProfile();
 
     if (!user) {
       this.loading.set(false);
       return;
     }
 
-    const loadedProfile = profile ?? (await this.supabase.loadProfile(user.id));
+    const loadedProfile = profile ?? (await this.auth.loadProfile(user.id));
     const agencyBrandValue = (loadedProfile as any)?.agency_brand || '';
     const finalBrand = agencyBrandValue === 'Otro' ? 'Otro' : agencyBrandValue;
 
@@ -205,7 +206,7 @@ export class PerfilComponent implements OnInit, AfterViewInit {
   }
 
   async saveProfile(): Promise<void> {
-    const user = this.supabase.currentUser();
+    const user = this.auth.currentUser();
     if (!user) {
       this.errorMessage.set('No hay una sesión activa.');
       return;
@@ -250,14 +251,13 @@ export class PerfilComponent implements OnInit, AfterViewInit {
         payload.longitude = this.selectedCoords.lng;
       }
 
-      const { error } = await this.supabase.updateProfile(user.id, payload);
+      const { error } = await this.auth.updateProfile(user.id, payload);
 
       if (error) {
         this.errorMessage.set(error.message || 'No se pudo guardar tu información.');
         return;
       }
 
-      await this.supabase.refreshProfile();
       this.successMessage.set('Tu información se actualizó correctamente.');
       await this.loadProfile();
     } finally {

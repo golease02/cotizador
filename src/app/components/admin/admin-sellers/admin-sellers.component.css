@@ -1937,7 +1937,7 @@ button.stat-card:hover {
 .confirm-modal h3 {
   margin: 0 0 0.5rem;
   font-size: 1.15rem;
-  color: #1a1a1a;
+  color: var(--text-main);
 }
 
 .confirm-modal p {

@@ -1,9 +1,8 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -12,29 +11,16 @@ import { Subscription } from 'rxjs';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css'],
 })
-export class HeaderComponent implements OnInit, OnDestroy {
-  public supabase = inject(SupabaseService);
+export class HeaderComponent {
+  public auth = inject(AuthService);
   public theme = inject(ThemeService);
   private router = inject(Router);
-  private cdr = inject(ChangeDetectorRef);
-
-  private refreshSubscription: Subscription | null = null;
 
   async ngOnInit() {
-    const user = this.supabase.currentUser();
-    if (user) {
-      if (!this.supabase.currentProfile()) {
-        await this.supabase.loadProfile(user.id);
-      }
+    const user = this.auth.currentUser();
+    if (user && !this.auth.currentProfile()) {
+      await this.auth.loadProfile(user.id);
     }
-
-    this.refreshSubscription = this.supabase.refreshProfile$.subscribe(async () => {
-      const user = this.supabase.currentUser();
-      if (user) {
-        await this.supabase.loadProfile(user.id);
-        this.cdr.detectChanges();
-      }
-    });
   }
 
   toggleTheme(): void {
@@ -42,13 +28,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   async logout(): Promise<void> {
-    await this.supabase.signOut();
+    await this.auth.signOut();
     this.router.navigate(['/login']);
-  }
-
-  ngOnDestroy(): void {
-    if (this.refreshSubscription) {
-      this.refreshSubscription.unsubscribe();
-    }
   }
 }

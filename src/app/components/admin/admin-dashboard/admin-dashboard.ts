@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AuthService } from '../../../services/auth.service';
 import { ThemeService } from '../../../services/theme.service';
 import { Subscription, filter } from 'rxjs';
 
@@ -13,7 +13,7 @@ import { Subscription, filter } from 'rxjs';
   styleUrls: ['./admin-dashboard.component.css'],
 })
 export class AdminDashboardComponent implements OnDestroy {
-  public supabase = inject(SupabaseService);
+  public auth = inject(AuthService);
   public theme = inject(ThemeService);
   private router = inject(Router);
   private routerEventsSub: Subscription;
@@ -43,7 +43,7 @@ export class AdminDashboardComponent implements OnDestroy {
   }
 
   async logout(): Promise<void> {
-    await this.supabase.signOut();
+    await this.auth.signOut();
     this.router.navigate(['/login']);
   }
 }

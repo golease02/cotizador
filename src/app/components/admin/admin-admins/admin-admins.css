@@ -1374,7 +1374,7 @@ button.stat-card:hover {
 .confirm-modal h3 {
   margin: 0 0 0.5rem;
   font-size: 1.15rem;
-  color: #1a1a1a;
+  color: var(--text-main);
 }
 
 .confirm-modal p {
@@ -1436,7 +1436,7 @@ button.stat-card:hover {
 
 .detail-hero-meta strong {
   font-size: 1.1rem;
-  color: #1a1a1a;
+  color: var(--text-main);
   line-height: 1.3;
   word-break: break-word;
 }
@@ -1502,7 +1502,7 @@ button.stat-card:hover {
 
 .detail-item strong {
   font-size: 0.92rem;
-  color: #1a1a1a;
+  color: var(--text-main);
   word-break: break-word;
 }
 

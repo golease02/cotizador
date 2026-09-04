@@ -1,18 +1,27 @@
-import { signal } from '@angular/core';
-import { SupabaseService } from './services/supabase.service';
+import { currentUserSignal } from './services/supabase-client';
+import { AuthService } from './services/auth.service';
 
-describe('SupabaseService security checks', () => {
-  let service: SupabaseService;
+describe('AuthService security checks', () => {
+  let service: AuthService;
 
   beforeEach(() => {
-    service = new SupabaseService();
+    service = new AuthService();
+    currentUserSignal.set(null);
+    service['currentProfileSignal'].set(null);
   });
 
   it('should deny editing another user profile without admin role', () => {
-    service['currentUserSignal'].set({ id: 'user-1' } as any);
+    currentUserSignal.set({ id: 'user-1' } as any);
     service['currentProfileSignal'].set({ id: 'user-1', role: 'seller', email: 'seller@test.com', full_name: 'Seller' } as any);
 
     expect(service.canManageProfile('user-2')).toBe(false);
+  });
+
+  it('should allow editing own profile', () => {
+    currentUserSignal.set({ id: 'user-1' } as any);
+    service['currentProfileSignal'].set({ id: 'user-1', role: 'seller', email: 'seller@test.com', full_name: 'Seller' } as any);
+
+    expect(service.canManageProfile('user-1')).toBe(true);
   });
 
   it('should sanitize unsafe string content to prevent code injection', () => {

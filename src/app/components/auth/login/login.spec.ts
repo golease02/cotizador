@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { LoginComponent } from './login';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({ template: '' })
 class DummyHomeComponent {}
@@ -12,7 +12,7 @@ describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
 
-  const mockSupabase = {
+  const mockAuthService = {
     getProfileBySellerNumber: vi.fn(),
     signIn: vi.fn().mockResolvedValue({ error: null }),
     currentUser: vi.fn().mockReturnValue({ id: 'user-1' }),
@@ -24,14 +24,14 @@ describe('LoginComponent', () => {
   };
 
   beforeEach(async () => {
-    mockSupabase.getProfileBySellerNumber.mockReset();
-    mockSupabase.signIn.mockClear();
+    mockAuthService.getProfileBySellerNumber.mockReset();
+    mockAuthService.signIn.mockClear();
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
         provideRouter([{ path: '', component: DummyHomeComponent }]),
-        { provide: SupabaseService, useValue: mockSupabase },
+        { provide: AuthService, useValue: mockAuthService },
       ],
     }).compileComponents();
 
@@ -75,7 +75,7 @@ describe('LoginComponent', () => {
   });
 
   it('should sign in with profile.email (the auth mirror email), not recovery_email', async () => {
-    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+    mockAuthService.getProfileBySellerNumber.mockResolvedValueOnce({
       data: {
         id: 'user-1',
         email: 'vendedor_5512345678@golease.com',
@@ -90,20 +90,20 @@ describe('LoginComponent', () => {
 
     await component.onLogin();
 
-    expect(mockSupabase.signIn).toHaveBeenCalledWith(
+    expect(mockAuthService.signIn).toHaveBeenCalledWith(
       'vendedor_5512345678@golease.com',
       'abc123'
     );
     // recovery_email sólo se usa para enviar el enlace de recuperación,
     // jamás para autenticar.
-    expect(mockSupabase.signIn).not.toHaveBeenCalledWith(
+    expect(mockAuthService.signIn).not.toHaveBeenCalledWith(
       'personal@gmail.com',
       expect.anything()
     );
   });
 
   it('should NOT build a synthetic email like vendedor_${phone}@golease.com', async () => {
-    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+    mockAuthService.getProfileBySellerNumber.mockResolvedValueOnce({
       data: {
         id: 'user-1',
         email: 'marcotulio@correo.com',
@@ -120,11 +120,11 @@ describe('LoginComponent', () => {
 
     // Se usa exactamente el email espejo del perfil: no se construye ningún
     // email a partir del rol y el teléfono.
-    expect(mockSupabase.signIn).toHaveBeenCalledWith('marcotulio@correo.com', 'abc123');
+    expect(mockAuthService.signIn).toHaveBeenCalledWith('marcotulio@correo.com', 'abc123');
   });
 
   it('should show a generic error and not call signIn when profile.email is missing', async () => {
-    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+    mockAuthService.getProfileBySellerNumber.mockResolvedValueOnce({
       data: { id: 'user-1', email: '', recovery_email: 'personal@gmail.com', role: 'seller' },
       error: null
     });
@@ -134,11 +134,11 @@ describe('LoginComponent', () => {
     await component.onLogin();
 
     expect(component.errorMessage).toContain('correo de autenticación');
-    expect(mockSupabase.signIn).not.toHaveBeenCalled();
+    expect(mockAuthService.signIn).not.toHaveBeenCalled();
   });
 
   it('should show generic error when the seller number is not registered', async () => {
-    mockSupabase.getProfileBySellerNumber.mockResolvedValueOnce({
+    mockAuthService.getProfileBySellerNumber.mockResolvedValueOnce({
       data: null,
       error: { message: 'No encontrado' }
     });
@@ -148,6 +148,6 @@ describe('LoginComponent', () => {
     await component.onLogin();
 
     expect(component.errorMessage).toBe('Número de celular no registrado.');
-    expect(mockSupabase.signIn).not.toHaveBeenCalled();
+    expect(mockAuthService.signIn).not.toHaveBeenCalled();
   });
 });

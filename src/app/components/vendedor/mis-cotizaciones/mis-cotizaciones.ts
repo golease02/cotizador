@@ -1,7 +1,8 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { SupabaseService } from '../../../services/supabase.service';
+import { AuthService } from '../../../services/auth.service';
+import { QuotesService } from '../../../services/quotes.service';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
@@ -15,10 +16,11 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./mis-cotizaciones.css']
 })
 export class MisCotizacionesComponent implements OnInit {
-  private supabase = inject(SupabaseService);
+  private auth = inject(AuthService);
+  private quotesService = inject(QuotesService);
   private calculator = inject(FinancialCalculatorService);
 
-  isAdmin = computed(() => this.supabase.isAdmin());
+  isAdmin = computed(() => this.auth.isAdmin());
   cotizaciones = signal<any[]>([]);
   cotizacionesFiltradas = signal<any[]>([]);
   loading = signal(true);
@@ -35,13 +37,13 @@ export class MisCotizacionesComponent implements OnInit {
 
   async cargarCotizaciones() {
     this.loading.set(true);
-    const user = this.supabase.currentUser();
+    const user = this.auth.currentUser();
     if (!user) {
       this.loading.set(false);
       return;
     }
 
-    const { data, error } = await this.supabase.getVendedorQuotes(user.id);
+    const { data, error } = await this.quotesService.getVendedorQuotes(user.id);
     if (error) {
       // Error silencioso: no se muestra en consola
       this.loading.set(false);

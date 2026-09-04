@@ -147,9 +147,9 @@
             <div class="sidebar-user">
                 <a class="sidebar-user-link" routerLink="/perfil" routerLinkActive="active" title="Ver mi perfil"
                     aria-label="Ver mi perfil">
-                    <span class="user-avatar">{{ (supabase.currentProfile()?.full_name || 'A').charAt(0).toUpperCase() }}</span>
+                    <span class="user-avatar">{{ (auth.currentProfile()?.full_name || 'A').charAt(0).toUpperCase() }}</span>
                     <div class="user-info">
-                        <span class="user-name">{{ supabase.currentProfile()?.full_name || 'Administrador' }}</span>
+                        <span class="user-name">{{ auth.currentProfile()?.full_name || 'Administrador' }}</span>
                         <span class="user-role">Administrador</span>
                     </div>
                 </a>
