@@ -43,5 +43,19 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
-# Otros
-supabase/
+# Supabase (solo se ignora estado temporal y salidas de auditoria)
+supabase/.temp/
+supabase/config.toml
+supabase/.gitignore
+supabase/audits/out_*.json
+supabase/audits/audit_output.json
+supabase/audits/current_schema.sql
+supabase/audits/01_audit_rls.sql
+supabase/audits/query_*.sql
+supabase/migrations/20260309130000_fix_signup_trigger.sql
+
+# Archivos temporales de build / tests (no versionar)
+build_output.txt
+error.txt
+test-output.txt
+test_output.txt

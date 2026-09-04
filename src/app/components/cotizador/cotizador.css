@@ -48,7 +48,7 @@
     align-items: center;
     gap: 0.4rem;
     background: var(--accent-green-light);
-    border: 1px solid #bbf7d0;
+    border: 1px solid rgba(139, 226, 140, 0.4);
     padding: 0.3rem 0.8rem;
     border-radius: 30px;
     font-size: 0.75rem;

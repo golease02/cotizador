@@ -46,7 +46,7 @@
 
 .quotes-panel .page-heading h2 {
   margin: 0;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-size: 2rem;
   line-height: 1;
 }
@@ -91,7 +91,7 @@
 
 .quote-summary .badge strong {
   font-size: 0.85rem;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
 }
 
 .quote-summary .badge-recent {
@@ -770,7 +770,7 @@
   border: 0;
   border-radius: 9px;
   background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;

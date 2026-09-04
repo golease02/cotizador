@@ -407,7 +407,7 @@
 }
 
 .dashboard-header h1 {
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-size: 2rem;
   line-height: 1;
 }

@@ -607,3 +607,13 @@
 :host-context(html[data-theme='dark']) .sidebar-overlay {
     background: rgba(0, 0, 0, 0.65);
 }
+
+:host-context(html[data-theme='dark']) .back-link {
+    background: rgba(139, 226, 140, 0.14);
+    border-color: rgba(139, 226, 140, 0.4);
+    color: #d9ede0;
+}
+:host-context(html[data-theme='dark']) .back-link:hover {
+    background: rgba(139, 226, 140, 0.26);
+    color: #ffffff;
+}

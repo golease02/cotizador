@@ -548,13 +548,13 @@
     padding: 0.75rem 1rem;
     border: 0;
     border-radius: 9px;
-    background: #8be28c;
-    color: var(--accent-slate);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     box-shadow: none;
 }
 
 .dashboard-cotizaciones .btn-primary:hover {
-    background: #b1f0b1;
+    background: var(--btn-primary-bg-hover);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
 }
 
@@ -579,7 +579,7 @@
 
 .dashboard-cotizaciones .search-input {
     min-height: 42px;
-    border: 1px solid #dbe4ec;
+    border: 1px solid var(--border-color);
     border-radius: 9px;
     background: var(--surface-subtle);
 }
@@ -656,7 +656,7 @@
 }
 
 .dashboard-cotizaciones .client-name {
-    color: var(--accent-slate);
+    color: var(--btn-primary-text);
 }
 
 .dashboard-cotizaciones .vehicle-name {
@@ -687,7 +687,7 @@
 }
 
 .dashboard-cotizaciones .btn-view-detail:hover {
-    background: #dcfce7;
+    background: var(--accent-green-light);
 }
 
 .dashboard-cotizaciones .empty-state {

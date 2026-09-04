@@ -1,4 +1,4 @@
-.quote-document-wrapper {
+﻿.quote-document-wrapper {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -210,16 +210,16 @@
     color: #15803d;
     font-weight: 700;
     text-decoration: none;
-    background: #f0fdf4;
+    background: var(--accent-green-light);
     padding: 0.4rem 1rem;
     border-radius: 8px;
-    border: 1px solid #bbf7d0;
+    border: 1px solid rgba(139, 226, 140, 0.4);
     cursor: pointer;
     transition: 0.2s;
 }
 
 .btn-back:hover {
-    background: #dcfce7;
+    background: var(--accent-green-light);
 }
 
 .meta-unit-cell {

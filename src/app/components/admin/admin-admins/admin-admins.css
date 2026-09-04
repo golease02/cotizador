@@ -41,7 +41,7 @@
 
 .admins-container .page-heading h2 {
   margin: 0.25rem 0 0.35rem;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-size: 2rem;
   line-height: 1;
 }
@@ -72,8 +72,8 @@
   padding: 0.75rem 1rem;
   border: 0;
   border-radius: 9px;
-  background: #8be28c;
-  color: var(--accent-slate);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   box-shadow: none;
   white-space: nowrap;
   cursor: pointer;
@@ -85,7 +85,7 @@
 
 .admins-container .btn-primary:hover,
 .btn-primary:hover {
-  background: #b1f0b1;
+  background: var(--btn-primary-bg-hover);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
 }
 
@@ -170,7 +170,7 @@ button.stat-card:hover {
 .stat-body strong {
   font-size: 1.35rem;
   font-weight: 800;
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
 }
 
 .stat-body small {
@@ -419,7 +419,7 @@ button.stat-card:hover {
 }
 
 .user-meta strong {
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -439,7 +439,7 @@ button.stat-card:hover {
   height: 44px;
   flex-shrink: 0;
   border-radius: 50%;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.5px;
@@ -765,7 +765,7 @@ button.stat-card:hover {
 
 .drawer-header h3 {
   margin: 0.2rem 0 0;
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
   font-size: 1.25rem;
 }
 
@@ -1045,7 +1045,7 @@ button.stat-card:hover {
 
 .modal-content h3 {
   margin: 0;
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
   font-size: 1.15rem;
 }
 
@@ -1092,7 +1092,7 @@ button.stat-card:hover {
   border: 0;
   border-radius: 9px;
   background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
@@ -1315,7 +1315,7 @@ button.stat-card:hover {
   border: none;
   border-radius: 10px;
   background: #e5484d;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-weight: 600;
   font-size: 0.9rem;
   font-family: inherit;
@@ -1413,7 +1413,7 @@ button.stat-card:hover {
   justify-content: center;
   font-weight: 700;
   font-size: 1.35rem;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   letter-spacing: 0.02em;
   flex-shrink: 0;
   background: linear-gradient(135deg, var(--text-muted), var(--text-silver));
@@ -1535,4 +1535,8 @@ button.stat-card:hover {
 .admins-container > *:not(.toast-host) {
   position: relative;
   z-index: 1;
+}
+
+:host-context(html[data-theme='dark']) .avatar {
+    box-shadow: inset 0 0 0 999px rgba(13, 21, 23, 0.32), 0 4px 10px rgba(0, 0, 0, 0.45);
 }

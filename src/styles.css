@@ -45,6 +45,9 @@
   --info: #1d4ed8;
   --info-bg: #eaf2fd;
   --info-border: #d6e4fb;
+  --btn-primary-bg: #8be28c;
+  --btn-primary-bg-hover: #b1f0b1;
+  --btn-primary-text: #10251f;
   --warning: #b45309;
   --warning-bg: #fffbeb;
   --warning-border: #fde68a;
@@ -92,6 +95,9 @@ html[data-theme='dark'] {
   --info: #7cb8f5;
   --info-bg: rgba(96, 165, 250, 0.14);
   --info-border: rgba(96, 165, 250, 0.35);
+  --btn-primary-bg: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
+  --btn-primary-bg-hover: linear-gradient(135deg, var(--accent-green), var(--accent-green-bright));
+  --btn-primary-text: var(--text-on-accent);
   --warning: #fbbf24;
   --warning-bg: rgba(245, 158, 11, 0.14);
   --warning-border: rgba(245, 158, 11, 0.35);

@@ -45,7 +45,7 @@
 
 .parameters-container .page-heading h2 {
   margin: 0.25rem 0 0.35rem;
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-family: var(--font-heading, 'Fjalla One', sans-serif);
   font-size: 2rem;
   line-height: 1;
@@ -76,8 +76,8 @@
   padding: 0.75rem 1rem;
   border: 0;
   border-radius: 9px;
-  background: #8be28c;
-  color: var(--accent-slate);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
   white-space: nowrap;
   cursor: pointer;
   font-weight: 700;
@@ -87,7 +87,7 @@
 }
 
 .parameters-container .btn-primary:hover:not(:disabled) {
-  background: #b1f0b1;
+  background: var(--btn-primary-bg-hover);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
 }
 
@@ -167,7 +167,7 @@
 .stat-body strong {
   font-size: 1.35rem;
   font-weight: 800;
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
 }
 
 .stat-body small {
@@ -314,7 +314,7 @@
 .config-card-header h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
 }
 
 .config-card-header p {
@@ -521,7 +521,7 @@
 
 .residual-value {
   text-align: right;
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
   font-size: 0.82rem;
 }
 
@@ -609,7 +609,7 @@
 }
 
 .form-actions .actions-title {
-  color: var(--accent-slate);
+  color: var(--btn-primary-text);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -655,7 +655,7 @@
   border: 0;
   border-radius: 9px;
   background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
-  color: var(--surface-card);
+  color: var(--text-on-accent);
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;

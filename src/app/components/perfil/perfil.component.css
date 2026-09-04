@@ -300,3 +300,9 @@
     padding: 1rem 0.9rem;
   }
 }
+
+:host-context(html[data-theme='dark']) .btn-back {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(139, 226, 140, 0.45);
+    color: #ffffff;
+}
