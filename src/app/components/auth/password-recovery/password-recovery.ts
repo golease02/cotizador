@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -15,9 +15,9 @@ export class PasswordRecoveryComponent {
 
   phoneNumber = '';
   recoveryEmail = '';
-  errorMessage = '';
-  submitted = false;
-  loading = false;
+  errorMessage = signal('');
+  submitted = signal(false);
+  loading = signal(false);
 
   // Errores de validación por campo
   phoneError = '';
@@ -78,22 +78,22 @@ export class PasswordRecoveryComponent {
   }
 
   async onSubmit(): Promise<void> {
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     // Validar ambos campos antes de contactar al backend
     const phoneOk = this.validatePhone();
     const emailOk = this.validateEmail();
     if (!phoneOk || !emailOk) return;
 
-    this.loading = true;
+    this.loading.set(true);
     try {
       await this.auth.requestPasswordRecovery(this.phoneNumber, this.recoveryEmail);
-      this.submitted = true;
+      this.submitted.set(true);
     } catch {
       // Keep the response generic so account existence is not disclosed.
-      this.submitted = true;
+      this.submitted.set(true);
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 }

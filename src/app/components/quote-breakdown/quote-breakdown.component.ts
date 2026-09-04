@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QuoteCalculationResult } from '../../models/leasing.model';
 import { PdfExportService } from '../../services/pdf-export.service';
@@ -20,7 +20,7 @@ export class QuoteBreakdownComponent {
   @Output() saveQuote = new EventEmitter<void>();
 
   public currentDate = new Date();
-  public isDownloading = false;
+  public isDownloading = signal(false);
 
   get opt1() {
     return this.calculation?.options?.option1 || {
@@ -55,11 +55,11 @@ export class QuoteBreakdownComponent {
   }
 
   public async downloadPDF(): Promise<void> {
-    this.isDownloading = true;
+    this.isDownloading.set(true);
     try {
       await this.pdfExport.exportToPdf('official-pdf-sheet', 'cotizacion_golease');
     } finally {
-      this.isDownloading = false;
+      this.isDownloading.set(false);
     }
   }
 

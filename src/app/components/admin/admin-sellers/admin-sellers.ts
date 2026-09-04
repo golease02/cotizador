@@ -98,7 +98,7 @@ export class AdminSellersComponent implements OnInit {
   manualAddress = '';
   selectedCoords: { lat: number; lng: number } | null = null;
   addressText = '';
-  isSearching = false;
+  isSearching = signal(false);
   private map!: Leaflet.Map;
   private marker!: Leaflet.Marker;
 
@@ -417,7 +417,7 @@ export class AdminSellersComponent implements OnInit {
       this.formError = 'El mapa aún se está cargando. Intenta de nuevo.';
       return;
     }
-    this.isSearching = true;
+    this.isSearching.set(true);
     this.formError = '';
     try {
       const response = await fetch(
@@ -442,7 +442,7 @@ export class AdminSellersComponent implements OnInit {
       console.error('❌ Error al buscar la dirección:', err);
       this.formError = 'Error al buscar la dirección. Intenta de nuevo.';
     } finally {
-      this.isSearching = false;
+      this.isSearching = signal(false);
     }
   }
 

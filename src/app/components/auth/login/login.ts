@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -16,14 +16,14 @@ export class LoginComponent {
 
   phoneNumber = '';
   password = '';
-  errorMessage = '';
+  errorMessage = signal('');
 
   // Errores de validación por campo
   phoneError = '';
   passwordError = '';
 
   // Estado de UI
-  isLoading = false;
+  isLoading = signal(false);
   showPassword = false;
 
   private readonly phoneRegex = /^\d{10}$/;
@@ -79,18 +79,18 @@ export class LoginComponent {
   }
 
   async onLogin(): Promise<void> {
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     // Validar ambos campos antes de contactar al backend
     const phoneOk = this.validatePhone();
     const passwordOk = this.validatePassword();
     if (!phoneOk || !passwordOk) return;
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     try {
       const { data: profile, error: profileError } = await this.auth.getProfileBySellerNumber(this.phoneNumber);
       if (profileError || !profile) {
-        this.errorMessage = 'Número de celular no registrado.';
+        this.errorMessage.set('Número de celular no registrado.');
         return;
       }
 
@@ -99,18 +99,18 @@ export class LoginComponent {
       // un email desde el rol/teléfono ni se usa recovery_email para loguear.
       const email = profile.email?.trim().toLowerCase();
       if (!email) {
-        this.errorMessage = 'La cuenta no tiene un correo de autenticación configurado.';
+        this.errorMessage.set('La cuenta no tiene un correo de autenticación configurado.');
         return;
       }
       const { error } = await this.auth.signIn(email, this.password);
       if (error) {
-        this.errorMessage = error.message || 'Error al iniciar sesión.';
+        this.errorMessage.set(error.message || 'Error al iniciar sesión.');
         return;
       }
 
       const user = this.auth.currentUser();
       if (!user) {
-        this.errorMessage = 'No se pudo obtener el usuario.';
+        this.errorMessage.set('No se pudo obtener el usuario.');
         return;
       }
 
@@ -123,9 +123,9 @@ export class LoginComponent {
       }
     } catch {
       // Error silencioso: no se muestra en consola
-      this.errorMessage = 'Ocurrió un error inesperado. Intenta de nuevo.';
+      this.errorMessage.set('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
-      this.isLoading = false;
+      this.isLoading.set(false);
     }
   }
 }

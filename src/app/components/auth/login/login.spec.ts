@@ -133,7 +133,7 @@ describe('LoginComponent', () => {
 
     await component.onLogin();
 
-    expect(component.errorMessage).toContain('correo de autenticación');
+    expect(component.errorMessage()).toContain('correo de autenticación');
     expect(mockAuthService.signIn).not.toHaveBeenCalled();
   });
 
@@ -147,7 +147,7 @@ describe('LoginComponent', () => {
 
     await component.onLogin();
 
-    expect(component.errorMessage).toBe('Número de celular no registrado.');
+    expect(component.errorMessage()).toBe('Número de celular no registrado.');
     expect(mockAuthService.signIn).not.toHaveBeenCalled();
   });
 });

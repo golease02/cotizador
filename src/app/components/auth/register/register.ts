@@ -1,4 +1,4 @@
-import { Component, inject, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, signal, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -28,7 +28,7 @@ export class RegisterComponent implements AfterViewInit {
   errorMessage = '';
   selectedCoords: { lat: number; lng: number } | null = null;
   addressText = '';
-  isSearching = false;
+  isSearching = signal(false);
 
   // Errores de validación por campo
   phoneError = '';
@@ -191,7 +191,7 @@ export class RegisterComponent implements AfterViewInit {
       return;
     }
 
-    this.isSearching = true;
+    this.isSearching.set(true);
     this.errorMessage = '';
 
     try {
@@ -217,7 +217,7 @@ export class RegisterComponent implements AfterViewInit {
     } catch {
       this.errorMessage = 'Error al buscar la dirección. Intenta de nuevo.';
     } finally {
-      this.isSearching = false;
+      this.isSearching = signal(false);
     }
   }
 

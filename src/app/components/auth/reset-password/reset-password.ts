@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -18,9 +18,9 @@ export class ResetPasswordComponent implements OnInit {
 
   password = '';
   confirmation = '';
-  errorMessage = '';
-  successMessage = '';
-  loading = false;
+  errorMessage = signal('');
+  successMessage = signal('');
+  loading = signal(false);
 
   // Errores de validación por campo
   passwordError = '';
@@ -31,8 +31,7 @@ export class ResetPasswordComponent implements OnInit {
   showConfirmation = false;
 
   ngOnInit() {
-    // Leer token del fragmento (más robusto). No se hace log de tokens ni
-    // emails por seguridad: el fragmento de URL contiene credenciales.
+
     const fullHash = window.location.hash;
 
     let accessToken: string | null = null;
@@ -54,13 +53,13 @@ export class ResetPasswordComponent implements OnInit {
         refresh_token: refreshToken || ''
       }).then(({ error }) => {
         if (error) {
-          this.errorMessage = 'El enlace no es válido o ya expiró.';
+          this.errorMessage.set('El enlace no es válido o ya expiró.');
         }
       }).catch(() => {
-        this.errorMessage = 'Error al procesar el enlace.';
+        this.errorMessage.set('Error al procesar el enlace.');
       });
     } else {
-      this.errorMessage = 'El enlace no es válido o ya expiró.';
+      this.errorMessage.set('El enlace no es válido o ya expiró.');
     }
   }
 
@@ -117,42 +116,39 @@ export class ResetPasswordComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
     // Validar ambos campos antes de contactar al backend
     const passwordOk = this.validatePassword();
     const confirmationOk = this.validateConfirmation();
     if (!passwordOk || !confirmationOk) return;
 
-    this.loading = true;
+    this.loading.set(true);
     try {
-      // 1️⃣ Verificar que haya una sesión activa (sin exponer emails en logs)
       const { data: { session } } = await this.client.auth.getSession();
       if (!session) {
-        this.errorMessage = 'El enlace no es válido o ya expiró.';
-        this.loading = false;
+        this.errorMessage.set('El enlace no es válido o ya expiró.');
+        this.loading.set(false);
         return;
       }
 
-      // 2️⃣ Actualizar la contraseña
       const { error } = await this.client.auth.updateUser({ password: this.password });
 
       if (error) {
-        this.errorMessage = 'No se pudo actualizar la contraseña.';
-        this.loading = false;
+        this.errorMessage.set('No se pudo actualizar la contraseña.');
+        this.loading.set(false);
         return;
       }
 
-      // 3️⃣ Cerrar sesión para forzar al usuario a iniciar sesión con la nueva contraseña
       await this.auth.signOut();
 
-      this.successMessage = 'Contraseña actualizada. Ahora puedes iniciar sesión con tu nueva contraseña.';
+      this.successMessage.set('Contraseña actualizada. Ahora puedes iniciar sesión con tu nueva contraseña.');
       setTimeout(() => this.router.navigate(['/login']), 1500);
     } catch {
-      this.errorMessage = 'Ocurrió un error inesperado.';
+      this.errorMessage.set('Ocurrió un error inesperado.');
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 }
