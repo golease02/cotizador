@@ -21,6 +21,7 @@ export class PerfilComponent implements OnInit, AfterViewInit {
 
   isAdmin = computed(() => this.auth.isAdmin());
   loading = signal(true);
+  isEditing = signal(false);
   saving = signal(false);
   successMessage = signal('');
   errorMessage = signal('');
@@ -43,15 +44,24 @@ export class PerfilComponent implements OnInit, AfterViewInit {
     'LEXUS', 'INFINITI', 'ACURA', 'Otro'
   ];
 
-  private map!: Leaflet.Map;
-  private marker!: Leaflet.Marker;
+  private map?: Leaflet.Map;
+  private marker?: Leaflet.Marker;
 
   ngOnInit(): void {
     this.loadProfile();
   }
 
+  ngOnDestroy(): void {
+    this.destroyMap();
+  }
+
   async ngAfterViewInit(): Promise<void> {
-    await this.initMap();
+    // El contenedor del mapa vive dentro de *ngIf="!loading()", por lo que
+    // normalmente aún no existe en el DOM cuando corre este hook. Si ya está
+    // presente (perfil cargado muy rápido), lo inicializamos de inmediato.
+    if (this.mapContainer && !this.map) {
+      await this.initMap();
+    }
   }
 
   goBack(): void {
@@ -62,8 +72,56 @@ export class PerfilComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/']);
   }
 
+  startEditing(): void {
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.isEditing.set(true);
+    this.syncMapEditMode();
+    this.map?.invalidateSize();
+  }
+
+  async cancelEditing(): Promise<void> {
+    this.successMessage.set('');
+    this.isEditing.set(false);
+    this.syncMapEditMode();
+    await this.loadProfile();
+    this.map?.invalidateSize();
+  }
+
+  get displayAgencyBrand(): string {
+    return this.agencyBrand === 'Otro'
+      ? this.otherBrand.trim() || 'Otro'
+      : this.agencyBrand || '—';
+  }
+
+  private syncMapEditMode(): void {
+    const marker = this.marker;
+    if (!marker?.dragging) {
+      return;
+    }
+
+    if (this.isEditing()) {
+      marker.dragging.enable();
+    } else {
+      marker.dragging.disable();
+    }
+  }
+
+  private destroyMap(): void {
+    if (this.marker) {
+      this.marker.off();
+      this.marker.remove();
+      this.marker = undefined;
+    }
+    if (this.map) {
+      this.map.off();
+      this.map.remove();
+      this.map = undefined;
+    }
+  }
+
   private async initMap(): Promise<void> {
-    if (!this.mapContainer) {
+    if (!this.mapContainer || this.map) {
       return;
     }
 
@@ -76,26 +134,36 @@ export class PerfilComponent implements OnInit, AfterViewInit {
     });
 
     const queretaroCoords: Leaflet.LatLngExpression = [20.5921, -100.3947];
-    this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
+    const map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
+    this.map = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(this.map);
+    }).addTo(map);
 
-    this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
+    const marker = L.marker(queretaroCoords, { draggable: true }).addTo(map);
+    this.marker = marker;
 
-    this.map.on('click', (e: Leaflet.LeafletMouseEvent) => {
+    map.on('click', (e: Leaflet.LeafletMouseEvent) => {
+      if (!this.isEditing()) {
+        return;
+      }
       const { lat, lng } = e.latlng;
       this.setMarkerAndReverseGeocode(lat, lng);
     });
 
-    this.marker.on('dragend', () => {
-      const pos = this.marker.getLatLng();
+    marker.on('dragend', () => {
+      if (!this.isEditing()) {
+        return;
+      }
+      const pos = marker.getLatLng();
       this.setMarkerAndReverseGeocode(pos.lat, pos.lng);
     });
 
+    this.syncMapEditMode();
+
     if (this.manualAddress || this.addressText) {
-      this.map.setView(
+      map.setView(
         this.selectedCoords ? [this.selectedCoords.lat, this.selectedCoords.lng] : queretaroCoords,
         14
       );
@@ -103,6 +171,10 @@ export class PerfilComponent implements OnInit, AfterViewInit {
   }
 
   private async setMarkerAndReverseGeocode(lat: number, lng: number): Promise<void> {
+    if (!this.isEditing() || !this.marker) {
+      return;
+    }
+
     this.marker.setLatLng([lat, lng]);
     this.selectedCoords = { lat, lng };
     await this.updateAddress(lat, lng);
@@ -131,6 +203,10 @@ export class PerfilComponent implements OnInit, AfterViewInit {
   }
 
   async searchLocation(): Promise<void> {
+    if (!this.isEditing()) {
+      return;
+    }
+
     const query = this.manualAddress.trim();
     if (!query) {
       this.errorMessage.set('Escribe una ubicación para buscar.');
@@ -151,8 +227,8 @@ export class PerfilComponent implements OnInit, AfterViewInit {
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
 
-        this.map.setView([lat, lng], 16);
-        this.marker.setLatLng([lat, lng]);
+        this.map?.setView([lat, lng], 16);
+        this.marker?.setLatLng([lat, lng]);
         this.selectedCoords = { lat, lng };
         this.addressText = result.display_name || `${lat}, ${lng}`;
         this.manualAddress = this.addressText;
@@ -168,41 +244,62 @@ export class PerfilComponent implements OnInit, AfterViewInit {
   }
 
   private async loadProfile(): Promise<void> {
+    // Al alternar loading, el *ngIf destruye y recrea el contenedor del mapa:
+    // descartamos la instancia de Leaflet actual para volver a crearla fresca.
+    this.destroyMap();
+
     this.loading.set(true);
     this.errorMessage.set('');
 
     const user = this.auth.currentUser();
-    const profile = this.auth.currentProfile();
 
     if (!user) {
       this.loading.set(false);
+      this.errorMessage.set('No hay una sesión activa.');
       return;
     }
 
-    const loadedProfile = profile ?? (await this.auth.loadProfile(user.id));
-    const agencyBrandValue = (loadedProfile as any)?.agency_brand || '';
-    const finalBrand = agencyBrandValue === 'Otro' ? 'Otro' : agencyBrandValue;
+    const loadedProfile = await this.auth.loadProfile(user.id);
 
-    this.fullName = loadedProfile?.full_name || '';
-    this.sellerNumber = (loadedProfile as any)?.seller_number || '';
+    if (!loadedProfile) {
+      this.loading.set(false);
+      this.errorMessage.set('No se pudo cargar tu información de perfil.');
+      return;
+    }
+
+    const agencyBrandValue = loadedProfile.agency_brand || '';
+    const isKnownBrand =
+      agencyBrandValue && this.brands.some((b) => b.toLowerCase() === agencyBrandValue.toLowerCase());
+    const finalBrand = agencyBrandValue && !isKnownBrand ? 'Otro' : agencyBrandValue;
+
+    this.fullName = loadedProfile.full_name || '';
+    this.sellerNumber = loadedProfile.seller_number || '';
     this.agencyBrand = finalBrand;
-    this.otherBrand = finalBrand === 'Otro' ? (loadedProfile as any)?.other_brand || '' : '';
-    this.manualAddress = (loadedProfile as any)?.agency_location || '';
+    this.otherBrand = finalBrand === 'Otro' && agencyBrandValue ? agencyBrandValue : '';
+    this.manualAddress = loadedProfile.agency_location || '';
     this.addressText = this.manualAddress;
 
-    if ((loadedProfile as any)?.latitude && (loadedProfile as any)?.longitude) {
+    if (loadedProfile.latitude && loadedProfile.longitude) {
       this.selectedCoords = {
-        lat: Number((loadedProfile as any).latitude),
-        lng: Number((loadedProfile as any).longitude)
+        lat: Number(loadedProfile.latitude),
+        lng: Number(loadedProfile.longitude)
       };
     }
 
-    if (this.map && this.selectedCoords) {
+    if (this.map && this.selectedCoords && this.marker) {
       this.map.setView([this.selectedCoords.lat, this.selectedCoords.lng], 14);
       this.marker.setLatLng([this.selectedCoords.lat, this.selectedCoords.lng]);
     }
 
     this.loading.set(false);
+
+    // El contenedor del mapa está dentro de *ngIf="!loading()": una vez que
+    // loading pasa a false y se renderiza el formulario, inicializamos el mapa.
+    this.cdr.detectChanges();
+    if (!this.map) {
+      await this.initMap();
+    }
+    this.map?.invalidateSize();
   }
 
   async saveProfile(): Promise<void> {
@@ -259,6 +356,8 @@ export class PerfilComponent implements OnInit, AfterViewInit {
       }
 
       this.successMessage.set('Tu información se actualizó correctamente.');
+      this.isEditing.set(false);
+      this.syncMapEditMode();
       await this.loadProfile();
     } finally {
       this.saving.set(false);

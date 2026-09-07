@@ -269,7 +269,7 @@
                     <div class="form-group" [class.has-error]="formValidated && fieldErrors['seller_number']">
                         <label>Número de celular *</label>
                         <input type="text" [(ngModel)]="sellerForm.seller_number" name="seller_number"
-                            [disabled]="isEditMode" placeholder="Ej. 5512345678" inputmode="numeric" />
+                            [disabled]="isEditMode" placeholder="Ej. 5512345678" inputmode="numeric" maxlength="10" (input)="onPhoneInput($event)" />
                         <small class="field-error" *ngIf="formValidated && fieldErrors['seller_number']">{{ fieldErrors['seller_number'] }}</small>
                         <small *ngIf="isEditMode && !fieldErrors['seller_number']">Este número define el acceso; no se puede modificar.</small>
                     </div>

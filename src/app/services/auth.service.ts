@@ -15,6 +15,11 @@ export interface Profile {
   full_name: string;
   role: 'admin' | 'seller';
   active?: boolean;
+  seller_number?: string;
+  agency_brand?: string;
+  agency_location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface AuthResult {
@@ -149,7 +154,9 @@ export class AuthService {
   public async loadProfile(userId: string): Promise<Profile | null> {
     const { data, error } = await this.client
       .from('profiles')
-      .select('id, email, recovery_email, full_name, role, active')
+      .select(
+        'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude'
+      )
       .eq('id', userId)
       .maybeSingle();
     if (!error && data) {

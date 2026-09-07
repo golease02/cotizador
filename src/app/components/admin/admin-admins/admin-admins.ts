@@ -295,18 +295,28 @@ export class AdminAdminsComponent implements OnInit {
     this.formLoading = false;
   }
 
+  /** Filtra en vivo: solo dígitos, máximo 10 caracteres (igual que en el registro). */
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    input.value = input.value.replace(/\D/g, '').slice(0, 10);
+    this.adminForm.seller_number = input.value;
+    if (this.fieldErrors['seller_number']) this.validateForm();
+  }
+
   validateForm(): boolean {
     this.formValidated = true;
     this.fieldErrors = {};
     let valid = true;
     const numberField = this.adminForm.seller_number.trim();
 
-    if (!numberField) {
-      this.fieldErrors['seller_number'] = 'El N° de contacto es obligatorio.';
-      valid = false;
-    } else if (!/^\d+$/.test(numberField) || numberField.length < 3) {
-      this.fieldErrors['seller_number'] = 'Ingresa un N° de contacto válido.';
-      valid = false;
+    if (!this.isEditMode) {
+      if (!numberField) {
+        this.fieldErrors['seller_number'] = 'El número de celular es obligatorio.';
+        valid = false;
+      } else if (!/^\d{10}$/.test(numberField)) {
+        this.fieldErrors['seller_number'] = 'Ingresa un número válido de 10 dígitos.';
+        valid = false;
+      }
     }
 
     if (!this.adminForm.full_name.trim()) {
