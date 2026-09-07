@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { QuotesService } from '../../../services/quotes.service';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
-import { getSupabaseClient } from '../../../services/supabase-client';
+import { getSupabaseClient, sessionReady } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
@@ -61,11 +61,6 @@ export class AdminQuotesComponent implements OnInit {
   showNotaConfirmModal = false;
   notaToDelete: any = null;
 
-  // Tooltip
-  showTooltip = false;
-  tooltipContent = '';
-  tooltipPosition = { x: 0, y: 0 };
-
   async ngOnInit() {
     await Promise.all([
       this.loadQuotes(),
@@ -93,6 +88,40 @@ export class AdminQuotesComponent implements OnInit {
     this.loading = true;
     const { data, error } = await this.quotesService.getAllQuotesWithSeller();
     if (!error) {
+      // Conteo de notas por cotización (una consulta, con fallback por lotes)
+      await sessionReady();
+      const quoteIds = (data || []).map((q:any) => q.id);
+      const conteoNotas = new Map<string, number>();
+      const { data: notasData, error: notasError } = await this.client
+        .from('notas')
+        .select('entidad_id')
+        .eq('entidad_tipo', 'quote');
+      if (notasError || !Array.isArray(notasData) || (notasData || []).length === 0) {
+        console.warn('No se pudo contar las notas:', notasError);
+        // Fallback por lotes (aísla el problema por chunks de 100)
+        for (let i = 0; i < quoteIds.length; i += 100) {
+          const chunk = quoteIds.slice(i, i + 100);
+          const { data: chunkData, error: chunkError } = await this.client
+            .from('notas')
+            .select('entidad_id')
+            .eq('entidad_tipo', 'quote')
+            .in('entidad_id', chunk);
+          if (!chunkError) {
+            for (const n of chunkData || []) {
+              conteoNotas.set(String(n.entidad_id), (conteoNotas.get(String(n.entidad_id)) || 0) + 1);
+            }
+          } else {
+            console.warn('Fallback por lote fall:', chunkError);
+          }
+        }
+      } else {
+        for (const n of notasData || []) {
+          conteoNotas.set(String(n.entidad_id), (conteoNotas.get(String(n.entidad_id)) || 0) + 1);
+        }
+      }
+      for (const q of data || []) {
+        q.notas_count = conteoNotas.get(String(q.id)) || 0;
+      }
       // Agrupar ids por el color calculado para hacer un solo UPDATE por color (evita N+1)
       const idsPorColor = new Map<string, string[]>();
       for (const q of data) {
@@ -292,6 +321,7 @@ export class AdminQuotesComponent implements OnInit {
       this.notaText = '';
       this.notaEditando = null;
       await this.cargarNotasQuote(this.selectedQuoteId!);
+      this.actualizarConteoNotas(this.selectedQuoteId!, this.notasCotizacion.length);
       this.toastService.success(eraEdicion ? 'Nota actualizada correctamente' : 'Nota agregada correctamente');
     }
     this.notaLoading = false;
@@ -322,6 +352,7 @@ export class AdminQuotesComponent implements OnInit {
       this.toastService.error('No se pudo eliminar la nota');
     } else {
       await this.cargarNotasQuote(this.selectedQuoteId!);
+      this.actualizarConteoNotas(this.selectedQuoteId!, this.notasCotizacion.length);
       this.toastService.success('Nota eliminada correctamente');
     }
     this.notaLoading = false;
@@ -344,6 +375,13 @@ export class AdminQuotesComponent implements OnInit {
     this.notaEditando = null;
     this.notaError = '';
     this.selectedQuoteId = null;
+  }
+  getNotasCount(q: any): number {
+    return q.notas_count || 0;
+  }
+
+  private actualizarConteoNotas(quoteId: string, count: number) {
+    this.patchQuote(quoteId, { notas_count: count });
   }
 
   // ===================== COLOR Y SEGUIMIENTO =====================
@@ -425,38 +463,6 @@ export class AdminQuotesComponent implements OnInit {
           .eq('id', quote.id);
       }
     );
-  }
-
-  // ===================== TOOLTIP =====================
-
-  onMouseEnter(event: MouseEvent, quote: any) {
-    this.client
-      .from('notas')
-      .select('texto, created_at')
-      .eq('entidad_tipo', 'quote')
-      .eq('entidad_id', quote.id)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (!error && data && data.length > 0) {
-          const notasText = data.map(n => `• ${n.texto}`).join('\n');
-          this.tooltipContent = notasText || 'Sin notas';
-        } else {
-          this.tooltipContent = 'Sin notas';
-        }
-        this.showTooltip = true;
-        let x = event.clientX + 12;
-        let y = event.clientY + 12;
-        if (x + 280 > window.innerWidth) x = event.clientX - 290;
-        if (y + 120 > window.innerHeight) y = event.clientY - 120;
-        this.tooltipPosition = { x, y };
-        this.cdr.detectChanges();
-      });
-  }
-
-  onMouseLeave() {
-    this.showTooltip = false;
-    this.tooltipContent = '';
-    this.cdr.detectChanges();
   }
 
   // ===================== MODAL DE COTIZACIÓN =====================

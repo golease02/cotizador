@@ -100,8 +100,7 @@
 
         <div class="cards-grid" *ngIf="!loading && filteredQuotes().length > 0">
             <div *ngFor="let q of filteredQuotes(); let i = index" class="quote-card" [class]="getColorClase(q)"
-                [style.animation-delay]="(i * 0.03) + 's'" (mouseenter)="onMouseEnter($event, q)"
-                (mouseleave)="onMouseLeave()">
+                [style.animation-delay]="(i * 0.03) + 's'">
                 <div class="card-color-indicator" [class]="getColorClase(q)"></div>
 
                 <div class="card-body-grid">
@@ -152,9 +151,11 @@
                             [attr.aria-label]="q.fijada ? 'Desfijar cotización' : 'Fijar cotización'">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"></path><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"></path></svg>
                         </button>
-                        <button type="button" class="btn-icon btn-note" (click)="abrirNotas(q)" title="Notas"
+                        <button type="button" class="notas-counter" (click)="abrirNotas(q)" title="Ver notas"
                             aria-label="Ver notas de la cotización">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
+                            <span class="notas-counter-num">{{ getNotasCount(q) }}</span>
+                            <span class="notas-counter-label">{{ getNotasCount(q) === 1 ? 'nota' : 'notas' }}</span>
                         </button>
                         <button type="button" class="btn-icon btn-view" (click)="abrirModal(q)" title="Ver detalle"
                             aria-label="Ver detalle de la cotización">
@@ -162,19 +163,10 @@
                         </button>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
-</div>
-
-<!-- Tooltip de notas al hacer hover -->
-<div class="quote-notes-tooltip" *ngIf="showTooltip" [style.left.px]="tooltipPosition.x"
-    [style.top.px]="tooltipPosition.y">
-    <div class="quote-notes-tooltip-header">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
-        <span>Notas de la cotización</span>
-    </div>
-    <div class="quote-notes-tooltip-body">{{ tooltipContent }}</div>
 </div>
 
 <!-- MODAL DE NOTAS -->
