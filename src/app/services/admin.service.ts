@@ -102,43 +102,52 @@ export class AdminService {
   /** Respaldo de getStats: replica el shape exacto del RPC sin escribir en la BD. */
   private async getStatsLegacy(): Promise<{ data: any; error: any }> {
     try {
-      const headCount = (table: 'profiles' | 'quotes', match?: Record<string, unknown>) => {
-        const q = this.client.from(table).select('*', { count: 'exact', head: true });
-        return match ? q.match(match) : q;
-      };
+      // --- 1. Perfil de vendedores (contar total e inactivos de una sola consulta) ---
+      const { data: sellerProfiles, error: sellersError } = await this.client
+        .from('profiles')
+        .select('id, active')
+        .eq('role', 'seller');
+      if (sellersError) throw sellersError;
+      const totalSellers = sellerProfiles?.length ?? 0;
+      const inactiveSellers = (sellerProfiles ?? []).filter((p: any) => p.active === false).length;
 
-      const [
-        sellersR, inactiveR, quotesR, fijadasR, rojasR, recientesR, verdesR, amarillasR,
-      ] = await Promise.all([
-        headCount('profiles', { role: 'seller' }),
-        headCount('profiles', { role: 'seller', active: false }),
-        headCount('quotes'),
-        headCount('quotes', { fijada: true }),
-        headCount('quotes', { color: 'rojo' }),
-        headCount('quotes', { color: 'reciente' }),
-        headCount('quotes', { color: 'verde' }),
-        headCount('quotes', { color: 'amarillo' }),
-      ]);
-      const countOf = (r: any) => (r?.error ? 0 : (r?.count ?? 0));
+      // --- 2. Una sola consulta de cotizaciones con join de vendedor (fuente unica de verdad) ---
+      const { data: rows, error: quotesError } = await this.client
+        .from('quotes')
+        .select('id, client_name, brand, model, pricenet, created_at, revisada, fijada, color, seller_id, profiles!seller_id (full_name, agency_location)')
+        .order('created_at', { ascending: false });
+      if (quotesError) throw quotesError;
+      const allQuotes: any[] = (rows ?? []) as any[];
+
+      // --- Contadores derivados del color RECALCULADO (coherentes con los badges de las tarjetas) ---
+      const countByColor = (estado: string): number =>{
+        let count =  0;
+        for (const q of allQuotes) {
+          if (computeQuoteColor(q) === estado) count++;
+        }
+        return count;
+      };
+      const totalQuotes = allQuotes.length;
+      let totalFijadas =  0;
+      for (const q of allQuotes) {
+        if (q.fijada) totalFijadas++;
+      }
 
       // --- Top 5 vehículos (agregación local, igual que el RPC) ---
-      const { data: vehicleRows } = await this.client.from('quotes').select('brand, model');
       const vehicleCounts: Record<string, number> = {};
-      (vehicleRows ?? []).forEach((q: any) => {
+      for (const q of allQuotes) {
         const key = `${q.brand} ${q.model}`;
         vehicleCounts[key] = (vehicleCounts[key] || 0) + 1;
-      });
+      }
       const topVehicles = Object.entries(vehicleCounts)
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
       // --- Top 5 vendedores ---
-      const { data: sellerRows } = await this.client
-        .from('quotes')
-        .select('seller_id, profiles!seller_id (full_name, agency_location)');
+
       const sellerMap: Record<string, { name: string; location: string; count: number }> = {};
-      (sellerRows ?? []).forEach((q: any) => {
+      for (const q of allQuotes) {
         const seller = q.profiles;
         if (seller && seller.full_name) {
           if (!sellerMap[q.seller_id]) {
@@ -150,22 +159,14 @@ export class AdminService {
           }
           sellerMap[q.seller_id].count++;
         }
-      });
+      }
       const topSellers = Object.values(sellerMap)
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-      // --- Listas destacadas (solo lectura; el color se recalcula al vuelo) ---
-      const cardList = (match?: Record<string, unknown>) => {
-        const q = this.client
-          .from('quotes')
-          .select('id, client_name, brand, model, pricenet, created_at, revisada, color, profiles!seller_id (full_name)')
-          .order('created_at', { ascending: false })
-          .limit(5);
-        return match ? q.match(match) : q;
-      };
-      const toCards = (rows: any[] | null) =>
-        (rows ?? []).map((q: any) => ({
+      // --- Listas destacadas (siempre con el color recalculado, coherentes con las métricas) ---
+      const toCards = (list: any[]): any[] =>
+        list.map((q: any) => ({
           id: q.id,
           client_name: q.client_name,
           brand: q.brand,
@@ -176,27 +177,28 @@ export class AdminService {
           seller_name: q.profiles?.full_name || 'N/A',
         }));
 
-      const [fijadasQ, urgentesQ, recientesQ] = await Promise.all([
-        cardList({ fijada: true }),
-        cardList({ color: 'rojo' }),
-        cardList(),
-      ]);
+      const fijadasList: any[] = [];
+      const urgentesList: any[] = [];
+      for (const q of allQuotes) {
+        if (q.fijada && fijadasList.length < 5) fijadasList.push(q);
+        if (computeQuoteColor(q) === 'rojo' && urgentesList.length < 5) urgentesList.push(q);
+      }
 
       return {
         data: {
-          totalSellers: countOf(sellersR),
-          inactiveSellers: countOf(inactiveR),
-          totalQuotes: countOf(quotesR),
-          totalFijadas: countOf(fijadasR),
-          totalUrgentes: countOf(rojasR),
-          totalRecientes: countOf(recientesR),
-          totalRevisadas: countOf(verdesR),
-          totalPendientes: countOf(amarillasR),
+          totalSellers,
+          inactiveSellers,
+          totalQuotes,
+          totalFijadas,
+          totalUrgentes: countByColor('rojo'),
+          totalRecientes: countByColor('reciente'),
+          totalRevisadas: countByColor('verde'),
+          totalPendientes: countByColor('amarillo'),
           topVehicles,
           topSellers,
-          fijadas: toCards(fijadasQ.data),
-          urgentes: toCards(urgentesQ.data),
-          recientes: toCards(recientesQ.data),
+          fijadas: toCards(fijadasList),
+          urgentes: toCards(urgentesList),
+          recientes: toCards(allQuotes.slice(0, 5)),
         },
         error: null,
       };

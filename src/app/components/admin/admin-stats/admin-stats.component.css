@@ -548,7 +548,7 @@
   min-height: 180px;
   border: 1px solid var(--border-color);
   border-radius: 13px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface-card);
 }
 
 .attention-panel {

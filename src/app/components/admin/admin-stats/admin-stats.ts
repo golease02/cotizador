@@ -91,6 +91,7 @@ export class AdminStatsComponent implements OnInit {
     } catch (error) {
       console.warn('No se pudieron cargar las estadísticas:', error);
     } finally {
+      this.today = new Date();
       this.loading.set(false);
     }
   }
