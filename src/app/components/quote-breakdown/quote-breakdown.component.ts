@@ -46,6 +46,13 @@ export class QuoteBreakdownComponent {
     };
   }
 
+  get sheetDate(): Date {
+    const g = this.calculation?.generatedAt;
+    if (!g) return this.currentDate;
+
+    return g instanceof Date ? g : new Date(g);
+  }
+
   public getPlateLabel(): string {
     if (!this.calculation) return 'Alta de placas pendientes x cotizar';
     const stateId = this.calculation.input.selectedStatePlateId;

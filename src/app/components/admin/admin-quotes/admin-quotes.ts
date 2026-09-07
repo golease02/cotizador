@@ -8,6 +8,7 @@ import { getSupabaseClient } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
+import { CatalogService } from '../../../services/catalog.service';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
 
 @Component({
@@ -23,6 +24,7 @@ export class AdminQuotesComponent implements OnInit {
   private auth = inject(AuthService);
   private client = getSupabaseClient();
   private calculator = inject(FinancialCalculatorService);
+  private catalog = inject(CatalogService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
@@ -65,8 +67,12 @@ export class AdminQuotesComponent implements OnInit {
   tooltipPosition = { x: 0, y: 0 };
 
   async ngOnInit() {
-    await this.loadQuotes();
-    await this.loadVendedores();
+    await Promise.all([
+      this.loadQuotes(),
+      this.loadVendedores(),
+      this.catalog.loadStatePlates(),
+      this.catalog.loadCalculatorConfig(),
+    ]);
   }
 
   @HostListener('document:keydown.escape')
@@ -87,6 +93,8 @@ export class AdminQuotesComponent implements OnInit {
     this.loading = true;
     const { data, error } = await this.quotesService.getAllQuotesWithSeller();
     if (!error) {
+      // Agrupar ids por el color calculado para hacer un solo UPDATE por color (evita N+1)
+      const idsPorColor = new Map<string, string[]>();
       for (const q of data) {
         const dias = this.getDiasSinActualizar(q);
         let colorCalculado = 'reciente';
@@ -98,12 +106,16 @@ export class AdminQuotesComponent implements OnInit {
           else colorCalculado = 'reciente';
         }
         if (q.color !== colorCalculado) {
-          await this.client
-            .from('quotes')
-            .update({ color: colorCalculado })
-            .eq('id', q.id);
           q.color = colorCalculado;
+          if (!idsPorColor.has(colorCalculado)) idsPorColor.set(colorCalculado, []);
+          idsPorColor.get(colorCalculado)!.push(q.id);
         }
+      }
+      for (const [color, ids] of idsPorColor) {
+        await this.client
+          .from('quotes')
+          .update({ color })
+          .in('id', ids);
       }
       this.quotes.set(data || []);
       this.applyFilters();
@@ -357,7 +369,7 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   getDiasSinActualizar(quote: any): number {
-    const fecha = new Date(quote.ultima_actualizacion || quote.created_at);
+    const fecha = new Date(quote.created_at);
     const ahora = new Date();
     const diff = Math.floor((ahora.getTime() - fecha.getTime()) / (1000 * 60 * 60 * 24));
     return diff;
@@ -451,6 +463,15 @@ export class AdminQuotesComponent implements OnInit {
 
   async abrirModal(quote: any) {
     await this.marcarComoRevisado(quote.id);
+// 1. Intentar el snapshot inmutable guardado (fiel al momento de generación. Sí existe, se muestra tal cual.)
+    const snapshot = await this.quotesService.getQuoteCalculation(quote.id);
+
+    if (snapshot) {
+      this.selectedQuote.set(snapshot);
+      this.showModal = true;
+      document.body.style.overflow = 'hidden';
+      return;
+    }
     const input: VehicleQuoteInput = {
       clientName: quote.client_name || '',
       brand: quote.brand,

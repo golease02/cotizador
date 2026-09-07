@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { QuotesService } from '../../../services/quotes.service';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
+import { CatalogService } from '../../../services/catalog.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +20,7 @@ export class MisCotizacionesComponent implements OnInit {
   private auth = inject(AuthService);
   private quotesService = inject(QuotesService);
   private calculator = inject(FinancialCalculatorService);
+  private catalog = inject(CatalogService);
 
   isAdmin = computed(() => this.auth.isAdmin());
   cotizaciones = signal<any[]>([]);
@@ -32,6 +34,10 @@ export class MisCotizacionesComponent implements OnInit {
   filtroPeriodo = 'todos'; // 'todos', '7dias', '30dias'
 
   async ngOnInit() {
+    await Promise.all([
+      this.catalog.loadStatePlates(),
+      this.catalog.loadCalculatorConfig(),
+    ]);
     await this.cargarCotizaciones();
   }
 
@@ -88,7 +94,15 @@ export class MisCotizacionesComponent implements OnInit {
     this.aplicarFiltros();
   }
 
-  verCotizacion(cotizacion: any) {
+  async verCotizacion(cotizacion: any) {
+// 1. Intentar el snapshot inmutable guardado (fiel al momento de generación. Sí existe, se muestra tal cual.)
+    const snapshot = await this.quotesService.getQuoteCalculation(cotizacion.id);
+
+    if (snapshot) {
+      this.selectedQuote.set(snapshot);
+      this.showDetail.set(true);
+      return;
+    }
     const input: VehicleQuoteInput = {
       clientName: cotizacion.client_name || '',
       brand: cotizacion.brand,

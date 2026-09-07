@@ -55,6 +55,7 @@ export class QuotesService {
       selectedstateplateid: quote.input.selectedStatePlateId || 'pendiente',
       isinsuranceestimated: quote.input.isInsuranceEstimated || false,
       totalpayment: 0,
+      calculation: quote,
     };
 
     if (quoteId) {
@@ -122,6 +123,23 @@ export class QuotesService {
     this.savedQuotesSignal.set(mapped);
   }
 
+  /** Recupera el snapshot inmutable guardado de la cotización (null si no existe. */
+  public async getQuoteCalculation(quoteId: number | string): Promise<QuoteCalculationResult | null> {
+    const { data, error } = await this.client
+      .from('quotes')
+      .select('calculation')
+      .eq('id', quoteId)
+      .maybeSingle();
+    if (error || !data?.calculation) return null;
+    const calc = data.calculation as QuoteCalculationResult;
+
+    // El Date se serializa como ISO string en jsonb; normalizar a Date
+    if (calc.generatedAt && typeof calc.generatedAt === 'string') {
+      calc.generatedAt = new Date(calc.generatedAt);
+    }
+    return calc;
+  }
+
   public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('quotes')
@@ -144,7 +162,7 @@ export class QuotesService {
   public async getAllQuotesWithSeller(): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('quotes')
-      .select(`id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, color, fijada, revisada, created_at,
+      .select(`id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, color, fijada, revisada, created_at,
         profiles!seller_id (full_name)`)
       .order('created_at', { ascending: false })
       .limit(200);
