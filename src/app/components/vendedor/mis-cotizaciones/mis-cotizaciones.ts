@@ -96,7 +96,7 @@ export class MisCotizacionesComponent implements OnInit {
       year: cotizacion.year,
       priceNet: cotizacion.pricenet,
       isHybridOrElectric: cotizacion.ishybridorelectric || false,
-      termMonths: cotizacion.termmonths as any,
+      termMonths: (cotizacion.termmonths || 48) as any,
       extraordinaryRentPct: cotizacion.extraordinaryrentpct || 0.1,
       securityDepositPct: cotizacion.securitydepositpct || 0,
       selectedStatePlateId: cotizacion.selectedstateplateid || 'pendiente',

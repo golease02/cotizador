@@ -458,7 +458,7 @@ export class AdminQuotesComponent implements OnInit {
       year: quote.year,
       priceNet: quote.pricenet,
       isHybridOrElectric: quote.ishybridorelectric || false,
-      termMonths: quote.termmonths as any,
+      termMonths: (quote.termmonths || 48) as any,
       extraordinaryRentPct: quote.extraordinaryrentpct || 0.1,
       securityDepositPct: quote.securitydepositpct || 0,
       selectedStatePlateId: quote.selectedstateplateid || 'pendiente',

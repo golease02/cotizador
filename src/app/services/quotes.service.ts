@@ -125,7 +125,7 @@ export class QuotesService {
   public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('quotes')
-      .select('id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, selectedstateplateid, isinsuranceestimated, created_at')
+      .select('id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, created_at')
       .eq('seller_id', sellerId)
       .order('created_at', { ascending: false })
       .limit(200);
@@ -144,7 +144,7 @@ export class QuotesService {
   public async getAllQuotesWithSeller(): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('quotes')
-      .select(`id, client_name, brand, model, year, pricenet, color, fijada, revisada, created_at,
+      .select(`id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, color, fijada, revisada, created_at,
         profiles!seller_id (full_name)`)
       .order('created_at', { ascending: false })
       .limit(200);
