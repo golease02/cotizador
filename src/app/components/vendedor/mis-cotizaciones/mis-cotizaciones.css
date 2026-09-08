@@ -704,14 +704,17 @@
 }
 
 @media (max-width: 768px) {
+    .dashboard-cotizaciones {
+        margin-top: 1rem;
+        /* Respiro lateral en pantallas pequeñas. La regla de identidad visual
+           deja padding:0; este bloque (posterior) lo restaura SOLO en móvil. */
+        padding: 0 0.85rem 1.5rem;
+    }
+
     .dashboard-cotizaciones .dashboard-header {
         min-height: 0;
         align-items: stretch;
         padding: 1.25rem;
-    }
-
-    .dashboard-cotizaciones {
-        margin-top: 1rem;
     }
 
     .dashboard-cotizaciones .header-left h1 {
@@ -728,14 +731,62 @@
         white-space: nowrap;
     }
 
+    .dashboard-cotizaciones .filters-panel {
+        margin-bottom: 1.5rem;
+    }
+
     .dashboard-cotizaciones .card-body {
         grid-template-columns: 1fr 1fr;
+    }
+
+    /* Cabecera de tarjeta: los nombres largos se truncan en lugar de romper
+       el layout en pantallas pequeñas. */
+    .dashboard-cotizaciones .client-info {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .dashboard-cotizaciones .client-info > div {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dashboard-cotizaciones .client-name,
+    .dashboard-cotizaciones .vehicle-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* "Ver detalle completo" como target táctil de ancho completo */
+    .dashboard-cotizaciones .btn-view-detail {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
     }
 }
 
 @media (max-width: 480px) {
     .dashboard-cotizaciones .card-body {
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-cotizaciones .quote-card {
+        padding: 1.1rem;
+    }
+
+    .dashboard-cotizaciones .header-left h1 {
+        font-size: 1.5rem;
+    }
+
+    .dashboard-cotizaciones .client-initial {
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+    }
+
+    .dashboard-cotizaciones .period-btn {
+        padding: 0.4rem 0.85rem;
     }
 
     .dashboard-cotizaciones .detail-content {
@@ -752,9 +803,5 @@
     .detail-header .btn-back {
         width: 100%;
         justify-content: center;
-    }
-
-    .dashboard-cotizaciones .quote-card {
-        padding: 1.1rem;
     }
 }

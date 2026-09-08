@@ -1458,6 +1458,17 @@ html[data-theme='dark'] .notas-overlay {
     left: 0.7rem;
     max-width: none;
   }
+
+  /* Refinamientos táctiles (móvil) */
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chip-group .chip,
+  .toolbar .chip {
+    padding: 0.55rem 1.05rem;
+  }
 }
 
 @media (max-width: 480px) {

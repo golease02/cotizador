@@ -969,6 +969,19 @@
     left: 0.7rem;
     max-width: none;
   }
+
+  /* Acciones del modal apiladas y a ancho completo (consistente con
+     drawer-actions y el resto del panel en móvil). */
+  .modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .modal-actions .btn-cancel,
+  .modal-actions .btn-confirm {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .button-icon {

@@ -343,9 +343,29 @@
 }
 
 @media (max-width: 768px) {
+  .profile-shell {
+    /* Respiro lateral en pantallas pequeñas (evita que hero, formulario y mapa
+       toquen los bordes del dispositivo). */
+    padding: 0.75rem 0.85rem 2rem;
+  }
+
   .profile-hero {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+  }
+
+  .hero-user {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .hero-copy {
+    min-width: 0;
+  }
+
+  .hero-copy h2,
+  .hero-copy p {
+    overflow-wrap: break-word;
   }
 
   .field-grid,
@@ -365,11 +385,35 @@
   .btn-back {
     width: 100%;
   }
+
+  /* Cabeceras de sección: el título y la acción "Editar" se acomodan sin
+     desbordar en pantallas angostas. */
+  .section-header {
+    flex-wrap: wrap;
+  }
+
+  .btn-edit-profile {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* La dirección puede ocupar varias líneas: la pin queda alineada al inicio. */
+  .location-readonly {
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+
+  /* Evita el zoom automático de iOS al enfocar los campos del perfil. */
+  .form-field input,
+  .form-field select,
+  .search-row input {
+    font-size: 1rem;
+  }
 }
 
 @media (max-width: 480px) {
   .profile-shell {
-    padding: 0 0 1.5rem;
+    padding: 0 0.85rem 1.5rem;
   }
 
   .profile-hero {
@@ -383,12 +427,29 @@
     border-radius: 14px;
   }
 
+  .hero-user {
+    gap: 0.85rem;
+  }
+
   .hero-copy h2 {
     font-size: 1.6rem;
   }
 
+  .section-title {
+    font-size: 0.75rem;
+  }
+
   .profile-card {
     padding: 1rem 0.9rem;
+  }
+
+  .profile-actions {
+    gap: 0.6rem;
+  }
+
+  .map-container {
+    height: 220px;
+    min-height: 220px;
   }
 }
 

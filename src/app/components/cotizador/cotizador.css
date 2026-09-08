@@ -308,3 +308,9 @@
         text-align: center;
     }
 }
+@media (max-width: 768px) {
+  /* Mantener el toast por encima de la barra de navegación inferior móvil */
+  .toast {
+    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
+}

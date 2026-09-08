@@ -504,5 +504,11 @@ html {
   textarea {
     font-size: 16px;
   }
+
+  /* Espacio inferior para que el contenido no quede oculto tras la barra de
+     navegación inferior móvil (solo existe cuando el header está presente). */
+  body:has(.mobile-bottom-nav) {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 

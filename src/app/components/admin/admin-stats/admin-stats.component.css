@@ -769,4 +769,18 @@
   .attention-action {
     margin-left: 1.35rem;
   }
+
+  /* Nombre de cliente: truncado defensivo para no empujar el badge de
+     estado en pantallas pequeñas. */
+  .quote-card-mini .client-name,
+  .quote-card-mini .vehicle-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .quote-card-mini .card-header {
+    gap: 0.5rem;
+  }
 }
