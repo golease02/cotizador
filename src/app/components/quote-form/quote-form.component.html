@@ -57,14 +57,14 @@
           <label for="priceNet">Precio Neto del Vehículo (con IVA) *</label>
           <div class="currency-input-wrapper">
             <span class="currency-symbol">$</span>
-            <input id="priceNet" type="number" formControlName="priceNet" placeholder="969,900" step="5000" />
+            <input id="priceNet" type="text" inputmode="decimal" [value]="priceNetDisplay" (input)="onPriceNetInput($event)" placeholder="969.900,00" />
           </div>
           <div class="quick-amounts">
             <span>Montos rápidos:</span>
-            <button type="button" (click)="setPrice(407900)">$407.9k</button>
-            <button type="button" (click)="setPrice(520000)">$520k</button>
-            <button type="button" (click)="setPrice(780000)">$780k</button>
-            <button type="button" (click)="setPrice(969900)">$969.9k</button>
+            <button type="button" (click)="setPrice(407900)">${{ formatPrice(407900) }}</button>
+            <button type="button" (click)="setPrice(520000)">${{ formatPrice(520000) }}</button>
+            <button type="button" (click)="setPrice(780000)">${{ formatPrice(780000) }}</button>
+            <button type="button" (click)="setPrice(969900)">${{ formatPrice(969900) }}</button>
           </div>
         </div>
 

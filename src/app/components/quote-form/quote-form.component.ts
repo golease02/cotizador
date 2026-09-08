@@ -7,6 +7,7 @@ import {
   CalculatorConfig,
 } from '../../models/leasing.model';
 import { CatalogService, VehicleCatalogItem } from '../../services/catalog.service';
+import { formatPrice } from './price-format';
 
 @Component({
   selector: 'app-quote-form',
@@ -27,6 +28,7 @@ export class QuoteFormComponent implements OnInit {
   public presetVehicles: VehicleCatalogItem[] = [];
   public presetGroups: { brand: string; vehicles: VehicleCatalogItem[] }[] = [];
   public selectedPresetBrand: string = '';
+  public formatPrice = formatPrice;
 
   get filteredPresetVehicles(): VehicleCatalogItem[] {
     if (!this.selectedPresetBrand) {
@@ -80,6 +82,14 @@ export class QuoteFormComponent implements OnInit {
 
   get vehiclePrice(): number {
     return Number(this.quoteForm?.get('priceNet')?.value) || 0;
+  }
+
+  get priceNetDisplay(): string {
+    const v = this.quoteForm?.get('priceNet')?.value;
+    if (v === null || v === undefined || v === '') {
+      return '';
+    }
+    return formatPrice(String(v));
   }
 
   get calculatorConfig(): CalculatorConfig {
@@ -139,6 +149,33 @@ export class QuoteFormComponent implements OnInit {
     const vehicle = this.presetVehicles.find(v => v.id === id);
     if (vehicle) this.applyPresetVehicle(vehicle);
     (event.target as HTMLSelectElement).value = '';
+  }
+
+  public onPriceNetInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const cleaned = input.value.replace(/[^\d.,]/g, '');
+    const commaIdx = cleaned.lastIndexOf(',');
+    let intText = cleaned.replace(/[.,]/g, '');
+    let decText = '';
+    let hasComma = false;
+    if (commaIdx !== -1) {
+      hasComma = true;
+      intText = cleaned.slice(0, commaIdx).replace(/[.,]/g, '');
+      decText = cleaned.slice(commaIdx + 1).replace(/\D/g, '');
+    }
+    const groupedInt = intText.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const display = groupedInt + (hasComma ? ',' + decText : '');
+    if (input.value !== display) {
+      input.value = display;
+    }
+    let value: number | null = null;
+    if (intText || decText) {
+      value = Number(decText ? `${intText || '0'}.${decText}` : intText);
+    }
+    const current = this.quoteForm.get('priceNet')?.value;
+    if (current !== value) {
+      this.quoteForm.patchValue({ priceNet: value });
+    }
   }
 
   public setPrice(price: number): void {
