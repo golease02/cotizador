@@ -468,7 +468,6 @@ export class AdminQuotesComponent implements OnInit {
   // ===================== MODAL DE COTIZACIÓN =====================
 
   async abrirModal(quote: any) {
-    await this.marcarComoRevisado(quote.id);
 // 1. Intentar el snapshot inmutable guardado (fiel al momento de generación. Sí existe, se muestra tal cual.)
     const snapshot = await this.quotesService.getQuoteCalculation(quote.id);
 
@@ -476,6 +475,7 @@ export class AdminQuotesComponent implements OnInit {
       this.selectedQuote.set(snapshot);
       this.showModal = true;
       document.body.style.overflow = 'hidden';
+      await this.marcarComoRevisado(quote.id);
       return;
     }
     const input: VehicleQuoteInput = {
@@ -495,6 +495,7 @@ export class AdminQuotesComponent implements OnInit {
     this.selectedQuote.set(result);
     this.showModal = true;
     document.body.style.overflow = 'hidden';
+    await this.marcarComoRevisado(quote.id);
   }
 
   cerrarModal() {
