@@ -1,4 +1,4 @@
-<div class="quotes-panel">
+﻿<div class="quotes-panel">
     <!-- CABECERA -->
     <div class="page-header">
         <div class="page-heading">
@@ -170,56 +170,77 @@
 </div>
 
 <!-- MODAL DE NOTAS -->
-<div class="modal-overlay" *ngIf="showNotasModal" (click)="cerrarNotasQuote()">
-    <div class="modal-content notas-modal" (click)="$event.stopPropagation()">
-        <div class="modal-heading modal-heading-notes">
-            <span class="modal-icon">
+<div class="modal-overlay notas-overlay" *ngIf="showNotasModal" (click)="cerrarNotasQuote()">
+    <div class="notas-modal" role="dialog" aria-modal="true" aria-label="Notas de cotización" (click)="$event.stopPropagation()">
+        <header class="notas-header">
+            <span class="notas-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
             </span>
-            <div><span class="modal-eyebrow">Seguimiento</span><h3>Notas de Cotización</h3></div>
-        </div>
+            <div class="notas-titles">
+                <span class="notas-eyebrow">Seguimiento</span>
+                <h3 class="notas-title">Notas de Cotización</h3>
+            </div>
+            <button type="button" class="notas-close" (click)="cerrarNotasQuote()" title="Cerrar" aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </header>
 
-        <div *ngIf="notaError" class="error">{{ notaError }}</div>
+        <div class="notas-body">
+            <div *ngIf="notaError" class="notas-alert">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>{{ notaError }}</span>
+            </div>
 
-        <div class="notas-list">
             <div *ngIf="notaLoading" class="notas-loading">
-                <div class="spinner-small"></div>
+                <span class="notas-spinner"></span>
                 <span>Cargando notas...</span>
             </div>
-            <div *ngFor="let n of notasCotizacion" class="nota-item">
-                <div class="nota-texto">{{ n.texto }}</div>
-                <div class="nota-meta">
-                    <span class="nota-fecha">{{ n.created_at | date : 'dd/MM/yyyy HH:mm' }}</span>
+
+            <div class="notas-list" *ngIf="!notaLoading">
+                <article class="nota-item" *ngFor="let n of notasCotizacion" [class.nota-editing]="notaEditando?.id === n.id">
+                    <p class="nota-texto">{{ n.texto }}</p>
+                    <span class="nota-fecha">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                        {{ n.created_at | date : 'dd/MM/yyyy HH:mm' }}
+                    </span>
                     <div class="nota-acciones">
-                        <button class="btn-icon btn-edit" (click)="editarNotaQuote(n)" title="Editar nota" aria-label="Editar nota">
+                        <button type="button" class="btn-icon btn-edit" (click)="editarNotaQuote(n)" title="Editar nota" aria-label="Editar nota">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
                         </button>
-                        <button class="btn-icon btn-delete" (click)="eliminarNotaQuote(n)"
-                            title="Eliminar nota" aria-label="Eliminar nota">
+                        <button type="button" class="btn-icon btn-delete" (click)="eliminarNotaQuote(n)" title="Eliminar nota" aria-label="Eliminar nota">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
                         </button>
                     </div>
+                </article>
+
+                <div *ngIf="notasCotizacion.length === 0" class="notas-empty">
+                    <span class="notas-empty-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path></svg>
+                    </span>
+                    <p class="notas-empty-title">Sin notas todavía</p>
+                    <p class="notas-empty-sub">Documenta el seguimiento de esta cotización agregando la primera nota.</p>
                 </div>
             </div>
-            <div *ngIf="!notaLoading && notasCotizacion.length === 0" class="notas-empty">
-                <span class="empty-icon-small">📭</span>
-                <p>No hay notas para esta cotización</p>
-            </div>
         </div>
 
-        <div class="nota-editor">
-            <textarea [(ngModel)]="notaText" placeholder="Escribe una nota..." class="nota-textarea"
-                rows="2"></textarea>
-            <div class="nota-editor-actions">
-                <button class="btn-primary" (click)="guardarNotaQuote()" [disabled]="!notaText.trim() || notaLoading">
-                    {{ notaEditando ? 'Actualizar' : 'Agregar' }}
+        <div class="notas-editor">
+            <label class="notas-editor-label" for="nota-cotizacion-textarea">{{ notaEditando ? 'Editar nota' : 'Nueva nota' }}</label>
+            <textarea id="nota-cotizacion-textarea" class="nota-textarea" rows="3" [(ngModel)]="notaText" placeholder="Escribe una nota para esta cotización..."></textarea>
+            <div class="notas-editor-actions">
+                <button type="button" class="notas-btn-ghost" (click)="notaEditando = null; notaText = ''">Cancelar</button>
+                <button type="button" class="notas-btn-primary" (click)="guardarNotaQuote()" [disabled]="!notaText.trim() || notaLoading">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+                    {{ notaEditando ? 'Actualizar' : 'Agregar nota' }}
                 </button>
-                <button class="btn-secondary" (click)="notaEditando = null; notaText = ''">Cancelar</button>
             </div>
         </div>
 
-        <div class="modal-actions">
-            <button class="btn-cancel" (click)="cerrarNotasQuote()">Cerrar</button>
+        <div class="notas-footer">
+            <span class="notas-count">
+                <span class="notas-count-badge">{{ notasCotizacion.length }}</span>
+                {{ notasCotizacion.length === 1 ? 'nota registrada' : 'notas registradas' }}
+            </span>
+            <button type="button" class="notas-btn-ghost" (click)="cerrarNotasQuote()">Cerrar</button>
         </div>
     </div>
 </div>
