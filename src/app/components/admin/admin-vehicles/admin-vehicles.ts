@@ -206,7 +206,7 @@ export class AdminVehiclesComponent implements OnInit {
     this.isEditMode = true;
     this.vehicleForm = {
       id: vehicle.id,
-      brand: vehicle.brand,
+      brand: (vehicle.brand || '').toUpperCase(),
       model: vehicle.model,
       year: vehicle.year,
       suggestedPriceNet: vehicle.suggestedPriceNet,
@@ -222,11 +222,27 @@ export class AdminVehiclesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Convierte en vivo el nombre de la marca a mayúsculas (evita duplicados como "Toyota" vs "TOYOTA"). */
+  onBrandInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const upper = input.value.toUpperCase();
+    if (upper === input.value) return;
+    const { selectionStart, selectionEnd } = input;
+    input.value = upper;
+    if (this.vehicleForm.brand !== upper) {
+      this.vehicleForm.brand = upper;
+    }
+    input.setSelectionRange(selectionStart ?? upper.length, selectionEnd ?? upper.length);
+  }
+
   async submitForm() {
     if (this.formLoading) return;
     this.formLoading = true;
     this.formError = '';
     let operationSucceeded = false;
+
+    // Normalización final de la marca: mayúsculas y sin espacios al inicio/fin (evita duplicados).
+    this.vehicleForm.brand = (this.vehicleForm.brand || '').trim().toUpperCase();
 
     if (!this.vehicleForm.brand || !this.vehicleForm.model) {
       this.formError = 'Marca y Modelo son obligatorios';

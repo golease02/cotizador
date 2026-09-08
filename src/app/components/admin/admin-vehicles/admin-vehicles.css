@@ -716,6 +716,11 @@
   cursor: not-allowed;
 }
 
+/* La marca se muestra siempre en mayúsculas (evita marcas duplicadas). */
+.form-group .brand-input {
+  text-transform: uppercase;
+}
+
 .form-group small {
   display: block;
   margin-top: 0.3rem;

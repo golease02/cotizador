@@ -1,9 +1,4 @@
-/**
- * Formatea un valor numérico con los separadores solicitados:
- * - Miles separados por puntos (.) -> 969.900
- * - Decimales separados por coma (,) -> 969.900,50
- * Acepta number o string numérico (p. ej. "969900.5").
- */
+
 export function formatPrice(value: number | string): string {
   const s = String(value).trim();
   if (!s) {

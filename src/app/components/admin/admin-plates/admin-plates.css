@@ -894,12 +894,19 @@
 .currency-symbol {
   position: absolute;
   left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-muted);
   font-weight: 700;
   pointer-events: none;
 }
 
-.currency-input-wrapper input {
+/* Especificidad corregida: esta regla debe superar a
+   '.form-group input:not([type='checkbox']):not([type='radio'])'
+   (padding shorthand) para que el espacio reservado para el $ realmente
+   se aplique. Antes (.currency-input-wrapper input) perdia y el monto
+   quedaba empalmado con el simbolo. */
+.form-group .currency-input-wrapper input:not([type='checkbox']):not([type='radio']) {
   padding-left: 2rem;
 }
 

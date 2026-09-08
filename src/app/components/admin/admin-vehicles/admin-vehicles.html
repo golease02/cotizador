@@ -157,8 +157,9 @@
                 <!-- Marca -->
                 <div class="form-group">
                     <label>Marca *</label>
-                    <input type="text" [(ngModel)]="vehicleForm.brand" name="brand" required
-                        placeholder="Ej. HINO, Audi, Toyota" />
+                    <input type="text" class="brand-input" [(ngModel)]="vehicleForm.brand" name="brand" required
+                        placeholder="Ej. HINO, TOYOTA, AUDI" (input)="onBrandInput($event)" />
+                    <small>El nombre de la marca se escribe siempre en MAYÚSCULAS para evitar marcas duplicadas.</small>
                 </div>
 
                 <!-- Modelo -->
