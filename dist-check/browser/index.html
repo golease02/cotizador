@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Cotizador GoLease</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cotizador de arrendamiento vehicular GoLease — genera cotizaciones profesionales en PDF en segundos.">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://bcsvqvibccfnsmagwkbr.supabase.co" crossorigin="">
+  <link rel="dns-prefetch" href="https://bcsvqvibccfnsmagwkbr.supabase.co">
+  <script>
+    // Aplica el tema antes de que Angular renderice para evitar el "flash" de tema incorrecto.
+    (function () {
+      try {
+        var t = localStorage.getItem('cotizador-theme');
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.theme = t;
+      } catch (e) { document.documentElement.dataset.theme = 'light'; }
+    })();
+  </script>
+<link rel="stylesheet" href="styles.css"><link rel="preload" href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Source+Sans+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" as="style"></head>
+<body>
+  <app-root></app-root>
+<link rel="modulepreload" href="chunk-WDXLETH5.js"><link rel="modulepreload" href="chunk-74RWLUMR.js"><link rel="modulepreload" href="chunk-UUNAMTTY.js"><link rel="modulepreload" href="chunk-XCV63D25.js"><link rel="modulepreload" href="chunk-6KRTW2LJ.js"><link rel="modulepreload" href="chunk-FDMHZOCR.js"><script src="main.js" type="module"></script></body>
+</html>

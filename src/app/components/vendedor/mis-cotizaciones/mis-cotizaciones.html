@@ -75,6 +75,10 @@
                         </div>
                     </div>
                     <span class="date-badge">{{ item.created_at | date:'dd/MM/yyyy' }}</span>
+                    <span class="vigencia-badge" [class]="getVigenciaClase(item)"
+                        [title]="'Vence el ' + getVigenciaFecha(item)">
+                        {{ getVigenciaLabel(item) }}
+                    </span>
                 </div>
 
                 <div class="card-body">
@@ -100,6 +104,15 @@
                             <polyline points="9 18 15 12 9 6" />
                         </svg>
                     </button>
+                    <button class="btn-duplicate" (click)="duplicarCotizacion(item)" title="Duplicar cotización"
+                        aria-label="Duplicar cotización">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="4" width="16" height="16" rx="3" />
+                            <rect x="8" y="8" width="16" height="16" rx="3" />
+                        </svg>
+                        Duplicar
+                    </button>
                 </div>
             </div>
         </div>
@@ -114,6 +127,20 @@
                 </svg>
                 Volver al listado
             </button>
+            <div class="detail-actions">
+                <span class="vigencia-badge" [class]="getVigenciaClase(selectedRow())"
+                    [title]="'Vence el ' + getVigenciaFecha(selectedRow())">
+                    {{ getVigenciaLabel(selectedRow()) }}
+                </span>
+                <button class="btn-edit-quote" (click)="editarCotizacion()" title="Editar cotización"
+                    aria-label="Editar cotización">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4h6M5 5h11M5 11h11M11 12h6" />
+                    </svg>
+                    Editar cotización
+                </button>
+            </div>
         </div>
         <div class="detail-content">
             <app-quote-breakdown [calculation]="selectedQuote()" [mostrarGuardar]="false"

@@ -81,3 +81,110 @@
     text-align: center;
   }
 }
+
+/* ===== TOASTS GLOBALES (vistas de vendedor; el área admin dibuja los suyos) ===== */
+.toast-host {
+  position: fixed;
+  z-index: 4000;
+  right: 1.1rem;
+  bottom: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 400px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  background: var(--text-main);
+  color: var(--surface-card);
+  font-size: 0.86rem;
+  box-shadow: 0 16px 34px -10px rgba(15, 23, 42, 0.35);
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #14532d, var(--accent-green-dark));
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #7f1d1d, var(--danger));
+}
+
+.toast-info {
+  background: var(--text-main);
+}
+
+.toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.toast-msg {
+  flex: 1;
+  line-height: 1.35;
+}
+
+.toast-action {
+  padding: 0.28rem 0.65rem;
+  border-radius: 8px;
+  background: var(--surface-card);
+  color: var(--accent-green-dark);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.toast-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--surface-card);
+}
+
+@media (max-width: 600px) {
+  .toast-host {
+    right: 0.7rem;
+    bottom: 0.7rem;
+    left: 0.7rem;
+  }
+}

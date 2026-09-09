@@ -2,3 +2,18 @@
 	<app-header />
 }
 <router-outlet />
+@if (!isAdminRoute() && toastService.toasts().length) {
+	<div class="toast-host" aria-live="polite">
+		@for (t of toastService.toasts(); track t.id) {
+			<div class="toast" [class]="'toast-' + t.type" (click)="handleToast(t)">
+				<span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+				<span class="toast-msg">{{ t.message }}</span>
+				@if (t.actionLabel) {
+					<span class="toast-action">{{ t.actionLabel }}</span>
+				}
+				<button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()"
+					aria-label="Cerrar">×</button>
+			</div>
+		}
+	</div>
+}

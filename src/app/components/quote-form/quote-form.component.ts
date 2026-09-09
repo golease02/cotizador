@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
@@ -7,6 +7,7 @@ import {
   CalculatorConfig,
 } from '../../models/leasing.model';
 import { CatalogService, VehicleCatalogItem } from '../../services/catalog.service';
+import { QuoteDraftService } from '../../services/quote-draft.service';
 import { formatPrice } from './price-format';
 
 @Component({
@@ -20,8 +21,11 @@ export class QuoteFormComponent implements OnInit {
 
   private fb = inject(FormBuilder);
   private catalog = inject(CatalogService);
+  private draftService = inject(QuoteDraftService);
 
   @Output() quoteChange = new EventEmitter<VehicleQuoteInput>();
+  @Output() newQuote = new EventEmitter<void>();
+  @Input() initialInput: VehicleQuoteInput | null = null;
 
   public quoteForm!: FormGroup;
   public statePlates: StatePlateOption[] = [];
@@ -73,6 +77,34 @@ export class QuoteFormComponent implements OnInit {
     });
 
     this.emitQuoteInput();
+    this.applyInitialInput();
+  }
+
+  /**
+   * Precarga los datos de una cotización existente ("Duplicar" / "Editar").
+   * Se invoca al iniciar, cuando el padre entrega [initialInput].
+   */
+  private applyInitialInput(): void {
+    if (!this.initialInput) return;
+
+    const input = this.initialInput;
+    this.quoteForm.patchValue({
+      clientName: input.clientName || '',
+      brand: input.brand || '',
+      model: input.model || '',
+      year: input.year,
+      priceNet: input.priceNet,
+      isHybridOrElectric: input.isHybridOrElectric,
+      termMonths: input.termMonths,
+      extraordinaryRentPct: input.extraordinaryRentPct,
+      securityDepositPct: input.securityDepositPct || 0,
+      selectedStatePlateId: input.selectedStatePlateId || 'pendiente',
+      isInsuranceEstimated: input.isInsuranceEstimated,
+    });
+    this.quoteForm.updateValueAndValidity();
+    this.emitQuoteInput();
+    // El borrador ya se consumió: la próxima visita al cotizador arranca en limpio.
+    this.draftService.clear();
   }
 
   get isPreOwned(): boolean {
@@ -137,6 +169,8 @@ export class QuoteFormComponent implements OnInit {
     });
     this.quoteForm.updateValueAndValidity();
     this.emitQuoteInput();
+    // Un vehículo distinto = cotización nueva (reinicia el id de autosave en el padre).
+    this.newQuote.emit();
   }
 
   public onBrandSelectChange(event: Event): void {

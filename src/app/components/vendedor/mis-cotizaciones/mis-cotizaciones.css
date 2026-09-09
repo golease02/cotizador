@@ -342,6 +342,8 @@
     /* Más espacio */
     display: flex;
     justify-content: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
 }
 
 .btn-view-detail {
@@ -379,6 +381,11 @@
 }
 
 .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     margin-bottom: 1.5rem;
 }
 
@@ -794,13 +801,152 @@
         border-radius: 16px;
     }
 
-    .detail-header {
+            .detail-header {
         flex-direction: column;
         align-items: stretch;
         gap: 0.75rem;
     }
 
     .detail-header .btn-back {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ============================================
+   Vigencia de cotizaciones
+   ============================================ */
+.vigencia-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 30px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.vigencia-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.vigencia-badge.vigencia-vigente {
+    background: var(--accent-green-light);
+    color: var(--accent-green-dark);
+    border: 1px solid rgba(139, 226, 140, 0.4);
+}
+
+.vigencia-badge.vigencia-proxima {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.vigencia-badge.vigencia-vencida {
+    background: #fde8e8;
+    color: #b91c1c;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* ============================================
+   Botones de acción: Duplicar (secundario) / Editar (positivo)
+   Coherentes con .btn-back y .btn-view-detail de este documento
+   (píldoras de 30 px de radio — lenguaje propio del seller).
+   ============================================ */
+.btn-duplicate,
+.btn-edit-quote {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 36px;
+    padding: 0.4rem 0.9rem;
+    border-radius: 30px;          /* Píldora: lenguaje propio del seller */
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+/* Duplicar → estilo secundario (idéntico a .btn-back) */
+.btn-duplicate {
+    background: var(--surface-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-silver);
+}
+
+.btn-duplicate:hover,
+.btn-duplicate:focus-visible {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+    color: var(--text-main);
+}
+
+/* Editar → acción positiva destacada (verde-tint) */
+.btn-edit-quote {
+    border: 1px solid rgba(139, 226, 140, 0.35);
+    background: var(--accent-green-light);
+    color: var(--accent-green-dark);
+}
+
+.btn-edit-quote:hover,
+.btn-edit-quote:focus-visible {
+    background: var(--accent-green);
+    color: var(--text-on-accent);
+    border-color: var(--accent-green);
+}
+
+/* Microinteracción: icono se desplaza a la derecha */
+.btn-duplicate svg,
+.btn-edit-quote svg {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.btn-duplicate:hover svg,
+.btn-edit-quote:hover svg {
+    transform: translateX(4px);
+}
+
+/* Anillos de foco coherentes con la UI del seller */
+.btn-duplicate:focus-visible,
+.btn-edit-quote:focus-visible {
+    outline: 2px solid var(--accent-green);
+    outline-offset: 2px;
+}
+
+.detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Rejilla compacta del listado: separar los botones del pie de tarjeta */
+.dashboard-cotizaciones .card-footer {
+    gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .dashboard-cotizaciones .card-footer {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .dashboard-cotizaciones .btn-duplicate {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .detail-header .btn-back,
+    .detail-header .btn-edit-quote {
         width: 100%;
         justify-content: center;
     }

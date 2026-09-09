@@ -281,7 +281,8 @@
     }
 
     .btn-back,
-    .meta-badge {
+    .meta-badge,
+    .save-indicator {
         justify-content: center;
         width: 100%;
     }
@@ -313,4 +314,38 @@
   .toast {
     bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
+}
+
+/* ===== Indicador de guardado automático ===== */
+.save-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-silver);
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--input-border);
+  border-radius: 30px;
+  background: var(--surface-subtle);
+  white-space: nowrap;
+}
+
+.save-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  flex-shrink: 0;
+}
+
+.save-dot.is-saving {
+  background: #f59e0b;
+  animation: pulse 1.2s infinite;
+}
+
+.meta-badge.badge-vencida {
+  background: #7f1d1d;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
 }

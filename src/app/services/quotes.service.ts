@@ -20,6 +20,7 @@ export interface QuoteRow {
   fijada: boolean;
   color: string;
   created_at: string;
+  valid_until?: string | null;
 }
 
 @Injectable({
@@ -56,6 +57,7 @@ export class QuotesService {
       isinsuranceestimated: quote.input.isInsuranceEstimated || false,
       totalpayment: 0,
       calculation: quote,
+      valid_until: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
     if (quoteId) {
@@ -163,6 +165,7 @@ export class QuotesService {
     const { data, error } = await this.client
       .from('quotes')
       .select(`id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, color, fijada, revisada, created_at,
+        created_at,
         profiles!seller_id (full_name)`)
       .order('created_at', { ascending: false })
       .limit(200);

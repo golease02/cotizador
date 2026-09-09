@@ -9,16 +9,20 @@
             Volver a Mis Cotizaciones
         </a>
         <div class="topbar-right">
-            <div class="meta-badge">
-                <span class="pulse-dot"></span>
-                <span>Vigencia 7 días</span>
+            <div class="meta-badge" [class.badge-vencida]="isVencida()">
+                <span class="pulse-dot" *ngIf="!isVencida()"></span>
+                <span>{{ vigenciaLabel() }}</span>
+            </div>
+            <div class="save-indicator" *ngIf="saveState() === 'saving' || saveState() === 'saved'">
+                <span class="save-dot" [class.is-saving]="saveState() === 'saving'"></span>
+                <span>{{ saveIndicatorLabel() }}</span>
             </div>
         </div>
     </div>
 
     <div class="cotizador-grid">
         <div class="left-column">
-            <app-quote-form (quoteChange)="onQuoteInputChange($event)" (newQuote)="resetQuoteId()" />
+            <app-quote-form [initialInput]="preloadedInput" (quoteChange)="onQuoteInputChange($event)" (newQuote)="resetQuoteId()" />
         </div>
         <div class="right-column">
             <app-quote-options [calculation]="calculationResult()" (optionSelected)="onOptionSelected($event)" />
@@ -27,4 +31,3 @@
         </div>
     </div>
 </div>
-<div *ngIf="notificationMessage()" class="toast">{{ notificationMessage() }}</div>
