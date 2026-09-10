@@ -41,7 +41,7 @@
           <span class="user-avatar">{{ (auth.currentProfile()?.full_name || 'V').charAt(0).toUpperCase() }}</span>
           <div class="user-info">
             <span class="user-name">{{ auth.currentProfile()?.full_name || 'Vendedor' }}</span>
-            <span class="user-role">{{ auth.isAdmin() ? 'Administrador' : 'Vendedor' }}</span>
+            <span class="user-role">{{ auth.getRoleLabel() }}</span>
           </div>
         </a>
         <button class="logout-btn" (click)="logout()" title="Cerrar sesión">

@@ -93,8 +93,13 @@ export class CatalogService {
 
   public async updateCalculatorConfig(settings: CalculatorConfig): Promise<{ error: any }> {
     const profile = this.auth.currentProfile();
-    if (!currentUserSignal() || profile?.role !== 'admin' || profile.active === false) {
-      return { error: { message: 'Solo un administrador puede modificar estos parámetros.' } };
+    const role = profile?.role;
+    const isStaff = role === 'super_admin' || role === 'socio';
+    if (!currentUserSignal() || !profile || !isStaff || profile.active === false) {
+      return { error: { message: 'Solo el super admin o un socio autorizado puede modificar estos parámetros.' } };
+    }
+    if (role === 'socio' && !this.auth.canAccessModule('parameters')) {
+      return { error: { message: 'No tienes permiso para modificar parámetros.' } };
     }
     const { error } = await this.client
       .from('calculator_settings')

@@ -16,6 +16,7 @@ export class PerfilComponent implements OnInit, AfterViewInit {
   private auth = inject(AuthService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  readonly authService = this.auth;
 
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 

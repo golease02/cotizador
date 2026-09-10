@@ -116,7 +116,7 @@ export class LoginComponent {
 
       const loggedProfile = await this.auth.loadProfile(user.id);
 
-      if (loggedProfile?.role === 'admin') {
+      if (loggedProfile?.role === 'super_admin' || loggedProfile?.role === 'socio') {
         this.router.navigate(['/admin']);
       } else {
         this.router.navigate(['/']);

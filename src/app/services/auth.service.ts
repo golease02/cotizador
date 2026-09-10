@@ -13,13 +13,15 @@ export interface Profile {
   email: string;
   recovery_email?: string;
   full_name: string;
-  role: 'admin' | 'seller';
+  role: 'super_admin' | 'socio' | 'seller';
   active?: boolean;
   seller_number?: string;
   agency_brand?: string;
   agency_location?: string;
   latitude?: number | null;
   longitude?: number | null;
+  socio_id?: string | null;
+  permisos?: Record<string, boolean>;
 }
 
 export interface AuthResult {
@@ -81,7 +83,8 @@ export class AuthService {
     const currentProfile = this.currentProfileSignal();
     if (!currentUser || !targetUserId) return false;
     if (currentUser.id === targetUserId) return true;
-    return currentProfile?.role === 'admin' && currentProfile?.active !== false;
+    const role = currentProfile?.role;
+    return (role === 'super_admin' || role === 'socio') && currentProfile?.active !== false;
   }
 
   public async signUp(email: string, password: string, fullName: string): Promise<AuthResult> {
@@ -155,7 +158,7 @@ export class AuthService {
     const { data, error } = await this.client
       .from('profiles')
       .select(
-        'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude'
+        'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude, socio_id, permisos'
       )
       .eq('id', userId)
       .maybeSingle();
@@ -199,15 +202,46 @@ export class AuthService {
   }
 
   public isAdmin(): boolean {
-    return this.currentProfileSignal()?.role === 'admin';
+    const role = this.currentProfileSignal()?.role;
+    // Para compatibilidad, un "admin" ahora es cualquier cuenta con acceso al panel
+    // (super_admin o socio).
+    return role === 'super_admin' || role === 'socio';
   }
 
-  public async getAdmins(): Promise<{ data: any; error: any }> {
+  public isSuperAdmin(): boolean {
+    return this.currentProfileSignal()?.role === 'super_admin';
+  }
+
+  public isSocio(): boolean {
+    return this.currentProfileSignal()?.role === 'socio';
+  }
+
+  public getRoleLabel(): string {
+    const role = this.currentProfileSignal()?.role;
+    if (role === 'super_admin') return 'Super Admin';
+    if (role === 'socio') return 'Socio';
+    return 'Vendedor';
+  }
+
+  /** Evalúa un permiso granular definido para socios (ej: 'dashboard', 'quotes', ...).
+   *  El super admin y el vendedor tienen todo su rol implícito. */
+  public canAccessModule(module: string): boolean {
+    const profile = this.currentProfileSignal();
+    if (!profile) return false;
+    if (profile.role === 'super_admin') return true;
+    if (profile.role === 'seller') return true;
+    // socio: revisa su JSONB de permisos (por defecto ninguno salvo dashboard)
+    const permisos: Record<string, boolean> = profile.permisos || {};
+    if (module === 'dashboard') return permisos['dashboard'] !== false;
+    return permisos[module] === true;
+  }
+
+  public async getSocios(): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('profiles')
-      .select('id, email, full_name, seller_number, recovery_email, role, active, created_at')
-      .eq('role', 'admin')
-      .order('created_at', { ascending: false });
+      .select('id, email, full_name, seller_number, recovery_email, role, active, created_at, socio_id, permisos')
+      .in('role', ['super_admin', 'socio'])
+      .order('full_name', { ascending: true });
     return { data, error };
   }
 
@@ -261,8 +295,8 @@ export class AuthService {
     if (currentUser.id === userId) {
       return { error: { message: 'No puedes eliminar tu propio usuario.' } };
     }
-    if (currentProfile?.role !== 'admin') {
-      return { error: { message: 'Solo los administradores pueden eliminar usuarios.' } };
+    if (currentProfile?.role !== 'super_admin' && currentProfile?.role !== 'socio') {
+      return { error: { message: 'Solo el super admin o un socio pueden eliminar usuarios.' } };
     }
     const { error } = await this.client.rpc('delete_user', { user_id: userId });
     return { error };
@@ -272,11 +306,17 @@ export class AuthService {
     email: string;
     password: string;
     full_name: string;
-    role: 'admin' | 'seller';
+    role: 'super_admin' | 'socio' | 'seller';
   }): Promise<{ data: { id: string } | null; error: any }> {
     const currentProfile = this.currentProfileSignal();
-    if (!currentUserSignal() || currentProfile?.role !== 'admin' || currentProfile?.active === false) {
+    const isSuper = currentProfile?.role === 'super_admin';
+    const isSocio = currentProfile?.role === 'socio';
+    if (!currentUserSignal() || currentProfile?.active === false || (!isSuper && !isSocio)) {
       return { data: null, error: { message: 'No tienes permisos para crear usuarios.' } };
+    }
+    // Un socio solo puede crear vendedores; super admin puede crear socios y vendedores.
+    if (isSocio && payload.role !== 'seller') {
+      return { data: null, error: { message: 'Un socio solo puede crear vendedores.' } };
     }
     const safeEmail = this.sanitizeText(payload.email, 'email', 160).toLowerCase();
     const safeName = this.sanitizeText(payload.full_name, 'full_name', 120);
@@ -319,7 +359,7 @@ export class AuthService {
     if (password.length < 6 || password.length > 128) {
       return { error: { message: 'La contraseña debe tener entre 6 y 128 caracteres.' } };
     }
-    if (currentProfile?.role !== 'admin' && currentUser.id !== userId) {
+    if (currentProfile?.role !== 'super_admin' && currentProfile?.role !== 'socio' && currentUser.id !== userId) {
       return { error: { message: 'No puedes restablecer otra contraseña.' } };
     }
     const { error } = await this.client.rpc('update_user_password', {

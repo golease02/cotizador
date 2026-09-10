@@ -106,7 +106,7 @@ export class AdminAdminsComponent implements OnInit {
 
   async loadAdmins() {
     this.loading = true;
-    const { data, error } = await this.auth.getAdmins();
+    const { data, error } = await this.auth.getSocios();
     if (!error) {
       this.admins.set(data || []);
       this.applyFilters();
@@ -262,7 +262,7 @@ export class AdminAdminsComponent implements OnInit {
 
     try {
       const { data, error } = await this.auth.getProfileById(admin.id);
-      if (error || !data || data.role !== 'admin') {
+      if (error || !data || (data.role !== 'socio' && data.role !== 'super_admin')) {
         this.formError = 'Error al cargar datos del administrador';
         this.formLoading = false;
         this.cdr.detectChanges();
@@ -373,7 +373,7 @@ export class AdminAdminsComponent implements OnInit {
           full_name: this.adminForm.full_name.trim(),
           seller_number: this.adminForm.seller_number.trim(),
           active: this.adminForm.active,
-          role: 'admin',
+          role: 'socio',
           agency_name: 'GoLease',
           agency_location: 'Querétaro'
         });
@@ -409,7 +409,7 @@ export class AdminAdminsComponent implements OnInit {
         email,
         password: this.adminForm.password,
         full_name: this.adminForm.full_name.trim(),
-        role: 'admin'
+        role: 'socio'
       });
 
       if (!created.error && created.data?.id) {
@@ -418,15 +418,15 @@ export class AdminAdminsComponent implements OnInit {
           seller_number: this.adminForm.seller_number.trim(),
           full_name: this.adminForm.full_name.trim(),
           active: true,
-          role: 'admin',
+          role: 'socio',
           agency_name: 'GoLease',
           agency_location: 'Querétaro'
         });
         if (profileError) {
           this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
         } else {
-          // Verificación: confirmar que el rol quedó como admin
-          const roleOk = await this.ensureRole(created.data.id, 'admin');
+          // Verificación: confirmar que el rol quedó como socio
+          const roleOk = await this.ensureRole(created.data.id, 'socio');
           if (roleOk) {
             this.toastService.success('Administrador creado correctamente');
           } else {
@@ -472,7 +472,7 @@ export class AdminAdminsComponent implements OnInit {
         seller_number: this.adminForm.seller_number.trim(),
         full_name: this.adminForm.full_name.trim(),
         active: true,
-        role: 'admin',
+        role: 'socio',
         agency_name: 'GoLease',
         agency_location: 'Querétaro'
       });
@@ -483,8 +483,8 @@ export class AdminAdminsComponent implements OnInit {
         return;
       }
 
-      // Verificación: confirmar que el rol quedó como admin.
-      const roleOk = await this.ensureRole(newUser.id, 'admin');
+      // Verificación: confirmar que el rol quedó como socio.
+      const roleOk = await this.ensureRole(newUser.id, 'socio');
       if (!roleOk) {
         this.formError = 'El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.';
         this.toastService.error(this.formError);
@@ -507,7 +507,7 @@ export class AdminAdminsComponent implements OnInit {
   // ===================== HELPERS =====================
 
   /** Confirma que el perfil quedó con el rol esperado tras la creación. */
-  private async ensureRole(userId: string, expected: 'admin' | 'seller'): Promise<boolean> {
+  private async ensureRole(userId: string, expected: 'super_admin' | 'socio' | 'seller'): Promise<boolean> {
     const { data } = await this.auth.getProfileById(userId);
     return !!data && data.role === expected;
   }

@@ -1,9 +1,8 @@
-import { Component, inject, signal, AfterViewInit, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-import type * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-register',
@@ -12,12 +11,9 @@ import type * as Leaflet from 'leaflet';
   templateUrl: './register.html',
   styleUrls: ['./register.css']
 })
-export class RegisterComponent implements AfterViewInit {
+export class RegisterComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
-  private cdr = inject(ChangeDetectorRef);
-
-  @ViewChild('mapContainer') mapContainer!: ElementRef;
 
   phoneNumber = '';
   fullName = '';
@@ -26,9 +22,6 @@ export class RegisterComponent implements AfterViewInit {
   otherBrand = '';
   manualAddress = '';
   errorMessage = '';
-  selectedCoords: { lat: number; lng: number } | null = null;
-  addressText = '';
-  isSearching = signal(false);
 
   // Errores de validación por campo
   phoneError = '';
@@ -112,10 +105,7 @@ export class RegisterComponent implements AfterViewInit {
     return /[A-Za-z]/.test(this.password) && /\d/.test(this.password);
   }
 
-  private map!: Leaflet.Map;
-  private marker!: Leaflet.Marker;
-
-  brands = [
+    brands = [
     'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
     'VOLKSWAGEN', 'CHEVROLET', 'HONDA', 'MAZDA', 'HYUNDAI', 'KIA',
     'MITSUBISHI', 'SUZUKI', 'RENAULT', 'PEUGEOT', 'BMW', 'MERCEDES-BENZ',
@@ -123,110 +113,6 @@ export class RegisterComponent implements AfterViewInit {
     'VOLVO', 'PORSCHE', 'MINI', 'FIAT', 'ALFA ROMEO', 'MASERATI',
     'LEXUS', 'INFINITI', 'ACURA'
   ];
-
-  async ngAfterViewInit() {
-    await this.initMap();
-  }
-
-  async initMap() {
-    const L = await import('leaflet');
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-      iconUrl: '/leaflet/marker-icon.png',
-      shadowUrl: '/leaflet/marker-shadow.png',
-    });
-
-    const queretaroCoords: Leaflet.LatLngExpression = [20.5921, -100.3947];
-
-    this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(this.map);
-
-    this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
-
-    this.map.on('click', (e: Leaflet.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      this.setMarkerAndReverseGeocode(lat, lng);
-    });
-
-    this.marker.on('dragend', () => {
-      const pos = this.marker.getLatLng();
-      this.setMarkerAndReverseGeocode(pos.lat, pos.lng);
-    });
-  }
-
-  async setMarkerAndReverseGeocode(lat: number, lng: number) {
-    this.marker.setLatLng([lat, lng]);
-    this.selectedCoords = { lat, lng };
-    await this.updateAddress(lat, lng);
-  }
-
-  async updateAddress(lat: number, lng: number) {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-      );
-      const data = await response.json();
-      if (data && data.display_name) {
-        this.addressText = data.display_name;
-        this.manualAddress = data.display_name;
-      } else {
-        this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        this.manualAddress = this.addressText;
-      }
-    } catch {
-      this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      this.manualAddress = this.addressText;
-    }
-    this.cdr.detectChanges();
-  }
-
-  async searchLocation() {
-    const query = this.manualAddress.trim();
-    if (!query) {
-      this.errorMessage = 'Escribe una dirección para buscar';
-      return;
-    }
-
-    this.isSearching.set(true);
-    this.errorMessage = '';
-
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`
-      );
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lng = parseFloat(result.lon);
-
-        this.map.setView([lat, lng], 16);
-        this.marker.setLatLng([lat, lng]);
-        this.selectedCoords = { lat, lng };
-        this.addressText = result.display_name || `${lat}, ${lng}`;
-        this.manualAddress = this.addressText;
-        this.cdr.detectChanges();
-      } else {
-        this.errorMessage = 'No se encontró la dirección. Intenta con otra búsqueda.';
-      }
-    } catch {
-      this.errorMessage = 'Error al buscar la dirección. Intenta de nuevo.';
-    } finally {
-      this.isSearching = signal(false);
-    }
-  }
-
-  onSearchKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.searchLocation();
-    }
-  }
 
   async onRegister() {
     this.errorMessage = '';
@@ -248,14 +134,10 @@ export class RegisterComponent implements AfterViewInit {
       return;
     }
 
-    // Validar ubicación
-    let finalLocation = '';
-    if (this.selectedCoords) {
-      finalLocation = this.addressText || `${this.selectedCoords.lat}, ${this.selectedCoords.lng}`;
-    } else if (this.manualAddress.trim()) {
-      finalLocation = this.manualAddress.trim();
-    } else {
-      this.errorMessage = 'Selecciona una ubicación en el mapa o escribe una dirección y presiona "Buscar"';
+        // Validar ubicación
+    const finalLocation = this.manualAddress.trim();
+    if (!finalLocation) {
+      this.errorMessage = 'Escribe la ubicación de tu sucursal';
       return;
     }
 
@@ -295,11 +177,6 @@ export class RegisterComponent implements AfterViewInit {
         agency_brand: finalBrand,
         agency_location: finalLocation
       };
-
-      if (this.selectedCoords) {
-        profileData.latitude = this.selectedCoords.lat;
-        profileData.longitude = this.selectedCoords.lng;
-      }
 
       const { error: profileError } = await this.auth.updateProfile(user.id, profileData);
 

@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const adminGuard = async () => {
+export const superAdminGuard = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
@@ -16,18 +16,10 @@ export const adminGuard = async () => {
     }
   }
 
-  if (
-    (profile?.role === 'super_admin' || profile?.role === 'socio') &&
-    profile.active !== false
-  ) {
+  if (profile?.role === 'super_admin' && profile.active !== false) {
     return true;
   } else {
-    if (profile?.active === false) {
-      await auth.signOut();
-      router.navigate(['/login']);
-      return false;
-    }
-    router.navigate(['/']);
+    router.navigate(['/admin']);
     return false;
   }
 };

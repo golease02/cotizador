@@ -1,4 +1,4 @@
-<div class="auth-container">
+﻿<div class="auth-container">
     <div class="auth-inner register-inner">
         <!-- Panel de marca -->
         <aside class="auth-brand">
@@ -34,7 +34,7 @@
                     <span class="feature-icon">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
                     </span>
-                    Marca tu sucursal en el mapa interactivo
+                                        Indica la ubicación de tu sucursal
                 </li>
             </ul>
 
@@ -173,35 +173,19 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="reg-search">Buscar sucursal en el mapa</label>
-                            <div class="search-group">
-                                <div class="input-wrapper search-wrapper">
-                                    <span class="input-icon">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                    </span>
-                                    <input id="reg-search" type="text" [(ngModel)]="manualAddress" name="manualAddress"
-                                        placeholder="Ej. Toyota Querétaro" (keydown)="onSearchKeydown($event)" class="search-input" />
-                                </div>
-                                <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching()">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-                                    {{ isSearching() ? 'Buscando...' : 'Buscar' }}
-                                </button>
+                            <label for="reg-location">Ubicación de Sucursal *</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                                </span>
+                                <input id="reg-location" type="text" [(ngModel)]="manualAddress" name="manualAddress"
+                                    placeholder="Ej. Toyota Querétaro, Av. Hidalgo 123" class="search-input" />
                             </div>
-                            <p class="map-hint">Escribe una dirección y presiona Enter o haz clic en "Buscar"</p>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Ubicación de Sucursal *</label>
-                            <div #mapContainer class="map-container"></div>
-                            <div *ngIf="selectedCoords" class="coords-info">
-                                <span class="coord-label">📍 Dirección:</span>
-                                <span class="coord-value">{{ addressText || 'Cargando dirección...' }}</span>
-                            </div>
-                            <p class="map-hint">Haz clic en el mapa para marcar la ubicación exacta de tu sucursal</p>
+                            <p class="map-hint">Escribe la dirección o colonia de tu sucursal</p>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary" [disabled]="isLoading">
+<button type="submit" class="btn-primary" [disabled]="isLoading">
                         <span class="spinner" *ngIf="isLoading" aria-hidden="true"></span>
                         <span>{{ isLoading ? 'Creando cuenta...' : 'Registrarse' }}</span>
                         <svg *ngIf="!isLoading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
