@@ -309,10 +309,50 @@
         text-align: center;
     }
 }
-@media (max-width: 768px) {
-  /* Mantener el toast por encima de la barra de navegación inferior móvil */
-  .toast {
-    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+/* ===== Tarjeta de comisión del vendedor ===== */
+.seller-commission-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 12px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.commission-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.commission-icon {
+  font-size: 1.1rem;
+}
+
+.commission-amount {
+  font-family: 'Fjalla One', sans-serif;
+  font-size: 1.6rem;
+  color: var(--accent-green-dark);
+  line-height: 1.2;
+}
+
+.commission-formula {
+  font-size: 0.65rem;
+  color: var(--text-silver);
+  letter-spacing: 0.3px;
+}
+
+@media (max-width: 600px) {
+  .seller-commission-card {
+    padding: 0.85rem 1rem;
+  }
+  .commission-amount {
+    font-size: 1.3rem;
   }
 }
 
