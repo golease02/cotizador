@@ -10,7 +10,7 @@
                 <span class="badge badge-recent"><strong>{{ countQuotesByColor('reciente') }}</strong> recientes</span>
                 <span class="badge badge-reviewed"><strong>{{ countQuotesByColor('verde') }}</strong> revisadas</span>
                 <span class="badge badge-pending"><strong>{{ countQuotesByColor('amarillo') }}</strong> pendientes</span>
-                <span class="badge badge-urgent"><strong>{{ countQuotesByColor('rojo') }}</strong> urgentes</span>
+                <span class="badge badge-urgent"><strong>{{ countQuotesByColor('rojo') }}</strong> por caducar</span>
             </div>
         </div>
     </div>
@@ -35,7 +35,7 @@
             <button type="button" class="chip" [class.is-active]="filtroColor === 'amarillo'"
                 (click)="setStatusFilter('amarillo')">Pendientes</button>
             <button type="button" class="chip" [class.is-active]="filtroColor === 'rojo'"
-                (click)="setStatusFilter('rojo')">Urgentes</button>
+                (click)="setStatusFilter('rojo')">Por caducar</button>
         </div>
 
         <label class="toolbar-select">

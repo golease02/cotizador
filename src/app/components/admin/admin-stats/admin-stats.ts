@@ -68,10 +68,10 @@ export class AdminStatsComponent implements OnInit {
       this.attentionItems.set([
         ...(urgentesCount ? [{
           type: 'urgent',
-          title: 'Cotizaciones urgentes',
+          title: 'Cotizaciones por caducar',
           detail: `${urgentesCount} cotización${urgentesCount === 1 ? '' : 'es'} sin seguimiento reciente.`,
           link: '/admin/quotes',
-          action: 'Revisar cotizaciones'
+          action: 'Revisar por caducar'
         }] : []),
         ...(pendientesCount ? [{
           type: 'pending',
@@ -107,7 +107,7 @@ export class AdminStatsComponent implements OnInit {
       reciente: 'Reciente',
       verde: 'Revisada',
       amarillo: 'Pendiente',
-      rojo: 'Urgente'
+      rojo: 'Por caducar'
     };
     return labels[this.getEstado(quote)];
   }

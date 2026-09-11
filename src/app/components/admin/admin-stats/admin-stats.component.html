@@ -34,7 +34,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/></svg>
       </div>
       <div class="metric-info">
-        <span class="metric-label">Fijadas</span>
+        <span class="metric-label">Importantes</span>
         <span class="metric-value">{{ totalFijadas() }}</span>
       </div>
     </div>
@@ -43,7 +43,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
       </div>
       <div class="metric-info">
-        <span class="metric-label">Urgentes</span>
+        <span class="metric-label">Por caducar</span>
         <span class="metric-value">{{ totalUrgentes() }}</span>
       </div>
     </div>
@@ -116,48 +116,6 @@
   <!-- Cotizaciones destacadas -->
   <div class="quotes-sections" *ngIf="!loading()">
 
-    <!-- Fijadas -->
-    <div class="quotes-column" *ngIf="!loading()">
-      <h3>Fijadas</h3>
-      <div class="quote-list">
-        <div *ngFor="let q of fijadasQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
-          <div class="card-color-indicator"></div>
-          <div class="card-header">
-            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
-            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
-          <div class="card-footer">
-            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
-            <span class="status-badge">{{ getEtiqueta(q) }}</span>
-          </div>
-          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
-        </div>
-        <div *ngIf="fijadasQuotes().length === 0" class="empty-state">Sin cotizaciones fijadas</div>
-      </div>
-    </div>
-
-    <!-- Urgentes -->
-    <div class="quotes-column" *ngIf="!loading()">
-      <h3>Urgentes</h3>
-      <div class="quote-list">
-        <div *ngFor="let q of urgentesQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
-          <div class="card-color-indicator"></div>
-          <div class="card-header">
-            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
-            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
-          <div class="card-footer">
-            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
-            <span class="status-badge">{{ getEtiqueta(q) }}</span>
-          </div>
-          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
-        </div>
-        <div *ngIf="urgentesQuotes().length === 0" class="empty-state">Sin cotizaciones urgentes</div>
-      </div>
-    </div>
-
     <!-- Últimas cotizaciones -->
     <div class="quotes-column" *ngIf="!loading()">
       <h3>Últimas cotizaciones</h3>
@@ -176,6 +134,48 @@
           <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
         </div>
         <div *ngIf="recentQuotes().length === 0" class="empty-state">Sin cotizaciones recientes</div>
+      </div>
+    </div>
+
+    <!-- Importantes -->
+    <div class="quotes-column" *ngIf="!loading()">
+      <h3>Importantes</h3>
+      <div class="quote-list">
+        <div *ngFor="let q of fijadasQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
+          <div class="card-color-indicator"></div>
+          <div class="card-header">
+            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+          <div class="card-footer">
+            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
+            <span class="status-badge">{{ getEtiqueta(q) }}</span>
+          </div>
+          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
+        </div>
+        <div *ngIf="fijadasQuotes().length === 0" class="empty-state">Sin cotizaciones fijadas</div>
+      </div>
+    </div>
+
+    <!-- Por caducar -->
+    <div class="quotes-column" *ngIf="!loading()">
+      <h3>Por caducar</h3>
+      <div class="quote-list">
+        <div *ngFor="let q of urgentesQuotes()" class="quote-card-mini" [ngClass]="getColorClase(q)">
+          <div class="card-color-indicator"></div>
+          <div class="card-header">
+            <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+            <span class="price-tag">{{ q.pricenet | currency:'MXN':'symbol':'1.0-0' }}</span>
+          </div>
+          <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+          <div class="card-footer">
+            <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
+            <span class="status-badge">{{ getEtiqueta(q) }}</span>
+          </div>
+          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
+        </div>
+        <div *ngIf="urgentesQuotes().length === 0" class="empty-state">Sin cotizaciones por caducar</div>
       </div>
     </div>
 

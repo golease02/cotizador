@@ -431,7 +431,7 @@ export class AdminQuotesComponent implements OnInit {
       reciente: 'Reciente',
       verde: 'Revisada',
       amarillo: 'Pendiente',
-      rojo: 'Urgente'
+      rojo: 'Por caducar'
     };
     return labels[quote.color] || 'Reciente';
   }
