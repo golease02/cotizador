@@ -1,4 +1,4 @@
-﻿.cotizador-wrapper {
+.cotizador-wrapper {
     max-width: 1600px;
     margin: 0 auto;
     padding: 1.25rem 2rem 2.5rem;
@@ -153,7 +153,7 @@
     }
 }
 
-/* Presentación del espacio de trabajo */
+/* Presentaci�n del espacio de trabajo */
 .cotizador-wrapper {
     position: relative;
     max-width: 1600px;
@@ -257,8 +257,8 @@
         padding: 0;
     }
 
-    /* Importante: debe venir DESPUÉS de la regla .cotizador-grid base
-       (misma especificidad, gana la última) para colapsar a 1 columna */
+    /* Importante: debe venir DESPU�S de la regla .cotizador-grid base
+       (misma especificidad, gana la �ltima) para colapsar a 1 columna */
     .cotizador-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
@@ -270,7 +270,7 @@
         padding: 1rem 0.75rem 1.5rem;
     }
 
-    /* Ocultar el adorno decorativo en pantallas pequeñas */
+    /* Ocultar el adorno decorativo en pantallas peque�as */
     .cotizador-wrapper::before {
         display: none;
     }
@@ -309,88 +309,7 @@
         text-align: center;
     }
 }
-/* ===== Tarjeta de comisión del vendedor ===== */
-.seller-commission-card {
-  background: var(--surface-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 4px 12px var(--shadow-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.commission-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.commission-icon {
-  font-size: 1.1rem;
-}
-
-.commission-amount {
-  font-family: 'Fjalla One', sans-serif;
-  font-size: 1.6rem;
-  color: var(--accent-green-dark);
-  line-height: 1.2;
-}
-
-.commission-formula {
-  font-size: 0.65rem;
-  color: var(--text-silver);
-  letter-spacing: 0.3px;
-}
-
-@media (max-width: 600px) {
-  .seller-commission-card {
-    padding: 0.85rem 1rem;
-  }
-  .commission-amount {
-    font-size: 1.3rem;
-  }
-}
-
-/* ===== Indicador de guardado automático ===== */
-.save-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-silver);
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--input-border);
-  border-radius: 30px;
-  background: var(--surface-subtle);
-  white-space: nowrap;
-}
-
-.save-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-green);
-  flex-shrink: 0;
-}
-
-.save-dot.is-saving {
-  background: #f59e0b;
-  animation: pulse 1.2s infinite;
-}
-
-.meta-badge.badge-vencida {
-  background: #7f1d1d;
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-/* ===== Tarjeta de comisión del vendedor ===== */
+/* ===== Tarjeta de comision del vendedor ===== */
 .seller-commission-card {
   background: var(--surface-card);
   border: 1px solid var(--border-color);
@@ -400,7 +319,7 @@
   box-shadow: 0 4px 12px var(--shadow-soft);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .commission-header {
@@ -410,44 +329,7 @@
 }
 
 .commission-icon {
-  font-size: 1.3rem;
-}
-
-.commission-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-silver);
-}
-
-.commission-amount {
-  font-family: 'Fjalla One', sans-serif;
-  font-size: 1.8rem;
-  color: var(--accent-green-dark);
-}
-
-.commission-formula {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-/* ===== Tarjeta de comisión del vendedor ===== */
-.seller-commission-card {
-  background: var(--surface-card);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 2px 8px var(--shadow-soft);
-}
-
-.commission-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.commission-icon {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
 }
 
 .commission-label {
@@ -460,7 +342,7 @@
 
 .commission-amount {
   font-family: 'Fjalla One', sans-serif;
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   color: var(--accent-green-dark);
   line-height: 1.2;
 }
@@ -468,5 +350,13 @@
 .commission-formula {
   font-size: 0.7rem;
   color: var(--text-muted);
-  margin-top: 0.25rem;
+}
+
+@media (max-width: 600px) {
+  .seller-commission-card {
+    padding: 1rem;
+  }
+  .commission-amount {
+    font-size: 1.4rem;
+  }
 }
