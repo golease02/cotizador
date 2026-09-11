@@ -59,3 +59,14 @@ build_output.txt
 error.txt
 test-output.txt
 test_output.txt
+
+# Artefactos de debugging / diagnostico (no versionar)
+a1_rpcs.txt
+a2_schema.sql
+a3_b64.txt
+a5_rpcs_clean.sql
+a6_test_rpc_scope.mjs
+
+# Directorio local de herramientas AI (no versionar en nuevos clones)
+.kilo/
+.history/
