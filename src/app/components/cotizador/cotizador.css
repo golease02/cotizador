@@ -394,6 +394,46 @@
 .seller-commission-card {
   background: var(--surface-card);
   border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-green);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 12px var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.commission-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.commission-icon {
+  font-size: 1.3rem;
+}
+
+.commission-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-silver);
+}
+
+.commission-amount {
+  font-family: 'Fjalla One', sans-serif;
+  font-size: 1.8rem;
+  color: var(--accent-green-dark);
+}
+
+.commission-formula {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ===== Tarjeta de comisión del vendedor ===== */
+.seller-commission-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1rem 1.25rem;
   box-shadow: 0 2px 8px var(--shadow-soft);
