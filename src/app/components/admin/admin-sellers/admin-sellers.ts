@@ -15,7 +15,7 @@ import { ToastService } from '../../../services/toast.service';
 })
 export class AdminSellersComponent implements OnInit {
   private admin = inject(AdminService);
-  private auth = inject(AuthService);
+  public auth = inject(AuthService);
   private client = getSupabaseClient();
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
@@ -68,8 +68,13 @@ export class AdminSellersComponent implements OnInit {
     agency_brand: '',
     other_brand: '',
     agency_location: '',
+    socio_id: '',
     active: true
   };
+
+  // ------------------- SOCIO (solo super admin) -------------------
+  socios = signal<any[]>([]);
+  isLoadingSocios = false;
 
   // ------------------- DRAWER DE DETALLE -------------------
   showDetailDrawer = false;
@@ -88,6 +93,45 @@ export class AdminSellersComponent implements OnInit {
   showNotaConfirmModal = false;
   notaToDelete: any = null;
 
+  // ------------------- SEMAFORO COTIZACIONES -------------------
+  /** Mapa de colores por vendedor: { revisadas, porCaducar, pendientes, recientes } */
+  sellersQuoteColors = signal<Record<string, { revisadas: number; porCaducar: number; pendientes: number; recientes: number }>>({});
+
+  /** Calcula los colores de cotizaciones por vendedor para el semaforo. */
+  async loadSellersQuoteColors(): Promise<void> {
+    try {
+      const { data: quotes, error } = await this.client
+        .from('quotes')
+        .select('seller_id, revisada, created_at');
+      if (error || !quotes) return;
+
+      const now = Date.now();
+      const map: Record<string, { revisadas: number; porCaducar: number; pendientes: number; recientes: number }> = {};
+
+      for (const q of quotes) {
+        const sid = q.seller_id;
+        if (!map[sid]) map[sid] = { revisadas: 0, porCaducar: 0, pendientes: 0, recientes: 0 };
+
+        if (q.revisada === true) {
+          map[sid].revisadas++;
+        } else {
+          const dias = Math.floor((now - new Date(q.created_at).getTime()) / 86_400_000);
+          if (dias > 7) map[sid].porCaducar++;
+          else if (dias > 2) map[sid].pendientes++;
+          else map[sid].recientes++;
+        }
+      }
+
+      this.sellersQuoteColors.set(map);
+    } catch (err) {
+      console.error('Error cargando colores de cotizaciones:', err);
+    }
+  }
+
+  getQuoteColors(sellerId: string): { revisadas: number; porCaducar: number; pendientes: number; recientes: number } {
+    return this.sellersQuoteColors()[sellerId] || { revisadas: 0, porCaducar: 0, pendientes: 0, recientes: 0 };
+  }
+
   // ------------------- MARCAS -------------------
   brands = [
     'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
@@ -99,7 +143,21 @@ export class AdminSellersComponent implements OnInit {
   ];
 
   async ngOnInit() {
-    await this.loadSellers();
+    await Promise.all([
+      this.loadSellers(),
+      this.loadSellersQuoteColors(),
+      this.loadSociosIfNeeded()
+    ]);
+  }
+
+  async loadSociosIfNeeded(): Promise<void> {
+    if (!this.auth.isSuperAdmin()) return;
+    this.isLoadingSocios = true;
+    const { data, error } = await this.auth.getSocios();
+    if (!error && data) {
+      this.socios.set(data);
+    }
+    this.isLoadingSocios = false;
   }
 
     @HostListener('document:keydown.escape')
@@ -124,6 +182,7 @@ export class AdminSellersComponent implements OnInit {
     if (!error) {
       this.sellers.set(data || []);
       this.applyFilters();
+      await this.loadSellersQuoteColors();
     } else {
       this.toastService.error('No se pudieron cargar los vendedores');
     }
@@ -332,6 +391,7 @@ export class AdminSellersComponent implements OnInit {
         agency_brand: data.agency_brand || '',
         other_brand: '',
         agency_location: data.agency_location || '',
+        socio_id: data.socio_id || '',
         active: data.active !== false
       };
 
@@ -353,6 +413,7 @@ export class AdminSellersComponent implements OnInit {
       agency_brand: '',
       other_brand: '',
       agency_location: '',
+      socio_id: '',
       active: true
     };
     this.formError = '';
@@ -494,6 +555,7 @@ export class AdminSellersComponent implements OnInit {
           agency_brand: finalBrand,
           agency_location: finalLocation,
           seller_number: this.sellerForm.seller_number.trim(),
+          socio_id: this.sellerForm.socio_id || null,
           active: this.sellerForm.active
         });
         if (error) {
@@ -538,6 +600,7 @@ export class AdminSellersComponent implements OnInit {
           full_name: this.sellerForm.full_name.trim(),
           agency_brand: finalBrand,
           agency_location: finalLocation,
+          socio_id: this.sellerForm.socio_id || null,
           active: true,
           role: 'seller'
         });

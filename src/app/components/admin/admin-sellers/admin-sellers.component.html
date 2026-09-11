@@ -80,37 +80,28 @@
     <div class="table-wrapper" *ngIf="!loading && filteredSellers().length > 0">
         <table class="users-table">
             <thead>
-                <tr><th>Vendedor</th><th>Agencia</th><th>Ubicación</th><th>Cotizaciones</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
+                <tr><th>Agencia</th><th>Nombre</th><th>Teléfono</th><th>Ubicación</th><th>Semáforo</th><th class="actions-column">Acciones</th></tr>
             </thead>
             <tbody>
                 <tr *ngFor="let seller of filteredSellers()" [class.is-selected]="selectedSellerCardId === seller.id"
                     (click)="openDetail(seller)" tabindex="0" (keydown.enter)="openDetail(seller)"
                     (keydown.space)="openDetail(seller); $event.preventDefault()"
                     [attr.aria-label]="'Ver detalle de ' + seller.full_name">
-                    <td class="user-cell" data-label="Vendedor">
-                        <span class="avatar" [class]="getAvatarClass(seller.full_name)" aria-hidden="true">
-                            {{ getInitials(seller.full_name) }}
-                            <span class="avatar-dot" [class.is-on]="seller.active ?? true"></span>
-                        </span>
-                        <span class="user-meta">
-                            <strong (mouseenter)="mostrarNotasTooltip($event, seller)" (mouseleave)="ocultarNotasTooltip()">{{ seller.full_name }}</strong>
-                            <small>{{ seller.seller_number || '-' }}</small>
-                        </span>
-                    </td>
                     <td data-label="Agencia"><span class="brand-chip">{{ seller.agency_brand || '—' }}</span></td>
+                    <td data-label="Nombre"><strong>{{ seller.full_name }}</strong></td>
+                    <td data-label="Teléfono">{{ seller.seller_number || '-' }}</td>
                     <td class="location-cell" data-label="Ubicación" [title]="seller.agency_location || '-'">
                         <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                         {{ seller.agency_location || '-' }}
                     </td>
-                    <td data-label="Cotizaciones"><strong class="quote-count">{{ seller.quote_count || 0 }}</strong></td>
-                    <td data-label="Estado">
-                        <button type="button" class="switch" [class.is-on]="seller.active ?? true" role="switch"
-                            [attr.aria-checked]="seller.active ?? true"
-                            [title]="'Cambiar estado (' + getStatusLabel(seller.active ?? true) + ')'"
-                            (click)="toggleSellerStatus(seller); $event.stopPropagation()">
-                            <span class="switch-thumb"></span>
-                        </button>
-                        <span class="switch-label">{{ getStatusLabel(seller.active ?? true) }}</span>
+                    <td data-label="Semáforo">
+                        <div class="semaforo-cell">
+                            <span class="dot dot-green" title="Revisadas" *ngIf="getQuoteColors(seller.id).revisadas > 0">{{ getQuoteColors(seller.id).revisadas }}</span>
+                            <span class="dot dot-yellow" title="Pendientes" *ngIf="getQuoteColors(seller.id).pendientes > 0">{{ getQuoteColors(seller.id).pendientes }}</span>
+                            <span class="dot dot-red" title="Por caducar" *ngIf="getQuoteColors(seller.id).porCaducar > 0">{{ getQuoteColors(seller.id).porCaducar }}</span>
+                            <span class="dot dot-blue" title="Recientes" *ngIf="getQuoteColors(seller.id).recientes > 0">{{ getQuoteColors(seller.id).recientes }}</span>
+                            <span class="dot dot-gray" *ngIf="getQuoteColors(seller.id).revisadas === 0 && getQuoteColors(seller.id).pendientes === 0 && getQuoteColors(seller.id).porCaducar === 0 && getQuoteColors(seller.id).recientes === 0">—</span>
+                        </div>
                     </td>
                     <td class="actions-column" data-label="Acciones" (click)="$event.stopPropagation()">
                         <div class="action-buttons">
@@ -290,6 +281,15 @@
                             <small class="field-error" *ngIf="formValidated && fieldErrors['password']">{{ fieldErrors['password'] }}</small>
                             <button type="button" class="btn-link" (click)="generatePassword()">🛡 Generar contraseña segura</button>
                         </div>
+                    </div>
+
+                    <div class="form-group" *ngIf="isEditMode && auth.isSuperAdmin()">
+                        <label>Socio de GoLease</label>
+                        <select [(ngModel)]="sellerForm.socio_id" name="socio_id">
+                            <option value="">Sin asignar</option>
+                            <option *ngFor="let s of socios()" [value]="s.id">{{ s.full_name }}</option>
+                        </select>
+                        <small class="field-hint">Reasigna el vendedor a otro socio (solo super-admin).</small>
                     </div>
 
                     <div class="form-group" *ngIf="isEditMode">

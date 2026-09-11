@@ -2497,3 +2497,29 @@ html[data-theme='dark'] .notas-overlay {
     letter-spacing: 0.2px;
   }
 }
+/* ===== Semaforo de cotizaciones ===== */
+.semaforo-cell {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.dot-green  { background: #20b038; }
+.dot-yellow { background: #eab308; }
+.dot-red    { background: #dc2626; }
+.dot-blue   { background: #3b82f6; }
+.dot-gray   { background: #9ca3af; color: #fff; }
