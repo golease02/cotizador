@@ -275,6 +275,17 @@ export class AuthService {
     return { data, error };
   }
 
+  /** Obtiene los vendedores (role=seller) vinculados a un socio específico. */
+  public async getSellersBySocio(socioId: string): Promise<{ data: any[]; error: any }> {
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('id, full_name, seller_number, active, agency_name, agency_location')
+      .eq('role', 'seller')
+      .eq('socio_id', socioId)
+      .order('full_name', { ascending: true });
+    return { data: data || [], error };
+  }
+
   public async getProfileBySellerNumber(
     sellerNumber: string
   ): Promise<{ data: any; error: any }> {

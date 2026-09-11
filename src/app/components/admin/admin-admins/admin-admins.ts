@@ -80,6 +80,16 @@ export class AdminAdminsComponent implements OnInit {
   showDetailDrawer = false;
   detailAdmin: any = null;
 
+  // Socios disponibles para reasignación (Dropdown)
+  allSocios = signal<any[]>([]);
+
+  // Vendedores vinculados al socio en detalle
+  linkedSellers = signal<any[]>([]);
+  sellersLoading = false;
+  reassignSellerId: string | null = null;
+  reassignTargetSocioId = '';
+  reassignLoading = false;
+
   async ngOnInit() {
     await this.loadAdmins();
   }
@@ -101,6 +111,10 @@ export class AdminAdminsComponent implements OnInit {
   openDetail(admin: any) {
     this.detailAdmin = admin;
     this.showDetailDrawer = true;
+    this.linkedSellers.set([]);
+    if (admin.role === 'socio') {
+      this.loadLinkedSellers();
+    }
   }
 
   closeDetail() {
@@ -529,6 +543,79 @@ export class AdminAdminsComponent implements OnInit {
       this.formLoading = false;
       this.cdr.detectChanges();
     }
+  }
+
+  // ===================== SOCIOS: VENDEDORES VINCULADOS + REASIGNACIÓN =====================
+
+  /** Carga los vendedores vinculados al socio que se está viendo en detalle. */
+  async loadLinkedSellers(): Promise<void> {
+    if (!this.detailAdmin) return;
+    this.sellersLoading = true;
+    const { data, error } = await this.auth.getSellersBySocio(this.detailAdmin.id);
+    if (error) {
+      this.toastService.error('No se pudieron cargar los vendedores vinculados');
+      this.linkedSellers.set([]);
+    } else {
+      this.linkedSellers.set(data || []);
+    }
+    this.sellersLoading = false;
+    this.cdr.detectChanges();
+  }
+
+  /** Carga todos los socios para el selector de reasignación (excluye el actual). */
+  async loadAllSocios(): Promise<void> {
+    const { data, error } = await this.auth.getSocios();
+    if (error) {
+      this.allSocios.set([]);
+      return;
+    }
+    const others = (data || []).filter((s: any) => s.id !== this.detailAdmin?.id);
+    this.allSocios.set(others);
+    this.cdr.detectChanges();
+  }
+
+  /** Abre el modal de confirmación para reasignar un vendedor a otro socio. */
+  confirmReassignSeller(sellerId: string, targetSocioId: string): void {
+    this.reassignSellerId = sellerId;
+    this.reassignTargetSocioId = targetSocioId;
+    this.cdr.detectChanges();
+  }
+
+  /** Cancela la reasignación en curso. */
+  cancelReassignSeller(): void {
+    this.reassignSellerId = null;
+    this.reassignTargetSocioId = '';
+    this.cdr.detectChanges();
+  }
+
+  /** Ejecuta la reasignación del vendedor al socio seleccionado. */
+  async executeReassignSeller(): Promise<void> {
+    if (!this.reassignSellerId || !this.reassignTargetSocioId) return;
+    this.reassignLoading = true;
+    this.cdr.detectChanges();
+
+    const { error } = await this.auth.updateProfile(this.reassignSellerId, {
+      socio_id: this.reassignTargetSocioId,
+    });
+
+    if (error) {
+      this.toastService.error('No se pudo reasignar el vendedor: ' + error.message);
+    } else {
+      this.toastService.success('Vendedor reasignado correctamente');
+      await this.loadLinkedSellers();
+    }
+
+    this.reassignLoading = false;
+    this.reassignSellerId = null;
+    this.reassignTargetSocioId = '';
+    this.cdr.detectChanges();
+  }
+
+  /** Selecciona un vendedor para iniciar su reasignación. */
+  selectSellerToReassign(sellerId: string): void {
+    this.reassignSellerId = sellerId;
+    this.loadAllSocios();
+    this.cdr.detectChanges();
   }
 
   // ===================== HELPERS =====================

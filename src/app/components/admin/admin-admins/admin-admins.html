@@ -304,6 +304,49 @@
                 </div>
             </div>
 
+            <!-- VENDEDORES VINCULADOS AL SOCIO -->
+            <div class="detail-section" *ngIf="detailAdmin.role === 'socio'">
+                <h4>Vendedores vinculados ({{ linkedSellers().length }})</h4>
+                <div class="sellers-linked-list" *ngIf="!sellersLoading && linkedSellers().length > 0">
+                    <div class="seller-linked-row" *ngFor="let seller of linkedSellers()">
+                        <span class="seller-linked-name">{{ seller.full_name }}</span>
+                        <span class="seller-linked-phone">{{ seller.seller_number }}</span>
+                        <button type="button" class="btn-reassign-mini" (click)="selectSellerToReassign(seller.id)" title="Reasignar a otro socio">
+                            ↔ Reasignar
+                        </button>
+                    </div>
+                </div>
+                <div class="sellers-linked-empty" *ngIf="!sellersLoading && linkedSellers().length === 0">
+                    <p>Este socio aún no tiene vendedores vinculados.</p>
+                </div>
+                <div class="sellers-linked-loading" *ngIf="sellersLoading">
+                    <p>Cargando vendedores…</p>
+                </div>
+            </div>
+
+            <!-- MODAL DE REASIGNACIÓN -->
+            <div class="reassign-modal" *ngIf="reassignSellerId && !reassignLoading">
+                <div class="reassign-modal-content">
+                    <h4>Reasignar vendedor a otro socio</h4>
+                    <p>Selecciona el nuevo socio para este vendedor:</p>
+                    <select [(ngModel)]="reassignTargetSocioId" class="reassign-select">
+                        <option value="">-- Seleccionar socio --</option>
+                        <option *ngFor="let socio of allSocios()" [value]="socio.id">
+                            {{ socio.full_name }} ({{ socio.seller_number }})
+                        </option>
+                    </select>
+                    <div class="reassign-actions">
+                        <button type="button" class="btn-cancel" (click)="cancelReassignSeller()">Cancelar</button>
+                        <button type="button" class="btn-primary" (click)="executeReassignSeller()" [disabled]="!reassignTargetSocioId">
+                            Confirmar reasignación
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="reassign-loading-overlay" *ngIf="reassignLoading">
+                <p>Reasignando vendedor…</p>
+            </div>
+
             <div class="detail-actions">
                 <button type="button" class="btn-cancel" (click)="closeDetail()">Cerrar</button>
                 <button type="button" class="btn-primary" (click)="detailEdit()">Editar</button>
