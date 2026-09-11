@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
-import { adminGuard } from './guards/admin-guard';
+import { adminGuard, moduleGuard } from './guards/admin-guard';
 import { superAdminGuard } from './guards/super-admin-guard';
 
 export const routes: Routes = [
@@ -50,31 +50,37 @@ export const routes: Routes = [
         children: [
             {
                 path: '',
+                canActivate: [moduleGuard('dashboard')],
                 loadComponent: () => import('./components/admin/admin-stats/admin-stats').then(m => m.AdminStatsComponent)
             },
             {
                 path: 'sellers',
+                canActivate: [moduleGuard('sellers')],
                 loadComponent: () => import('./components/admin/admin-sellers/admin-sellers').then(m => m.AdminSellersComponent)
             },
             {
                 path: 'admins',
-                loadComponent: () => import('./components/admin/admin-admins/admin-admins').then(m => m.AdminAdminsComponent),
-                canActivate: [superAdminGuard]
+                canActivate: [superAdminGuard],
+                loadComponent: () => import('./components/admin/admin-admins/admin-admins').then(m => m.AdminAdminsComponent)
             },
             {
                 path: 'quotes',
+                canActivate: [moduleGuard('quotes')],
                 loadComponent: () => import('./components/admin/admin-quotes/admin-quotes').then(m => m.AdminQuotesComponent)
             },
             {
                 path: 'vehicles',
+                canActivate: [moduleGuard('vehicles')],
                 loadComponent: () => import('./components/admin/admin-vehicles/admin-vehicles').then(m => m.AdminVehiclesComponent)
             },
             {
                 path: 'plates',
+                canActivate: [moduleGuard('plates')],
                 loadComponent: () => import('./components/admin/admin-plates/admin-plates').then(m => m.AdminPlatesComponent)
             },
             {
                 path: 'parameters',
+                canActivate: [moduleGuard('parameters')],
                 loadComponent: () => import('./components/admin/admin-parameters/admin-parameters').then(m => m.AdminParametersComponent)
             }
         ]

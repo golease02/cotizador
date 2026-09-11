@@ -31,3 +31,32 @@ export const adminGuard = async () => {
     return false;
   }
 };
+
+/**
+ * Guard de permisos granulares para rutas hijas del panel admin.
+ * - super_admin siempre tiene acceso.
+ * - socio solo accede si su JSONB de permisos le otorga el módulo.
+ * - El módulo 'dashboard' siempre está permitido (permite llegar al panel).
+ */
+export const moduleGuard = (module: string) => {
+  return async () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+
+    await auth.waitForSession();
+
+    const profile = auth.currentProfile();
+    if (!profile) {
+      router.navigate(['/login']);
+      return false;
+    }
+
+    if (auth.canAccessModule(module)) {
+      return true;
+    }
+
+    // Sin permisos → redirigir al dashboard del admin
+    router.navigate(['/admin']);
+    return false;
+  };
+};
