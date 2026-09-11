@@ -64,7 +64,10 @@ export class QuoteBreakdownComponent {
   public async downloadPDF(): Promise<void> {
     this.isDownloading.set(true);
     try {
-      await this.pdfExport.exportToPdf('official-pdf-sheet', 'cotizacion_golease');
+      const model = this.calculation?.input?.model?.trim() || this.calculation?.input?.brand?.trim() || 'VEHICULO';
+      const term = this.calculation?.input?.termMonths || 48;
+      const fileName = `COT GO ${model.toUpperCase()} ${term}M`.replace(/[^A-Z0-9 _-]/g, '');
+      await this.pdfExport.exportToPdf('official-pdf-sheet', fileName);
     } finally {
       this.isDownloading.set(false);
     }

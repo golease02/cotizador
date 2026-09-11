@@ -47,14 +47,16 @@ export class PdfExportService {
                 height: element.scrollHeight
             });
 
-            const imgData = canvas.toDataURL('image/png');
+            // JPEG con calidad 0.85: ~70% más ligero que PNG sin pérdida visual notable
+            const imgData = canvas.toDataURL('image/jpeg', 0.85);
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'px',
-                format: [canvas.width, canvas.height]
+                format: [canvas.width, canvas.height],
+                compress: true
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
             pdf.save(`${fileName}.pdf`);
 
         } catch (error) {
