@@ -113,22 +113,13 @@ export const DEFAULT_CALCULATOR_CONFIG: CalculatorConfig = {
 };
 
 /**
- * Calcula el porcentaje mínimo de renta extraordinaria basado en el precio del vehículo
+ * Porcentaje mínimo de renta extraordinaria (enganche deducible).
  *
- * BASES:
- * - MINIMO 10%
- * - 10% PARA VEHÍCULOS DE MENOS DE 650 MIL
- * - 15% SI EL PRECIO ESTA ENTRE 650 MIL Y $1.5 MILLONES
- * - 20% ARRIBA DE PRECIOS DE $1.5 MILLONES
+ * Regla vigente: mínimo fijo del 10% para cualquier precio de vehículo.
+ * (Antes se indexaba por precio: 10% <$650k, 15% $650k-$1.5M, 20% >$1.5M.)
  */
-export function getMinimumExtraordinaryRentPct(priceNet: number): number {
-  if (priceNet < 650000) {
-    return 0.10; // 10%
-  } else if (priceNet < 1500000) {
-    return 0.15; // 15%
-  } else {
-    return 0.20; // 20%
-  }
+export function getMinimumExtraordinaryRentPct(_priceNet: number): number {
+  return 0.10;
 }
 
 /**

@@ -4,24 +4,7 @@
     <span class="subtitle">Cotización rápida en tiempo real</span>
   </div>
 
-  <div class="preset-section">
-    <span class="preset-label">Selección rápida</span>
-    <div class="preset-row">
-      <select class="preset-select" (change)="onBrandSelectChange($event)">
-        <option value="" disabled selected hidden>Marca</option>
-        <option *ngFor="let group of presetGroups" [value]="group.brand">{{ group.brand }}</option>
-      </select>
-
-      <select class="preset-select" (change)="onPresetSelectChange($event)" [disabled]="!selectedPresetBrand">
-        <option value="" disabled selected hidden>Modelo</option>
-        <option *ngFor="let v of filteredPresetVehicles" [value]="v.id">
-          {{ v.model }} — {{ v.suggestedPriceNet | currency:'MXN':'symbol':'1.0-0' }}
-        </option>
-      </select>
-    </div>
-  </div>
-
-  <form [formGroup]="quoteForm">
+    <form [formGroup]="quoteForm">
     <div class="form-grid">
       <div class="full-width">
         <label for="clientName">Atención a (Cliente / Prospecto)</label>
@@ -69,14 +52,12 @@
         </div>
 
         <div class="full-width">
-          <label>¿Es híbrido o eléctrico?</label>
+                    <label>¿Es híbrido o eléctrico?</label>
           <div class="toggle-group">
             <button type="button" class="toggle-btn"
-              [class.active]="quoteForm.get('isHybridOrElectric')?.value === false" (click)="setHybrid(false)">No (Renta
-              básica $6,000 + IVA)</button>
+              [class.active]="quoteForm.get('isHybridOrElectric')?.value === false" (click)="setHybrid(false)">No</button>
             <button type="button" class="toggle-btn"
-              [class.active]="quoteForm.get('isHybridOrElectric')?.value === true" (click)="setHybrid(true)">Sí (Renta
-              básica $8,550 + IVA)</button>
+              [class.active]="quoteForm.get('isHybridOrElectric')?.value === true" (click)="setHybrid(true)">Sí</button>
           </div>
         </div>
 
@@ -107,7 +88,7 @@
             {{ extraordinaryRentAdjustmentMessage }}
           </div>
           <div class="chip-group">
-            <button type="button" *ngFor="let pct of [0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70]" class="chip-btn"
+                        <button type="button" *ngFor="let pct of [0.10, 0.15, 0.20, 0.30, 0.40, 0.50]" class="chip-btn"
               [class.active]="extraordinaryRentPct === pct"
               [disabled]="pct < minimumExtraordinaryRentPct || pct > maximumExtraordinaryRentPct"
               (click)="setExtraordinaryRent(pct)">{{ (pct * 100) }}%</button>

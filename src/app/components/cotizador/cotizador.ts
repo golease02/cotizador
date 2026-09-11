@@ -95,11 +95,6 @@ export class CotizadorComponent implements OnDestroy {
       });
   }
 
-  // Reiniciar ID cuando se seleccione un nuevo vehículo
-  public resetQuoteId(): void {
-    this.currentQuoteId = null;
-  }
-
   private isValidQuote(input: VehicleQuoteInput): boolean {
     return (
       input.priceNet > 0 &&

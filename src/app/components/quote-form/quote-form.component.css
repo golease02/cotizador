@@ -33,29 +33,6 @@
   color: var(--text-muted);
 }
 
-.preset-section {
-  background: #f5faf6;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #dcebe0;
-  margin-bottom: 1.25rem;
-}
-
-.preset-label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-silver);
-  text-transform: uppercase;
-  margin-bottom: 0.3rem;
-}
-
-.preset-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-}
-
 .preset-select {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -321,10 +298,6 @@ select:focus-visible {
 
   .full-width {
     grid-column: span 1;
-  }
-
-  .preset-row {
-    grid-template-columns: 1fr;
   }
 
   .form-card {

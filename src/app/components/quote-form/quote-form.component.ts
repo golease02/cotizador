@@ -6,7 +6,7 @@ import {
   StatePlateOption,
   CalculatorConfig,
 } from '../../models/leasing.model';
-import { CatalogService, VehicleCatalogItem } from '../../services/catalog.service';
+import { CatalogService } from '../../services/catalog.service';
 import { QuoteDraftService } from '../../services/quote-draft.service';
 import { formatPrice } from './price-format';
 
@@ -24,22 +24,11 @@ export class QuoteFormComponent implements OnInit {
   private draftService = inject(QuoteDraftService);
 
   @Output() quoteChange = new EventEmitter<VehicleQuoteInput>();
-  @Output() newQuote = new EventEmitter<void>();
   @Input() initialInput: VehicleQuoteInput | null = null;
 
-  public quoteForm!: FormGroup;
+    public quoteForm!: FormGroup;
   public statePlates: StatePlateOption[] = [];
-  public presetVehicles: VehicleCatalogItem[] = [];
-  public presetGroups: { brand: string; vehicles: VehicleCatalogItem[] }[] = [];
-  public selectedPresetBrand: string = '';
   public formatPrice = formatPrice;
-
-  get filteredPresetVehicles(): VehicleCatalogItem[] {
-    if (!this.selectedPresetBrand) {
-      return this.presetVehicles;
-    }
-    return this.presetVehicles.filter(v => v.brand === this.selectedPresetBrand);
-  }
 
   async ngOnInit(): Promise<void> {
     this.quoteForm = this.fb.group({
@@ -56,19 +45,11 @@ export class QuoteFormComponent implements OnInit {
       isInsuranceEstimated: [false],
     });
 
-    await Promise.all([
+        await Promise.all([
       this.catalog.loadStatePlates(),
       this.catalog.loadCalculatorConfig(),
     ]);
     this.statePlates = this.catalog.getStatePlates().filter(p => p.disponible !== false);
-    this.presetVehicles = await this.catalog.getVehicleCatalog();
-
-    const brandMap = new Map<string, VehicleCatalogItem[]>();
-    for (const v of this.presetVehicles) {
-      if (!brandMap.has(v.brand)) brandMap.set(v.brand, []);
-      brandMap.get(v.brand)!.push(v);
-    }
-    this.presetGroups = Array.from(brandMap.entries()).map(([brand, vehicles]) => ({ brand, vehicles }));
 
     this.quoteForm.valueChanges.subscribe(() => {
       if (this.quoteForm.valid) {
@@ -128,17 +109,16 @@ export class QuoteFormComponent implements OnInit {
     return this.catalog.getCalculatorConfig();
   }
 
-  get minimumExtraordinaryRentPct(): number {
-    const config = this.calculatorConfig;
-    if (this.vehiclePrice < config.minimumRentThreshold1) return config.minimumRentPct1;
-    if (this.vehiclePrice < config.minimumRentThreshold2) return config.minimumRentPct2;
-    return config.minimumRentPct3;
+    get minimumExtraordinaryRentPct(): number {
+    // Mínimo fijo: ya no se indexa por precio del vehículo (libre a partir de 10%).
+    return 0.10;
   }
 
   get maximumExtraordinaryRentPct(): number {
-    const config = this.calculatorConfig;
-    // La opción 1 tiene el residual más alto y define el máximo común del formulario.
-    return config.maxRentAndResidualPct - config.residualOption1Pct;
+    // Techo absoluto de la renta extraordinaria (enganche deducible): 50%.
+    // La regla de negocio "renta + VR ≤ 75%" sigue aplicándose por opción en el
+    // motor de cálculo; por eso la Opción 1 (VR 35%) se ajusta a 40% en pantalla.
+    return 0.50;
   }
 
   get extraordinaryRentPct(): number {
@@ -150,39 +130,11 @@ export class QuoteFormComponent implements OnInit {
       || this.extraordinaryRentPct > this.maximumExtraordinaryRentPct;
   }
 
-  get extraordinaryRentAdjustmentMessage(): string {
-    if (this.extraordinaryRentPct < this.minimumExtraordinaryRentPct) {
-      return `La renta se ajustará a ${this.minimumExtraordinaryRentPct * 100}% (mínimo para este precio).`;
+    get extraordinaryRentAdjustmentMessage(): string {
+    if (this.extraordinaryRentPct > this.maximumExtraordinaryRentPct) {
+      return `La renta se ajustará a ${this.maximumExtraordinaryRentPct * 100}% (máximo permitido).`;
     }
-
-    return `La renta se ajustará a ${this.maximumExtraordinaryRentPct * 100}% (máximo: renta + valor residual no puede superar 75%).`;
-  }
-
-  public applyPresetVehicle(v: VehicleCatalogItem): void {
-    const price = Number(v.suggestedPriceNet) || 0;
-    this.quoteForm.patchValue({
-      brand: v.brand,
-      model: v.model,
-      year: v.year,
-      priceNet: price,
-      isHybridOrElectric: v.isHybridOrElectric,
-    });
-    this.quoteForm.updateValueAndValidity();
-    this.emitQuoteInput();
-    // Un vehículo distinto = cotización nueva (reinicia el id de autosave en el padre).
-    this.newQuote.emit();
-  }
-
-  public onBrandSelectChange(event: Event): void {
-    this.selectedPresetBrand = (event.target as HTMLSelectElement).value;
-  }
-
-  public onPresetSelectChange(event: Event): void {
-    const id = (event.target as HTMLSelectElement).value;
-    if (!id) return;
-    const vehicle = this.presetVehicles.find(v => v.id === id);
-    if (vehicle) this.applyPresetVehicle(vehicle);
-    (event.target as HTMLSelectElement).value = '';
+    return `La renta se ajustará al 50% (máximo: renta + valor residual no puede superar 75%).`;
   }
 
   public onPriceNetInput(event: Event): void {
@@ -224,20 +176,12 @@ export class QuoteFormComponent implements OnInit {
     this.quoteForm.patchValue({ termMonths: months });
   }
 
-  public setExtraordinaryRent(pct: number): void {
+    public setExtraordinaryRent(pct: number): void {
     const boundedPct = Math.min(
       this.maximumExtraordinaryRentPct,
       Math.max(this.minimumExtraordinaryRentPct, pct)
     );
     this.quoteForm.patchValue({ extraordinaryRentPct: boundedPct });
-  }
-
-  public setDeposit(depositPct: number): void {
-    this.quoteForm.patchValue({ securityDepositPct: depositPct });
-  }
-
-  public setInsurance(isEstimated: boolean): void {
-    this.quoteForm.patchValue({ isInsuranceEstimated: isEstimated });
   }
 
   private emitQuoteInput(): void {

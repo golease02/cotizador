@@ -75,7 +75,7 @@ describe('FinancialCalculatorService', () => {
 
   it('should compute exact quotation matching PDF VW Crafter example', () => {
     // Data from actual PDF: VW Crafter Cargo Van 4.7, $1,288,000
-    // NOTE: Price $1,288,000 is between $650k-$1.5M, so minimum rent = 15% (not 10%)
+    // NOTE: El mínimo de renta extraordinaria ahora es fijo 10% (ya no depende del precio).
     const input: VehicleQuoteInput = {
       brand: 'VW',
       model: 'Crafter Cargo Van 4.7',
@@ -83,7 +83,7 @@ describe('FinancialCalculatorService', () => {
       priceNet: 1288000,
       isHybridOrElectric: false,
       termMonths: 48,
-      extraordinaryRentPct: 0.10, // User sets 10%, but validation enforces 15% minimum
+      extraordinaryRentPct: 0.10,
       securityDepositPct: 0.0,
       selectedStatePlateId: 'pendiente',
       isInsuranceEstimated: false,
@@ -92,13 +92,14 @@ describe('FinancialCalculatorService', () => {
 
     const result = service.calculateQuote(input);
 
-    // Validation should enforce 15% minimum (price is between 650k-1.5M)
-    expect(result.options.option1.initialCosts.extraordinaryRentPct).toBe(0.15);
-    expect(result.options.option2.initialCosts.extraordinaryRentPct).toBe(0.15);
-    expect(result.options.option3.initialCosts.extraordinaryRentPct).toBe(0.15);
+    // El mínimo es fijo 10% (ya no depende del precio del vehículo)
+    expect(result.options.option1.initialCosts.extraordinaryRentPct).toBe(0.10);
+    expect(result.options.option2.initialCosts.extraordinaryRentPct).toBe(0.10);
+    expect(result.options.option3.initialCosts.extraordinaryRentPct).toBe(0.10);
 
-    // With 15% rent: (1,288,000 / 1.16) * 0.15 = 166,551.72
-    expect(result.options.option1.initialCosts.extraordinaryRentNoIva).toBeCloseTo(166551.72, 1);
+    // With 10% rent: (1,288,000 / 1.16) * 0.10 = 111,034.48
+    expect(result.options.option1.initialCosts.extraordinaryRentNoIva).toBeCloseTo(111034.48, 1);
+    // Advisory fee = 2% del precio sin IVA (independiente de la renta): (1,288,000 / 1.16) * 0.02 = 22,206.90
     expect(result.options.option1.initialCosts.advisoryFeeNoIva).toBeCloseTo(22206.90, 2);
     expect(result.options.option1.initialCosts.adminFeeInitialNet).toBeCloseTo(3334.50, 2);
   });
@@ -156,24 +157,25 @@ describe('FinancialCalculatorService', () => {
       expect(minPct).toBe(0.10);
     });
 
-    it('should require minimum 15% for vehicles between $650k and $1.5M', () => {
+    it('should always return 10% minimum regardless of price ($650k-$1.5M)', () => {
       const minPct1 = getMinimumExtraordinaryRentPct(650000);
       const minPct2 = getMinimumExtraordinaryRentPct(1000000);
       const minPct3 = getMinimumExtraordinaryRentPct(1499999);
-      expect(minPct1).toBe(0.15);
-      expect(minPct2).toBe(0.15);
-      expect(minPct3).toBe(0.15);
+      expect(minPct1).toBe(0.10);
+      expect(minPct2).toBe(0.10);
+      expect(minPct3).toBe(0.10);
     });
 
-    it('should require minimum 20% for vehicles $1.5M or above', () => {
+    it('should always return 10% minimum regardless of price ($1.5M+)', () => {
       const minPct1 = getMinimumExtraordinaryRentPct(1500000);
       const minPct2 = getMinimumExtraordinaryRentPct(2000000);
-      expect(minPct1).toBe(0.20);
-      expect(minPct2).toBe(0.20);
+      expect(minPct1).toBe(0.10);
+      expect(minPct2).toBe(0.10);
     });
 
     it('should enforce minimum rent in quote calculation', () => {
-      // Price: $1,600,000 (requires 20% minimum)
+      // Price: $1,600,000 (mínimo fijo 10%)
+      // Usuario intenta 5% → el motor ajusta al mínimo 10%
       const input: VehicleQuoteInput = {
         brand: 'TEST',
         model: 'TEST',
@@ -181,7 +183,7 @@ describe('FinancialCalculatorService', () => {
         priceNet: 1600000,
         isHybridOrElectric: false,
         termMonths: 48,
-        extraordinaryRentPct: 0.10, // User tries to set 10%
+        extraordinaryRentPct: 0.05,
         securityDepositPct: 0.0,
         selectedStatePlateId: 'pendiente',
         isInsuranceEstimated: false,
@@ -189,10 +191,10 @@ describe('FinancialCalculatorService', () => {
 
       const result = service.calculateQuote(input);
 
-      // Should be enforced to 20% minimum
-      expect(result.options.option1.initialCosts.extraordinaryRentPct).toBe(0.20);
-      expect(result.options.option2.initialCosts.extraordinaryRentPct).toBe(0.20);
-      expect(result.options.option3.initialCosts.extraordinaryRentPct).toBe(0.20);
+      // Debe ajustarse al mínimo fijo 10%
+      expect(result.options.option1.initialCosts.extraordinaryRentPct).toBe(0.10);
+      expect(result.options.option2.initialCosts.extraordinaryRentPct).toBe(0.10);
+      expect(result.options.option3.initialCosts.extraordinaryRentPct).toBe(0.10);
     });
   });
 
@@ -287,11 +289,11 @@ describe('FinancialCalculatorService', () => {
 
   describe('Validation: Combined Rules', () => {
     it('should enforce BOTH minimum rent AND maximum sum for high-priced vehicle', () => {
-      // Price: $2,000,000 (requires 20% minimum)
+      // Price: $2,000,000 (mínimo fijo 10%)
       // If user tries 50%, both rules apply:
-      // 1. Must be >= 20% (minimum for price)
+      // 1. Must be >= 10% (mínimo fijo)
       // 2. Must be <= 40% for Option 1 (to keep sum at 75%)
-      // Therefore: 20% <= rent <= 40%
+      // Therefore: 10% <= rent <= 40%
       const input: VehicleQuoteInput = {
         brand: 'LUXURY',
         model: 'CAR',
@@ -307,10 +309,10 @@ describe('FinancialCalculatorService', () => {
 
       const result = service.calculateQuote(input);
 
-      // Option 1: Should be 40% (capped by 75% rule, even though minimum is 20%)
+      // Option 1: Should be 40% (capped by 75% rule; mínimo 10% ya cumplido)
       expect(result.options.option1.initialCosts.extraordinaryRentPct).toBe(0.40);
 
-      // Verify: 20% min met (40% >= 20%) ✓
+      // Verify: 10% min met (40% >= 10%) ✓
       expect(result.options.option1.initialCosts.extraordinaryRentPct).toBeGreaterThanOrEqual(0.20);
 
       // Verify: 75% max met (40% + 35% = 75%) ✓

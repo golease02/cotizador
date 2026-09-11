@@ -22,7 +22,7 @@
 
     <div class="cotizador-grid">
         <div class="left-column">
-            <app-quote-form [initialInput]="preloadedInput" (quoteChange)="onQuoteInputChange($event)" (newQuote)="resetQuoteId()" />
+            <app-quote-form [initialInput]="preloadedInput" (quoteChange)="onQuoteInputChange($event)" />
         </div>
         <div class="right-column">
             <app-quote-options [calculation]="calculationResult()" (optionSelected)="onOptionSelected($event)" />

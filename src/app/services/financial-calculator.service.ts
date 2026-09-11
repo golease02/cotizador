@@ -108,7 +108,8 @@ export class FinancialCalculatorService {
     const priceNoIva = input.priceNet / (1 + config.ivaPct);
 
     // 1. Validar renta extraordinaria contra reglas de negocio
-    const minimumRentPct = this.getMinimumRentPct(input.priceNet, config);
+    // Mínimo fijo 10% (ya no depende del precio del vehículo).
+    const minimumRentPct = config.minimumRentPct1;
     const userRentPct = input.extraordinaryRentPct || 0.10;
 
     // Aplicar validación: nunca permitir menos que el mínimo requerido
@@ -200,11 +201,5 @@ export class FinancialCalculatorService {
       initialCosts,
       monthlyCosts,
     };
-  }
-
-  private getMinimumRentPct(priceNet: number, config: CalculatorConfig): number {
-    if (priceNet < config.minimumRentThreshold1) return config.minimumRentPct1;
-    if (priceNet < config.minimumRentThreshold2) return config.minimumRentPct2;
-    return config.minimumRentPct3;
   }
 }
