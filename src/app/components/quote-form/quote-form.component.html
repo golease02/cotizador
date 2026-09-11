@@ -114,6 +114,8 @@
           </div>
         </div>
 
+        <!-- Depósito en Garantía: eliminado de la interfaz. Se aplica por defecto en cálculos (securityDepositPct en form model). -->
+        <!--
         <div>
           <label>Depósito en Garantía</label>
           <div class="chip-group">
@@ -122,17 +124,14 @@
               }}%</button>
           </div>
         </div>
+        -->
 
         <div>
-          <label>Seguro de Unidad</label>
-          <div class="toggle-group">
-            <button type="button" class="toggle-btn"
-              [class.active]="quoteForm.get('isInsuranceEstimated')?.value === false"
-              (click)="setInsurance(false)">Pendiente ($0)</button>
-            <button type="button" class="toggle-btn"
-              [class.active]="quoteForm.get('isInsuranceEstimated')?.value === true" (click)="setInsurance(true)">Est.
-              (3.5%)</button>
-          </div>
+          <label for="insuranceSelect">Seguro de Unidad</label>
+          <select id="insuranceSelect" formControlName="isInsuranceEstimated" class="preset-select">
+            <option [ngValue]="false">Pendiente ($0)</option>
+            <option [ngValue]="true">Estimado (3.5%)</option>
+          </select>
         </div>
       </div>
   </form>

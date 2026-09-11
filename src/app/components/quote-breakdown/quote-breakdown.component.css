@@ -313,10 +313,11 @@
 .col-pct {
     background-color: #e5e7eb;
     border: 1px solid #d1d5db;
-    text-align: center;
+    text-align: right;
     font-weight: 700;
     font-size: 0.8rem;
     width: 4%;
+    padding-right: 0.4rem;
 }
 
 .col-pct-vr {
