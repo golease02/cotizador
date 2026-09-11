@@ -72,25 +72,20 @@
       </div>
     </div>
 
-    <div class="profile-card map-card">
+    <div class="profile-card location-card">
       <div class="section-header">
         <span class="section-title">Ubicación</span>
       </div>
 
-      <div *ngIf="isEditing()" class="search-row">
-        <input type="text" [(ngModel)]="manualAddress" name="manualAddress" placeholder="Busca tu ubicación o dirección" />
-        <button type="button" class="btn-search" (click)="searchLocation()" [disabled]="isSearching()">
-          {{ isSearching() ? 'Buscando...' : 'Buscar' }}
-        </button>
+      <div *ngIf="isEditing()" class="form-field">
+        <label>Dirección / Ubicación</label>
+        <input type="text" [(ngModel)]="manualAddress" name="manualAddress" placeholder="Ej. Calle 5 de Mayo 12, Centro, Querétaro" />
+        <small class="field-hint">Escribe la dirección o zona donde se ubica la agencia.</small>
       </div>
 
       <div *ngIf="!isEditing()" class="location-readonly">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-        <span>{{ manualAddress || addressText || 'Sin ubicación registrada' }}</span>
-      </div>
-
-      <div class="map-box">
-        <div #mapContainer class="map-container"></div>
+        <span>{{ manualAddress || 'Sin ubicación registrada' }}</span>
       </div>
     </div>
 

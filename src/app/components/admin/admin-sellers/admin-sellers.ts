@@ -1,11 +1,10 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { getSupabaseClient } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
-import type * as Leaflet from 'leaflet';
 
 @Component({
   selector: 'app-admin-sellers',
@@ -20,9 +19,6 @@ export class AdminSellersComponent implements OnInit {
   private client = getSupabaseClient();
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
-
-  @ViewChild('mapContainer') mapContainer!: ElementRef;
-  @ViewChild('detailMapContainer') detailMapContainer!: ElementRef;
 
   // ------------------- LISTADO -------------------
   sellers = signal<any[]>([]);
@@ -78,8 +74,6 @@ export class AdminSellersComponent implements OnInit {
   // ------------------- DRAWER DE DETALLE -------------------
   showDetailDrawer = false;
   detailSeller: any = null;
-  private detailMap: Leaflet.Map | null = null;
-  private detailMarker: Leaflet.Marker | null = null;
 
     // ------------------- NOTAS -------------------
   showNotasModal = false;
@@ -93,14 +87,6 @@ export class AdminSellersComponent implements OnInit {
   notaError = '';
   showNotaConfirmModal = false;
   notaToDelete: any = null;
-
-  // ------------------- MAPA -------------------
-  manualAddress = '';
-  selectedCoords: { lat: number; lng: number } | null = null;
-  addressText = '';
-  isSearching = signal(false);
-  private map!: Leaflet.Map;
-  private marker!: Leaflet.Marker;
 
   // ------------------- MARCAS -------------------
   brands = [
@@ -300,157 +286,13 @@ export class AdminSellersComponent implements OnInit {
     this.selectedSellerId = seller.id;
     this.showDetailDrawer = true;
     this.cdr.detectChanges();
-    setTimeout(() => {
-      this.initDetailMap();
-      this.detailMap?.invalidateSize();
-    }, 200);
   }
 
   closeDetail() {
     this.showDetailDrawer = false;
     this.detailSeller = null;
-    this.destroyDetailMap();
     this.selectedSellerId = null;
     this.cdr.detectChanges();
-  }
-
-  async initDetailMap() {
-    if (!this.detailMapContainer || this.detailMap) return;
-    const L = await import('leaflet');
-    await this.setupLeafletIcons();
-    const seller = this.detailSeller || {};
-    let lat = 20.5921, lng = -100.3947;
-    if (seller.latitude && seller.longitude) {
-      lat = parseFloat(seller.latitude);
-      lng = parseFloat(seller.longitude);
-    }
-    this.detailMap = L.map(this.detailMapContainer.nativeElement).setView([lat, lng], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(this.detailMap);
-    this.detailMarker = L.marker([lat, lng]).addTo(this.detailMap);
-  }
-
-  destroyDetailMap() {
-    if (this.detailMap) {
-      this.detailMap.remove();
-      this.detailMap = null;
-      this.detailMarker = null;
-    }
-  }
-
-  // ===================== MAPA Y GEOLOCALIZACIÓN (FORMULARIO) =====================
-
-  private async setupLeafletIcons() {
-    const L = await import('leaflet');
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-      iconUrl: '/leaflet/marker-icon.png',
-      shadowUrl: '/leaflet/marker-shadow.png',
-    } as any);
-  }
-
-  async initMap() {
-    if (!this.mapContainer || this.map) return;
-    const L = await import('leaflet');
-    await this.setupLeafletIcons();
-
-    const queretaroCoords: Leaflet.LatLngExpression = [20.5921, -100.3947];
-    this.map = L.map(this.mapContainer.nativeElement).setView(queretaroCoords, 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(this.map);
-
-    this.marker = L.marker(queretaroCoords, { draggable: true }).addTo(this.map);
-
-    if (this.selectedCoords) {
-      this.map.setView([this.selectedCoords.lat, this.selectedCoords.lng], 16);
-      this.marker.setLatLng([this.selectedCoords.lat, this.selectedCoords.lng]);
-    }
-
-    this.map.on('click', (e: Leaflet.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
-      this.setMarkerAndReverseGeocode(lat, lng);
-    });
-
-    this.marker.on('dragend', () => {
-      const pos = this.marker.getLatLng();
-      this.setMarkerAndReverseGeocode(pos.lat, pos.lng);
-    });
-  }
-
-  async setMarkerAndReverseGeocode(lat: number, lng: number) {
-    this.marker.setLatLng([lat, lng]);
-    this.selectedCoords = { lat, lng };
-    await this.updateAddress(lat, lng);
-  }
-
-  async updateAddress(lat: number, lng: number) {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-      );
-      const data = await response.json();
-      if (data?.display_name) {
-        this.addressText = data.display_name;
-        this.manualAddress = data.display_name;
-      } else {
-        this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        this.manualAddress = this.addressText;
-      }
-    } catch {
-      this.addressText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      this.manualAddress = this.addressText;
-    }
-    this.cdr.detectChanges();
-  }
-
-  async searchLocation() {
-    const query = this.manualAddress.trim();
-    if (!query) {
-      this.formError = 'Escribe una dirección para buscar';
-      return;
-    }
-    if (!this.map) this.initMap();
-    if (!this.map || !this.marker) {
-      this.formError = 'El mapa aún se está cargando. Intenta de nuevo.';
-      return;
-    }
-    this.isSearching.set(true);
-    this.formError = '';
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&addressdetails=1`
-      );
-      const data = await response.json();
-      if (data && data.length > 0) {
-        const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lng = parseFloat(result.lon);
-        this.map.setView([lat, lng], 16);
-        this.marker.setLatLng([lat, lng]);
-        this.map.invalidateSize();
-        this.selectedCoords = { lat, lng };
-        this.addressText = result.display_name || `${lat}, ${lng}`;
-        this.manualAddress = this.addressText;
-        this.cdr.detectChanges();
-      } else {
-        this.formError = 'No se encontró la dirección. Intenta con otra búsqueda.';
-      }
-    } catch (err) {
-      console.error('❌ Error al buscar la dirección:', err);
-      this.formError = 'Error al buscar la dirección. Intenta de nuevo.';
-    } finally {
-      this.isSearching = signal(false);
-    }
-  }
-
-  onSearchKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.searchLocation();
-    }
   }
 
   // ===================== FORMULARIO (DRAWER) =====================
@@ -462,8 +304,6 @@ export class AdminSellersComponent implements OnInit {
     this.showFormDrawer = true;
     this.showDetailDrawer = false;
     this.cdr.detectChanges();
-    // El mapa se inicializa al entrar al paso 2 (nextFormStep),
-    // porque el contenedor #mapContainer solo existe cuando formStep === 2.
   }
 
   async openEditSeller(seller: any) {
@@ -495,16 +335,6 @@ export class AdminSellersComponent implements OnInit {
         active: data.active !== false
       };
 
-      this.manualAddress = data.agency_location || '';
-      this.addressText = data.agency_location || '';
-
-      if (data.latitude && data.longitude) {
-        const lat = parseFloat(data.latitude);
-        const lng = parseFloat(data.longitude);
-        this.selectedCoords = { lat, lng };
-        // initMap() centrará el mapa en estas coordenadas al entrar al paso 2
-      }
-
       this.formLoading = false;
       this.cdr.detectChanges();
     } catch {
@@ -525,9 +355,6 @@ export class AdminSellersComponent implements OnInit {
       agency_location: '',
       active: true
     };
-    this.manualAddress = '';
-    this.selectedCoords = null;
-    this.addressText = '';
     this.formError = '';
     this.fieldErrors = {};
     this.formValidated = false;
@@ -540,11 +367,6 @@ export class AdminSellersComponent implements OnInit {
       if (!this.validateStep1()) return;
       this.formStep = 2;
       this.cdr.detectChanges();
-      // El contenedor del mapa ya existe en el DOM; inicializarlo y ajustar tamaño
-      setTimeout(() => {
-        this.initMap();
-        this.map?.invalidateSize();
-      }, 120);
     } else {
       this.submitForm();
     }
@@ -553,20 +375,10 @@ export class AdminSellersComponent implements OnInit {
   prevFormStep() {
     if (this.formStep === 2) {
       this.formStep = 1;
-      // El contenedor del mapa se elimina con el *ngIf; liberar la instancia de Leaflet
-      this.destroyFormMap();
     } else {
       this.closeFormDrawer();
     }
     this.cdr.detectChanges();
-  }
-
-  private destroyFormMap() {
-    if (this.map) {
-      this.map.remove();
-      this.map = null!;
-      this.marker = null!;
-    }
   }
 
   /** Filtra en vivo: solo dígitos, máximo 10 caracteres (igual que en el registro). */
@@ -628,8 +440,8 @@ export class AdminSellersComponent implements OnInit {
         'Selecciona o escribe la marca de la agencia.';
       valid = false;
     }
-    if (!this.selectedCoords && !this.manualAddress.trim()) {
-      this.fieldErrors['agency_location'] = 'Selecciona una ubicación en el mapa o busca una dirección.';
+    if (!this.sellerForm.agency_location.trim()) {
+      this.fieldErrors['agency_location'] = 'Escribe la dirección o ubicación de la agencia.';
       valid = false;
     }
     this.cdr.detectChanges();
@@ -649,7 +461,6 @@ export class AdminSellersComponent implements OnInit {
 
   closeFormDrawer() {
     this.showFormDrawer = false;
-    this.destroyFormMap();
     this.cdr.detectChanges();
   }
 
@@ -662,7 +473,6 @@ export class AdminSellersComponent implements OnInit {
       if (!this.validateStep2()) {
         this.formStep = 2;
         this.cdr.detectChanges();
-        setTimeout(() => this.map?.invalidateSize(), 120);
         return;
       }
     }
@@ -671,12 +481,7 @@ export class AdminSellersComponent implements OnInit {
       ? this.sellerForm.other_brand
       : this.sellerForm.agency_brand;
 
-    let finalLocation = '';
-    if (this.selectedCoords) {
-      finalLocation = this.addressText || `${this.selectedCoords.lat}, ${this.selectedCoords.lng}`;
-    } else if (this.manualAddress.trim()) {
-      finalLocation = this.manualAddress.trim();
-    }
+    const finalLocation = this.sellerForm.agency_location.trim();
 
     this.formLoading = true;
     this.cdr.detectChanges();
@@ -689,9 +494,7 @@ export class AdminSellersComponent implements OnInit {
           agency_brand: finalBrand,
           agency_location: finalLocation,
           seller_number: this.sellerForm.seller_number.trim(),
-          active: this.sellerForm.active,
-          latitude: this.selectedCoords?.lat || null,
-          longitude: this.selectedCoords?.lng || null
+          active: this.sellerForm.active
         });
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
@@ -736,9 +539,7 @@ export class AdminSellersComponent implements OnInit {
           agency_brand: finalBrand,
           agency_location: finalLocation,
           active: true,
-          role: 'seller',
-          latitude: this.selectedCoords?.lat || null,
-          longitude: this.selectedCoords?.lng || null
+          role: 'seller'
         });
         if (profileError) {
           this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
@@ -786,9 +587,7 @@ export class AdminSellersComponent implements OnInit {
         agency_brand: finalBrand,
         agency_location: finalLocation,
         active: true,
-        role: 'seller',
-        latitude: this.selectedCoords?.lat || null,
-        longitude: this.selectedCoords?.lng || null
+        role: 'seller'
       });
       if (profileError) {
         this.formError = 'Error al guardar perfil: ' + profileError.message;

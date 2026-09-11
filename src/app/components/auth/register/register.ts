@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -11,7 +11,7 @@ import { AuthService } from '../../../services/auth.service';
   templateUrl: './register.html',
   styleUrls: ['./register.css']
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
 
@@ -21,7 +21,9 @@ export class RegisterComponent {
   agencyBrand = '';
   otherBrand = '';
   manualAddress = '';
+  contactoGoLease = '';
   errorMessage = '';
+  socios: any[] = [];
 
   // Errores de validación por campo
   phoneError = '';
@@ -32,6 +34,11 @@ export class RegisterComponent {
   showPassword = false;
 
   private readonly phoneRegex = /^\d{10}$/;
+
+  async ngOnInit(): Promise<void> {
+    const { data } = await this.auth.getSocios();
+    this.socios = (data ?? []).filter((s: any) => s.active !== false);
+  }
 
   /** Filtra en vivo: solo dígitos, máximo 10 caracteres. */
   onPhoneInput(event: Event): void {
@@ -141,6 +148,12 @@ export class RegisterComponent {
       return;
     }
 
+    // Validar contacto GoLease
+    if (!this.contactoGoLease) {
+      this.errorMessage = 'Selecciona tu contacto en GoLease';
+      return;
+    }
+
     // Marca final
     const finalBrand = this.agencyBrand === 'Otro' ? this.otherBrand : this.agencyBrand;
     if (!finalBrand) {
@@ -175,7 +188,8 @@ export class RegisterComponent {
         seller_number: this.phoneNumber,
         full_name: this.fullName.trim(),
         agency_brand: finalBrand,
-        agency_location: finalLocation
+        agency_location: finalLocation,
+        socio_id: this.contactoGoLease
       };
 
       const { error: profileError } = await this.auth.updateProfile(user.id, profileData);

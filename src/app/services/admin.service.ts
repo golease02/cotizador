@@ -14,6 +14,7 @@ export interface SellerWithQuoteCount {
   longitude: number;
   created_at: string;
   quote_count: number;
+  permisos?: Record<string, boolean>;
 }
 
 /** True cuando el error indica que la función RPC aún no existe (migración sin aplicar). */

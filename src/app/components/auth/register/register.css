@@ -71,7 +71,7 @@
 }
 
 .brand-other,
-.search-input {
+.location-input {
   width: 100%;
   min-height: 48px;
   padding: 0.75rem 1rem;
@@ -88,97 +88,23 @@
   margin-top: 0.6rem;
 }
 
-.search-group {
-  display: flex;
-  gap: 0.6rem;
-  align-items: stretch;
-  width: 100%;
-}
-
-.search-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
-.search-input {
+.location-input {
   padding-left: 2.9rem;
 }
 
 .brand-other:focus,
-.search-input:focus {
+.location-input:focus {
   outline: none;
   border-color: var(--accent-green);
   background: var(--surface-card);
   box-shadow: 0 0 0 4px rgba(32, 176, 56, 0.12);
 }
 
-.btn-search {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 48px;
-  padding: 0.75rem 1.1rem;
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  box-shadow: 0 10px 20px -8px rgba(32, 176, 56, 0.5);
-}
-
-.btn-search:hover {
-  transform: translateY(-2px);
-}
-
-.btn-search:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.map-hint {
+.field-hint {
   margin-top: 0.4rem;
   color: var(--text-muted);
   font-size: 0.74rem;
   font-style: italic;
-}
-
-.map-container {
-  width: 100%;
-  height: 300px;
-  border: 1.5px solid var(--border-color);
-  border-radius: 14px;
-  overflow: hidden;
-  cursor: crosshair;
-  box-shadow: inset 0 0 0 4px var(--surface-subtle);
-}
-
-.coords-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  margin-top: 0.55rem;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid #bbf7d0;
-  border-radius: 10px;
-  background: var(--accent-green-light);
-  font-size: 0.85rem;
-}
-
-.coord-label {
-  color: #166534;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.coord-value {
-  color: var(--text-main);
-  word-break: break-all;
 }
 
 .auth-link.register-link {
@@ -186,26 +112,13 @@
   text-align: center;
 }
 
-.btn-search:focus-visible,
-.search-input:focus-visible,
+.btn-primary:focus-visible,
 .brand-other:focus-visible {
   outline: 2px solid var(--accent-green);
   outline-offset: 3px;
 }
 
 @media (max-width: 600px) {
-  .map-container {
-    height: 220px;
-  }
-
-  .search-group {
-    flex-direction: column;
-  }
-
-  .btn-search {
-    width: 100%;
-  }
-
   .password-checklist {
     grid-template-columns: 1fr;
   }

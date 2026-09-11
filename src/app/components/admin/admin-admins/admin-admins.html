@@ -2,11 +2,11 @@
     <!-- CABECERA -->
     <div class="page-header">
         <div class="page-heading">
-            <span class="page-kicker">Control de acceso</span>
-            <h2>Administradores</h2>
-            <p>Gestiona los perfiles con permisos para operar la plataforma.</p>
+            <span class="page-kicker">Socios</span>
+            <h2>Socios</h2>
+            <p>Gestiona los socios y sus permisos para operar la plataforma.</p>
         </div>
-        <button class="btn-primary" (click)="openNewAdmin()"><span class="button-icon">+</span> Nuevo Administrador</button>
+        <button class="btn-primary" (click)="openNewAdmin()"><span class="button-icon">+</span> Nuevo Socio</button>
     </div>
 
     <!-- MÉTRICAS -->
@@ -15,7 +15,7 @@
             <span class="stat-icon tone-slate">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </span>
-            <span class="stat-body"><strong>{{ stats.total }}</strong><small>Administradores</small></span>
+            <span class="stat-body"><strong>{{ stats.total }}</strong><small>Socios</small></span>
         </button>
         <button type="button" class="stat-card" [class.is-active]="statusFilter === 'activos'" (click)="setStatusFilter('activos')">
             <span class="stat-icon tone-green">
@@ -59,7 +59,7 @@
     </div>
 
     <!-- SKELETON -->
-    <div *ngIf="loading" class="skeleton-list" aria-label="Cargando administradores">
+    <div *ngIf="loading" class="skeleton-list" aria-label="Cargando socios">
         <div class="skeleton-row" *ngFor="let i of [0,1,2,3,4]"></div>
     </div>
 
@@ -67,7 +67,7 @@
     <div class="table-wrapper" *ngIf="!loading && filteredAdmins().length > 0">
         <table class="users-table">
             <thead>
-                <tr><th>Administrador</th><th>N° de contacto</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
+                <tr><th>Socio</th><th>N° de contacto</th><th>Estado</th><th class="actions-column">Acciones</th></tr>
             </thead>
             <tbody>
                 <tr *ngFor="let admin of filteredAdmins()" [class.is-selected]="showDetailDrawer && detailAdmin?.id === admin.id"
@@ -80,7 +80,7 @@
                         </span>
                         <span class="user-meta">
                             <strong>{{ admin.full_name }}</strong>
-                            <small>Administrador</small>
+                            <small>{{ getRoleLabel(admin.role) }}</small>
                         </span>
                     </td>
                     <td data-label="N° de contacto"><span class="id-chip">{{ admin.seller_number || '-' }}</span></td>
@@ -113,10 +113,10 @@
         <span class="empty-state-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="10" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
         </span>
-        <strong>{{ admins().length === 0 ? 'Aún no hay administradores registrados' : 'Sin resultados' }}</strong>
-        <span>{{ admins().length === 0 ? 'Agrega tu primer administrador para empezar.' : 'Ajusta tu búsqueda o los filtros.' }}</span>
+        <strong>{{ admins().length === 0 ? 'Aún no hay socios registrados' : 'Sin resultados' }}</strong>
+        <span>{{ admins().length === 0 ? 'Agrega tu primer socio para empezar.' : 'Ajusta tu búsqueda o los filtros.' }}</span>
         <button *ngIf="admins().length > 0" type="button" class="btn-secondary" (click)="clearFilters()">Limpiar filtros</button>
-        <button *ngIf="admins().length === 0" type="button" class="btn-primary" (click)="openNewAdmin()">+ Nuevo Administrador</button>
+        <button *ngIf="admins().length === 0" type="button" class="btn-primary" (click)="openNewAdmin()">+ Nuevo Socio</button>
     </div>
 </div>
 
@@ -156,11 +156,11 @@
     <!-- DRAWER: FORMULARIO (CREAR / EDITAR) -->
 <div class="drawer-overlay" *ngIf="showFormDrawer" (click)="closeFormDrawer()">
     <aside class="drawer form-drawer" (click)="$event.stopPropagation()" role="dialog"
-        [attr.aria-label]="isEditMode ? 'Editar administrador' : 'Nuevo administrador'">
+        [attr.aria-label]="isEditMode ? 'Editar socio' : 'Nuevo socio'">
         <div class="drawer-header">
             <div>
-                <span class="page-kicker">{{ isEditMode ? 'Edición de administrador' : 'Nuevo registro' }}</span>
-                <h3>{{ isEditMode ? 'Editar Administrador' : 'Nuevo Administrador' }}</h3>
+                <span class="page-kicker">{{ isEditMode ? 'Edición de socio' : 'Nuevo registro' }}</span>
+                <h3>{{ isEditMode ? 'Editar Socio' : 'Nuevo Socio' }}</h3>
             </div>
             <button class="drawer-close" (click)="closeFormDrawer()" aria-label="Cerrar formulario">×</button>
         </div>
@@ -209,6 +209,28 @@
                     </select>
                 </div>
 
+                <div class="form-group" *ngIf="auth.isSuperAdmin()">
+                    <label for="admin-role">Rol</label>
+                    <select [(ngModel)]="adminForm.role" name="role" id="admin-role">
+                        <option *ngFor="let r of availableRoles" [value]="r.value">{{ r.label }}</option>
+                    </select>
+                    <small class="field-hint">El rol determina el nivel de acceso a la plataforma.</small>
+                </div>
+
+                <div class="form-group permisos-group" *ngIf="adminForm.role === 'socio'">
+                    <label>Permisos granulares</label>
+                    <p class="field-hint">Controla a qué módulos puede acceder este socio.</p>
+                    <div class="permisos-grid">
+                        <label class="permiso-item" *ngFor="let perm of permissionCatalog">
+                            <input type="checkbox" [(ngModel)]="adminForm.permisos[perm.key]" [name]="'perm_' + perm.key" />
+                            <span class="permiso-info">
+                                <strong>{{ perm.label }}</strong>
+                                <small>{{ perm.description }}</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="drawer-actions">
                     <button type="button" class="btn-cancel" (click)="closeFormDrawer()">Cancelar</button>
                     <button type="submit" class="btn-confirm" [disabled]="formLoading">
@@ -220,13 +242,13 @@
     </aside>
 </div>
 
-<!-- DRAWER: DETALLE DE ADMINISTRADOR -->
+<!-- DRAWER: DETALLE DE SOCIO -->
 <div class="drawer-overlay" *ngIf="showDetailDrawer && detailAdmin" (click)="closeDetail()">
-    <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" aria-label="Detalle del administrador">
+    <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" aria-label="Detalle del socio">
         <div class="drawer-header">
             <div>
-                <span class="page-kicker">Control de acceso</span>
-                <h3>Detalle del Administrador</h3>
+                <span class="page-kicker">Socio</span>
+                <h3>Detalle del Socio</h3>
             </div>
             <button class="drawer-close" (click)="closeDetail()" aria-label="Cerrar detalle">×</button>
         </div>
@@ -261,11 +283,23 @@
                     </div>
                     <div class="detail-item">
                         <small>Rol</small>
-                        <strong>{{ detailAdmin.role === 'seller' ? 'Vendedor' : 'Administrador' }}</strong>
+                        <strong>{{ getRoleLabel(detailAdmin.role) }}</strong>
                     </div>
                     <div class="detail-item">
                         <small>Registro</small>
                         <strong>{{ detailAdmin.created_at | date:'dd/MM/yyyy' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section" *ngIf="detailAdmin.role === 'socio'">
+                <h4>Permisos granulares</h4>
+                <div class="permisos-list">
+                    <div class="permiso-row" *ngFor="let perm of permissionCatalog">
+                        <span class="permiso-name">{{ perm.label }}</span>
+                        <span class="permiso-state" [class.is-on]="getPermissionState(detailAdmin, perm.key)">
+                            {{ getPermissionState(detailAdmin, perm.key) ? 'Habilitado' : 'Deshabilitado' }}
+                        </span>
                     </div>
                 </div>
             </div>

@@ -14,9 +14,9 @@ import { ToastService } from '../../../services/toast.service';
   styleUrls: ['./admin-admins.css']
 })
 export class AdminAdminsComponent implements OnInit {
-  private auth = inject(AuthService);
   private admin = inject(AdminService);
   private client = getSupabaseClient();
+  readonly auth = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
@@ -55,8 +55,26 @@ export class AdminAdminsComponent implements OnInit {
     seller_number: '',
     full_name: '',
     password: '',
-    active: true
+    role: 'socio' as 'super_admin' | 'socio',
+    active: true,
+    permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true } as Record<string, boolean>
   };
+
+  get availableRoles(): { value: string; label: string }[] {
+    return this.auth.isSuperAdmin()
+      ? [{ value: 'socio', label: 'Socio' }, { value: 'super_admin', label: 'Super Admin' }]
+      : [{ value: 'socio', label: 'Socio' }];
+  }
+
+  get permissionCatalog(): { key: string; label: string; description: string }[] {
+    return [
+      { key: 'dashboard', label: 'Dashboard', description: 'Ver el panel principal con metricas y atajos.' },
+      { key: 'quotes', label: 'Cotizaciones', description: 'Ver, crear y gestionar cotizaciones.' },
+      { key: 'sellers', label: 'Vendedores', description: 'Administrar los vendedores del socio.' },
+      { key: 'stats', label: 'Estadisticas', description: 'Acceder a reportes y estadisticas avanzadas.' },
+      { key: 'notas', label: 'Notas', description: 'Agregar y editar notas de seguimiento.' }
+    ];
+  }
 
   // ------------------- DRAWER DE DETALLE -------------------
   showDetailDrawer = false;
@@ -111,7 +129,7 @@ export class AdminAdminsComponent implements OnInit {
       this.admins.set(data || []);
       this.applyFilters();
     } else {
-      this.toastService.error('No se pudieron cargar los administradores');
+      this.toastService.error('No se pudieron cargar los socios');
     }
     this.loading = false;
     this.cdr.detectChanges();
@@ -217,7 +235,7 @@ export class AdminAdminsComponent implements OnInit {
 
   getAdminName(): string {
     const admin = this.admins().find(a => a.id === this.selectedAdminId);
-    return admin?.full_name || 'este administrador';
+    return admin?.full_name || 'este socio';
   }
 
   confirmAdminDelete() {
@@ -229,7 +247,7 @@ export class AdminAdminsComponent implements OnInit {
       if (error) {
         this.toastService.error('Error al eliminar: ' + error.message);
       } else {
-        this.toastService.success('Administrador eliminado correctamente');
+        this.toastService.success('Socio eliminado correctamente');
         this.showConfirmModal = false;
         this.selectedAdminId = null;
         this.loadAdmins();
@@ -263,7 +281,7 @@ export class AdminAdminsComponent implements OnInit {
     try {
       const { data, error } = await this.auth.getProfileById(admin.id);
       if (error || !data || (data.role !== 'socio' && data.role !== 'super_admin')) {
-        this.formError = 'Error al cargar datos del administrador';
+        this.formError = 'Error al cargar datos del socio';
         this.formLoading = false;
         this.cdr.detectChanges();
         return;
@@ -274,20 +292,26 @@ export class AdminAdminsComponent implements OnInit {
         seller_number: data.seller_number || '',
         full_name: data.full_name || '',
         password: '',
-        active: data.active !== false
+        role: data.role === 'super_admin' ? 'super_admin' : 'socio',
+        active: data.active !== false,
+        permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true, ...(data.permisos || {}) }
       };
 
       this.formLoading = false;
       this.cdr.detectChanges();
     } catch {
-      this.formError = 'Error inesperado al cargar el administrador';
+      this.formError = 'Error inesperado al cargar el socio';
       this.formLoading = false;
       this.cdr.detectChanges();
     }
   }
 
   private resetForm() {
-    this.adminForm = { id: '', seller_number: '', full_name: '', password: '', active: true };
+    this.adminForm = {
+      id: '', seller_number: '', full_name: '', password: '',
+      role: 'socio', active: true,
+      permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true }
+    };
     this.formError = '';
     this.fieldErrors = {};
     this.formValidated = false;
@@ -373,7 +397,8 @@ export class AdminAdminsComponent implements OnInit {
           full_name: this.adminForm.full_name.trim(),
           seller_number: this.adminForm.seller_number.trim(),
           active: this.adminForm.active,
-          role: 'socio',
+          role: this.adminForm.role,
+          permisos: this.adminForm.permisos,
           agency_name: 'GoLease',
           agency_location: 'Querétaro'
         });
@@ -395,7 +420,7 @@ export class AdminAdminsComponent implements OnInit {
             return;
           }
         }
-        this.toastService.success('Administrador actualizado correctamente');
+        this.toastService.success('Socio actualizado correctamente');
         this.closeFormDrawer();
         await this.loadAdmins();
         return;
@@ -409,7 +434,7 @@ export class AdminAdminsComponent implements OnInit {
         email,
         password: this.adminForm.password,
         full_name: this.adminForm.full_name.trim(),
-        role: 'socio'
+        role: this.adminForm.role
       });
 
       if (!created.error && created.data?.id) {
@@ -418,7 +443,8 @@ export class AdminAdminsComponent implements OnInit {
           seller_number: this.adminForm.seller_number.trim(),
           full_name: this.adminForm.full_name.trim(),
           active: true,
-          role: 'socio',
+          role: this.adminForm.role,
+          permisos: this.adminForm.permisos,
           agency_name: 'GoLease',
           agency_location: 'Querétaro'
         });
@@ -426,9 +452,9 @@ export class AdminAdminsComponent implements OnInit {
           this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
         } else {
           // Verificación: confirmar que el rol quedó como socio
-          const roleOk = await this.ensureRole(created.data.id, 'socio');
+          const roleOk = await this.ensureRole(created.data.id, this.adminForm.role);
           if (roleOk) {
-            this.toastService.success('Administrador creado correctamente');
+            this.toastService.success('Socio creado correctamente');
           } else {
             this.toastService.error('El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.');
           }
@@ -460,11 +486,6 @@ export class AdminAdminsComponent implements OnInit {
         this.cdr.detectChanges();
         return;
       }
-
-      // CRÍTICO: restaurar la sesión del administrador ANTES de actualizar el
-      // perfil. El trigger secure_profiles_row solo exime de cambios de rol a
-      // is_admin(); con la sesión del usuario recién creado el cambio sería
-      // rechazado y el perfil quedaría como "seller".
       await this.auth.restoreSession(adminSession);
 
       const { error: profileError } = await this.auth.updateProfile(newUser.id, {
@@ -472,7 +493,8 @@ export class AdminAdminsComponent implements OnInit {
         seller_number: this.adminForm.seller_number.trim(),
         full_name: this.adminForm.full_name.trim(),
         active: true,
-        role: 'socio',
+        role: this.adminForm.role,
+        permisos: this.adminForm.permisos,
         agency_name: 'GoLease',
         agency_location: 'Querétaro'
       });
@@ -484,7 +506,7 @@ export class AdminAdminsComponent implements OnInit {
       }
 
       // Verificación: confirmar que el rol quedó como socio.
-      const roleOk = await this.ensureRole(newUser.id, 'socio');
+      const roleOk = await this.ensureRole(newUser.id, this.adminForm.role);
       if (!roleOk) {
         this.formError = 'El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.';
         this.toastService.error(this.formError);
@@ -493,7 +515,7 @@ export class AdminAdminsComponent implements OnInit {
         return;
       }
 
-      this.toastService.success('Administrador creado correctamente');
+      this.toastService.success('Socio creado correctamente');
       this.closeFormDrawer();
       await this.loadAdmins();
       this.cdr.detectChanges();
@@ -534,5 +556,20 @@ export class AdminAdminsComponent implements OnInit {
       hash = (hash * 31 + (name.charCodeAt(i) || 0)) % 1000;
     }
     return `avatar-tone-${hash % 6}`;
+  }
+
+  getRoleLabel(role: string): string {
+    if (role === 'super_admin') return 'Super Admin';
+    if (role === 'socio') return 'Socio';
+    return 'Vendedor';
+  }
+
+  getPermissionLabel(key: string): string {
+    return this.permissionCatalog.find(p => p.key === key)?.label || key;
+  }
+
+  getPermissionState(admin: any, key: string): boolean {
+    const permisos = admin?.permisos || {};
+    return key === 'dashboard' ? permisos[key] !== false : permisos[key] === true;
   }
 }

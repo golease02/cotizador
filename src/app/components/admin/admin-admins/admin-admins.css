@@ -1604,14 +1604,104 @@ button.stat-card:hover {
   .detail-hero { flex-direction: column; align-items: flex-start; }
 }
 
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
+/* ===== PERMISOS GRANULARES (formulario) ===== */
+.permisos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
 
-  .detail-actions {
-    flex-wrap: wrap;
-  }
+.permiso-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--surface-card);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.permiso-item:hover {
+  border-color: #bbe8bf;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.permiso-item input[type="checkbox"] {
+  margin-top: 0.2rem;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-green);
+  flex-shrink: 0;
+}
+
+.permiso-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.permiso-info strong {
+  font-size: 0.85rem;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.permiso-info small {
+  font-size: 0.72rem;
+  color: #8a94a6;
+  line-height: 1.3;
+}
+
+/* ===== PERMISOS (drawer de detalle) ===== */
+.permisos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.permiso-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.permiso-name {
+  font-size: 0.85rem;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.permiso-state {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(229, 72, 77, 0.1);
+  color: #c53035;
+}
+
+.permiso-state.is-on {
+  background: rgba(32, 176, 56, 0.12);
+  color: #1d8a34;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  color: #8a94a6;
+  line-height: 1.3;
+}
+
+@media (max-width: 520px) {
+  .permisos-grid { grid-template-columns: 1fr; }
 }
 
 .admins-container > *:not(.toast-host) {

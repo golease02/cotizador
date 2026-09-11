@@ -64,6 +64,33 @@ export class AuthService {
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
   }
 
+  /** True para objetos planos JSONB (excluye arrays, null y Date). */
+  private isPlainObject(value: unknown): value is Record<string, unknown> {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      !Array.isArray(value) &&
+      !(value instanceof Date) &&
+      Object.getPrototypeOf(value) === Object.prototype
+    );
+  }
+
+  /** Sanitiza recursivamente un JSONB plano: recorta strings, pasa números/bool/null. */
+  private sanitizeJsonb(obj: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === 'string') {
+        out[k] = this.sanitizeText(v, k, this.maxFieldLength[k] ?? 200);
+      } else if (typeof v === 'number' || typeof v === 'boolean' || v === null) {
+        out[k] = v;
+      } else if (this.isPlainObject(v)) {
+        out[k] = this.sanitizeJsonb(v);
+      }
+      // Arrays u otros tipos se omiten por seguridad.
+    }
+    return out;
+  }
+
   public sanitizeText(value: unknown, fieldName: string, maxLength = 200): string {
     const raw = String(value ?? '');
     const normalized = raw
@@ -191,6 +218,9 @@ export class AuthService {
         safeData[key] = this.sanitizeText(value, key, this.maxFieldLength[key] ?? 200);
       } else if (typeof value === 'number' || typeof value === 'boolean' || value === null) {
         safeData[key] = value;
+      } else if (this.isPlainObject(value)) {
+        // JSONB (ej. permisos): pasar tal cual después de sanitizar valores string internos.
+        safeData[key] = this.sanitizeJsonb(value as Record<string, unknown>);
       } else if (value !== undefined) {
         safeData[key] = this.sanitizeText(String(value), key, this.maxFieldLength[key] ?? 200);
       }
