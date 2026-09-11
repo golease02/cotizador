@@ -1,7 +1,6 @@
 import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QuoteFormComponent } from '../quote-form/quote-form.component';
-import { QuoteOptionsComponent } from '../quote-options/quote-options.component';
 import { RouterModule } from '@angular/router';
 import { QuoteBreakdownComponent } from '../quote-breakdown/quote-breakdown.component';
 import { FinancialCalculatorService } from '../../services/financial-calculator.service';
@@ -19,7 +18,6 @@ import { VehicleQuoteInput, QuoteCalculationResult } from '../../models/leasing.
     CommonModule,
     RouterModule,
     QuoteFormComponent,
-    QuoteOptionsComponent,
     QuoteBreakdownComponent,
   ],
   templateUrl: './cotizador.html',
@@ -33,7 +31,6 @@ export class CotizadorComponent implements OnDestroy {
   private draftService = inject(QuoteDraftService);
 
   public calculationResult = signal<QuoteCalculationResult | null>(null);
-  public selectedOptionKey = signal<'OPCION_1' | 'OPCION_2' | 'OPCION_3'>('OPCION_1');
 
   /** Datos precargados desde Mis Cotizaciones ("Duplicar" / "Editar"). */
   public preloadedInput: VehicleQuoteInput | null = null;
@@ -72,8 +69,16 @@ export class CotizadorComponent implements OnDestroy {
     }
   }
 
-  public onOptionSelected(key: 'OPCION_1' | 'OPCION_2' | 'OPCION_3'): void {
-    this.selectedOptionKey.set(key);
+  /**
+   * Comisión del vendedor: (precio sin IVA - rentas adelantadas) × 4%.
+   * Se calcula sobre la Opción 1 (VR 35%, la más común).
+   */
+  get sellerCommission(): number {
+    const calc = this.calculationResult();
+    if (!calc) return 0;
+    const priceNoIva = calc.input.priceNet / 1.16;
+    const extraordinaryRentNoIva = calc.options.option1.initialCosts.extraordinaryRentNoIva;
+    return (priceNoIva - extraordinaryRentNoIva) * 0.04;
   }
 
   public onSaveQuote(): void {

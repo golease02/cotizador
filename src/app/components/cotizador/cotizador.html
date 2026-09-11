@@ -25,7 +25,14 @@
             <app-quote-form [initialInput]="preloadedInput" (quoteChange)="onQuoteInputChange($event)" />
         </div>
         <div class="right-column">
-            <app-quote-options [calculation]="calculationResult()" (optionSelected)="onOptionSelected($event)" />
+            <div class="seller-commission-card" *ngIf="calculationResult()">
+                <div class="commission-header">
+                    <span class="commission-icon">💰</span>
+                    <span class="commission-label">Comisión del vendedor</span>
+                </div>
+                <div class="commission-amount">{{ sellerCommission | currency:'MXN':'symbol':'1.2-2' }}</div>
+                <div class="commission-formula">(Precio sin IVA − rentas adelantadas) × 4%</div>
+            </div>
             <app-quote-breakdown *ngIf="calculationResult()" [calculation]="calculationResult()"
                 (saveQuote)="onSaveQuote()" />
         </div>

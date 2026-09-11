@@ -349,3 +349,44 @@
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.25);
 }
+
+/* ===== Tarjeta de comisión del vendedor ===== */
+.seller-commission-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+.commission-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.commission-icon {
+  font-size: 1.1rem;
+}
+
+.commission-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-silver);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.commission-amount {
+  font-family: 'Fjalla One', sans-serif;
+  font-size: 1.5rem;
+  color: var(--accent-green-dark);
+  line-height: 1.2;
+}
+
+.commission-formula {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
