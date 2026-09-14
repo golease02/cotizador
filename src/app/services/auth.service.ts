@@ -350,7 +350,9 @@ export class AuthService {
     if (currentProfile?.role !== 'super_admin' && currentProfile?.role !== 'socio') {
       return { error: { message: 'Solo el super admin o un socio pueden eliminar usuarios.' } };
     }
-    const { error } = await this.client.rpc('delete_user', { user_id: userId });
+    // El parámetro de la RPC se llama p_user_id (el nombre anterior "user_id"
+    // chocaba con la columna auth.identities.user_id y devolvía 400 ambiguous).
+    const { error } = await this.client.rpc('delete_user', { p_user_id: userId });
     return { error };
   }
 
