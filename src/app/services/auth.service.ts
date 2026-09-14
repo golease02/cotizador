@@ -275,6 +275,17 @@ export class AuthService {
     return { data, error };
   }
 
+  /**
+   * Lista de socios/super-admins ACTIVOS para el formulario de registro.
+   * El registro ocurre SIN sesión, por lo que la RLS no permite leer
+   * `profiles` directamente; esta RPC SECURITY DEFINER expone solo
+   * id, nombre y celular (nunca email ni permisos).
+   */
+  public async getPublicSocios(): Promise<{ data: any[]; error: any }> {
+    const { data, error } = await this.client.rpc('get_public_socios');
+    return { data: data || [], error };
+  }
+
   /** Obtiene los vendedores (role=seller) vinculados a un socio específico. */
   public async getSellersBySocio(socioId: string): Promise<{ data: any[]; error: any }> {
     const { data, error } = await this.client

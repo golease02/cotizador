@@ -60,21 +60,25 @@ export class AdminAdminsComponent implements OnInit {
     permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true } as Record<string, boolean>
   };
 
-  get availableRoles(): { value: string; label: string }[] {
-    return this.auth.isSuperAdmin()
-      ? [{ value: 'socio', label: 'Socio' }, { value: 'super_admin', label: 'Super Admin' }]
-      : [{ value: 'socio', label: 'Socio' }];
-  }
+  // Catálogos CONSTANTES (readonly). NO convertir a getters: en zoneless, un
+  // getter que devuelve un array nuevo en cada ciclo de detección, combinado
+  // con *ngFor + [(ngModel)] dentro del loop, provoca un bucle infinito de
+  // renderizado y tumba la página al abrir el drawer.
+  // La restricción de rol se aplica en el template con
+  // *ngIf="auth.isSuperAdmin()" sobre el <select> de rol, y en el trigger
+  // secure_profiles_row del lado de la base de datos.
+  readonly availableRoles: { value: string; label: string }[] = [
+    { value: 'socio', label: 'Socio' },
+    { value: 'super_admin', label: 'Super Admin' }
+  ];
 
-  get permissionCatalog(): { key: string; label: string; description: string }[] {
-    return [
-      { key: 'dashboard', label: 'Dashboard', description: 'Ver el panel principal con metricas y atajos.' },
-      { key: 'quotes', label: 'Cotizaciones', description: 'Ver, crear y gestionar cotizaciones.' },
-      { key: 'sellers', label: 'Vendedores', description: 'Administrar los vendedores del socio.' },
-      { key: 'stats', label: 'Estadisticas', description: 'Acceder a reportes y estadisticas avanzadas.' },
-      { key: 'notas', label: 'Notas', description: 'Agregar y editar notas de seguimiento.' }
-    ];
-  }
+  readonly permissionCatalog: { key: string; label: string; description: string }[] = [
+    { key: 'dashboard', label: 'Dashboard', description: 'Ver el panel principal con metricas y atajos.' },
+    { key: 'quotes', label: 'Cotizaciones', description: 'Ver, crear y gestionar cotizaciones.' },
+    { key: 'sellers', label: 'Vendedores', description: 'Administrar los vendedores del socio.' },
+    { key: 'stats', label: 'Estadisticas', description: 'Acceder a reportes y estadisticas avanzadas.' },
+    { key: 'notas', label: 'Notas', description: 'Agregar y editar notas de seguimiento.' }
+  ];
 
   // ------------------- DRAWER DE DETALLE -------------------
   showDetailDrawer = false;

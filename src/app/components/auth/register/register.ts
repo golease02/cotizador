@@ -36,7 +36,13 @@ export class RegisterComponent implements OnInit {
   private readonly phoneRegex = /^\d{10}$/;
 
   async ngOnInit(): Promise<void> {
-    const { data } = await this.auth.getSocios();
+    // Carga de socios/super-admins activos vía RPC pública (sin sesión).
+    const { data, error } = await this.auth.getPublicSocios();
+    if (error) {
+      console.error('[register] No se pudo cargar la lista de contactos GoLease:', error.message);
+      this.socios = [];
+      return;
+    }
     this.socios = (data ?? []).filter((s: any) => s.active !== false);
   }
 
