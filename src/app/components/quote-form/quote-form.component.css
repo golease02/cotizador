@@ -132,36 +132,6 @@ select:focus {
   font-size: 1.1rem;
 }
 
-.quick-amounts {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-
-.quick-amounts span {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-right: 0.2rem;
-}
-
-.quick-amounts button {
-  background: var(--surface-hover);
-  border: 1px solid var(--border-strong);
-  padding: 0.1rem 0.6rem;
-  border-radius: 5px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.quick-amounts button:hover {
-  background: var(--accent-green);
-  color: var(--text-on-accent);
-  border-color: var(--accent-green-dark);
-}
-
 .toggle-group {
   display: grid;
   grid-template-columns: 1fr 1fr;

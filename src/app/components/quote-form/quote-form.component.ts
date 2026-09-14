@@ -1,11 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {
-  VehicleQuoteInput,
-  StatePlateOption,
-  CalculatorConfig,
-} from '../../models/leasing.model';
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
+import { VehicleQuoteInput, StatePlateOption, CalculatorConfig } from '../../models/leasing.model';
 import { CatalogService } from '../../services/catalog.service';
 import { QuoteDraftService } from '../../services/quote-draft.service';
 import { formatPrice } from './price-format';
@@ -15,10 +17,9 @@ import { formatPrice } from './price-format';
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './quote-form.component.html',
-  styleUrls: ['./quote-form.component.css']
+  styleUrls: ['./quote-form.component.css'],
 })
 export class QuoteFormComponent implements OnInit {
-
   private fb = inject(FormBuilder);
   private catalog = inject(CatalogService);
   private draftService = inject(QuoteDraftService);
@@ -26,9 +27,8 @@ export class QuoteFormComponent implements OnInit {
   @Output() quoteChange = new EventEmitter<VehicleQuoteInput>();
   @Input() initialInput: VehicleQuoteInput | null = null;
 
-    public quoteForm!: FormGroup;
+  public quoteForm!: FormGroup;
   public statePlates: StatePlateOption[] = [];
-  public formatPrice = formatPrice;
 
   async ngOnInit(): Promise<void> {
     this.quoteForm = this.fb.group({
@@ -39,17 +39,14 @@ export class QuoteFormComponent implements OnInit {
       priceNet: [null, [Validators.required, Validators.min(10000)]],
       isHybridOrElectric: [false],
       termMonths: [48, Validators.required],
-      extraordinaryRentPct: [0.10, [Validators.required, Validators.min(0.10)]],
+      extraordinaryRentPct: [0.1, [Validators.required, Validators.min(0.1)]],
       securityDepositPct: [0.0],
       selectedStatePlateId: ['pendiente'],
       isInsuranceEstimated: [false],
     });
 
-        await Promise.all([
-      this.catalog.loadStatePlates(),
-      this.catalog.loadCalculatorConfig(),
-    ]);
-    this.statePlates = this.catalog.getStatePlates().filter(p => p.disponible !== false);
+    await Promise.all([this.catalog.loadStatePlates(), this.catalog.loadCalculatorConfig()]);
+    this.statePlates = this.catalog.getStatePlates().filter((p) => p.disponible !== false);
 
     this.quoteForm.valueChanges.subscribe(() => {
       if (this.quoteForm.valid) {
@@ -109,16 +106,16 @@ export class QuoteFormComponent implements OnInit {
     return this.catalog.getCalculatorConfig();
   }
 
-    get minimumExtraordinaryRentPct(): number {
+  get minimumExtraordinaryRentPct(): number {
     // Mínimo fijo: ya no se indexa por precio del vehículo (libre a partir de 10%).
-    return 0.10;
+    return 0.1;
   }
 
   get maximumExtraordinaryRentPct(): number {
     // Techo absoluto de la renta extraordinaria (enganche deducible): 50%.
     // La regla de negocio "renta + VR ≤ 75%" sigue aplicándose por opción en el
     // motor de cálculo; por eso la Opción 1 (VR 35%) se ajusta a 40% en pantalla.
-    return 0.50;
+    return 0.5;
   }
 
   get extraordinaryRentPct(): number {
@@ -126,11 +123,13 @@ export class QuoteFormComponent implements OnInit {
   }
 
   get hasExtraordinaryRentAdjustment(): boolean {
-    return this.extraordinaryRentPct < this.minimumExtraordinaryRentPct
-      || this.extraordinaryRentPct > this.maximumExtraordinaryRentPct;
+    return (
+      this.extraordinaryRentPct < this.minimumExtraordinaryRentPct ||
+      this.extraordinaryRentPct > this.maximumExtraordinaryRentPct
+    );
   }
 
-    get extraordinaryRentAdjustmentMessage(): string {
+  get extraordinaryRentAdjustmentMessage(): string {
     if (this.extraordinaryRentPct > this.maximumExtraordinaryRentPct) {
       return `La renta se ajustará a ${this.maximumExtraordinaryRentPct * 100}% (máximo permitido).`;
     }
@@ -164,22 +163,22 @@ export class QuoteFormComponent implements OnInit {
     }
   }
 
-  public setPrice(price: number): void {
-    this.quoteForm.patchValue({ priceNet: price });
-  }
-
   public setHybrid(isHybrid: boolean): void {
     this.quoteForm.patchValue({ isHybridOrElectric: isHybrid });
+  }
+
+  public setInsurance(isEstimated: boolean): void {
+    this.quoteForm.patchValue({ isInsuranceEstimated: isEstimated });
   }
 
   public setTerm(months: number): void {
     this.quoteForm.patchValue({ termMonths: months });
   }
 
-    public setExtraordinaryRent(pct: number): void {
+  public setExtraordinaryRent(pct: number): void {
     const boundedPct = Math.min(
       this.maximumExtraordinaryRentPct,
-      Math.max(this.minimumExtraordinaryRentPct, pct)
+      Math.max(this.minimumExtraordinaryRentPct, pct),
     );
     this.quoteForm.patchValue({ extraordinaryRentPct: boundedPct });
   }
@@ -194,7 +193,7 @@ export class QuoteFormComponent implements OnInit {
       year: Number(raw.year) || 2026,
       priceNet: priceNet,
       isHybridOrElectric: Boolean(raw.isHybridOrElectric),
-      termMonths: Number(raw.termMonths) as any || 48,
+      termMonths: (Number(raw.termMonths) as any) || 48,
       extraordinaryRentPct: Number(raw.extraordinaryRentPct) || 0.1,
       securityDepositPct: Number(raw.securityDepositPct) || 0,
       selectedStatePlateId: raw.selectedStatePlateId || 'pendiente',

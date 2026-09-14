@@ -4,99 +4,142 @@
     <span class="subtitle">Cotización rápida en tiempo real</span>
   </div>
 
-    <form [formGroup]="quoteForm">
+  <form [formGroup]="quoteForm">
     <div class="form-grid">
       <div class="full-width">
         <label for="clientName">Atención a (Cliente / Prospecto)</label>
-        <input id="clientName" type="text" formControlName="clientName" placeholder="Nombre del cliente" />
+        <input
+          id="clientName"
+          type="text"
+          formControlName="clientName"
+          placeholder="Nombre del cliente"
+        />
       </div>
 
       <div>
         <label for="brand">Marca *</label>
-        <input id="brand" type="text" formControlName="brand" placeholder="Ej. Audi, HINO, Toyota" />
+        <input
+          id="brand"
+          type="text"
+          formControlName="brand"
+          placeholder="Ej. Audi, HINO, Toyota"
+        />
       </div>
 
       <div>
         <label for="model">Modelo *</label>
-        <input id="model" type="text" formControlName="model" placeholder="Ej. Q3 Sportback, 616 LONG" />
+        <input
+          id="model"
+          type="text"
+          formControlName="model"
+          placeholder="Ej. Q3 Sportback, 616 LONG"
+        />
       </div>
 
       <div>
         <label for="year">Año Modelo *</label>
         <input id="year" type="number" formControlName="year" min="2015" max="2030" />
         <div *ngIf="isPreOwned" class="warning">Seminuevo (< 2024): IVA al 16% en factura.</div>
-        </div>
+      </div>
 
-        <div>
-          <label for="selectedStatePlateId">Alta de Placas</label>
-          <select id="selectedStatePlateId" formControlName="selectedStatePlateId">
-            <option *ngFor="let p of statePlates" [value]="p.id">
-              {{ p.name }} ({{ p.costNet | currency:'MXN':'symbol':'1.0-0' }})
-            </option>
-          </select>
-        </div>
+      <div>
+        <label for="selectedStatePlateId">Alta de Placas</label>
+        <select id="selectedStatePlateId" formControlName="selectedStatePlateId">
+          <option *ngFor="let p of statePlates" [value]="p.id">
+            {{ p.name }} ({{ p.costNet | currency: 'MXN' : 'symbol' : '1.0-0' }})
+          </option>
+        </select>
+      </div>
 
-        <div class="full-width price-group">
-          <label for="priceNet">Precio Neto del Vehículo (con IVA) *</label>
-          <div class="currency-input-wrapper">
-            <span class="currency-symbol">$</span>
-            <input id="priceNet" type="text" inputmode="decimal" [value]="priceNetDisplay" (input)="onPriceNetInput($event)" placeholder="969.900,00" />
-          </div>
-          <div class="quick-amounts">
-            <span>Montos rápidos:</span>
-            <button type="button" (click)="setPrice(407900)">${{ formatPrice(407900) }}</button>
-            <button type="button" (click)="setPrice(520000)">${{ formatPrice(520000) }}</button>
-            <button type="button" (click)="setPrice(780000)">${{ formatPrice(780000) }}</button>
-            <button type="button" (click)="setPrice(969900)">${{ formatPrice(969900) }}</button>
-          </div>
+      <div class="full-width price-group">
+        <label for="priceNet">Precio Neto del Vehículo (con IVA) *</label>
+        <div class="currency-input-wrapper">
+          <span class="currency-symbol">$</span>
+          <input
+            id="priceNet"
+            type="text"
+            inputmode="decimal"
+            [value]="priceNetDisplay"
+            (input)="onPriceNetInput($event)"
+            placeholder="969.900,00"
+          />
         </div>
+      </div>
 
-        <div class="full-width">
-                    <label>¿Es híbrido o eléctrico?</label>
-          <div class="toggle-group">
-            <button type="button" class="toggle-btn"
-              [class.active]="quoteForm.get('isHybridOrElectric')?.value === false" (click)="setHybrid(false)">No</button>
-            <button type="button" class="toggle-btn"
-              [class.active]="quoteForm.get('isHybridOrElectric')?.value === true" (click)="setHybrid(true)">Sí</button>
-          </div>
+      <div class="full-width">
+        <label>¿Es híbrido o eléctrico?</label>
+        <div class="toggle-group">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="quoteForm.get('isHybridOrElectric')?.value === false"
+            (click)="setHybrid(false)"
+          >
+            No
+          </button>
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="quoteForm.get('isHybridOrElectric')?.value === true"
+            (click)="setHybrid(true)"
+          >
+            Sí
+          </button>
         </div>
+      </div>
 
-        <div class="full-width">
-          <label>Plazo (Meses)</label>
-          <div class="term-grid">
-            <button type="button" *ngFor="let t of [12, 24, 36, 48]" class="term-btn"
-              [class.active]="quoteForm.get('termMonths')?.value === t" (click)="setTerm(t)">
-              <span class="term-number">{{ t }}</span>
-              <span class="term-label">Meses</span>
-            </button>
-          </div>
+      <div class="full-width">
+        <label>Plazo (Meses)</label>
+        <div class="term-grid">
+          <button
+            type="button"
+            *ngFor="let t of [12, 24, 36, 48]"
+            class="term-btn"
+            [class.active]="quoteForm.get('termMonths')?.value === t"
+            (click)="setTerm(t)"
+          >
+            <span class="term-number">{{ t }}</span>
+            <span class="term-label">Meses</span>
+          </button>
         </div>
+      </div>
 
-        <div class="full-width">
-          <div class="label-row">
-            <label>Renta Extraordinaria (Enganche Deducible)</label>
-            <span class="slider-value">{{ (extraordinaryRentPct * 100) | number:'1.0-1' }}%</span>
-          </div>
-          <input type="range" [min]="minimumExtraordinaryRentPct" [max]="maximumExtraordinaryRentPct" step="0.01"
-            formControlName="extraordinaryRentPct"
-            class="range-slider" />
-          <div class="range-limits">
-            <span>Mínimo: {{ minimumExtraordinaryRentPct * 100 | number:'1.0-0' }}%</span>
-            <span>Máximo: {{ maximumExtraordinaryRentPct * 100 | number:'1.0-0' }}%</span>
-          </div>
-          <div *ngIf="hasExtraordinaryRentAdjustment" class="warning" role="status">
-            {{ extraordinaryRentAdjustmentMessage }}
-          </div>
-          <div class="chip-group">
-                        <button type="button" *ngFor="let pct of [0.10, 0.15, 0.20, 0.30, 0.40, 0.50]" class="chip-btn"
-              [class.active]="extraordinaryRentPct === pct"
-              [disabled]="pct < minimumExtraordinaryRentPct || pct > maximumExtraordinaryRentPct"
-              (click)="setExtraordinaryRent(pct)">{{ (pct * 100) }}%</button>
-          </div>
+      <div class="full-width">
+        <div class="label-row">
+          <label>Renta Extraordinaria (Enganche Deducible)</label>
+          <span class="slider-value">{{ extraordinaryRentPct * 100 | number: '1.0-1' }}%</span>
         </div>
+        <input
+          type="range"
+          [min]="minimumExtraordinaryRentPct"
+          [max]="maximumExtraordinaryRentPct"
+          step="0.01"
+          formControlName="extraordinaryRentPct"
+          class="range-slider"
+        />
+        <div class="range-limits">
+          <span>Mínimo: {{ minimumExtraordinaryRentPct * 100 | number: '1.0-0' }}%</span>
+          <span>Máximo: {{ maximumExtraordinaryRentPct * 100 | number: '1.0-0' }}%</span>
+        </div>
+        <div *ngIf="hasExtraordinaryRentAdjustment" class="warning" role="status">
+          {{ extraordinaryRentAdjustmentMessage }}
+        </div>
+        <div class="chip-group">
+          <button
+            type="button"
+            *ngFor="let pct of [0.1, 0.15, 0.2, 0.3, 0.4, 0.5]"
+            class="chip-btn"
+            [class.active]="extraordinaryRentPct === pct"
+            [disabled]="pct < minimumExtraordinaryRentPct || pct > maximumExtraordinaryRentPct"
+            (click)="setExtraordinaryRent(pct)"
+          >
+            {{ pct * 100 }}%
+          </button>
+        </div>
+      </div>
 
-        <!-- Depósito en Garantía: eliminado de la interfaz. Se aplica por defecto en cálculos (securityDepositPct en form model). -->
-        <!--
+      <!-- Depósito en Garantía: eliminado de la interfaz. Se aplica por defecto en cálculos (securityDepositPct en form model). -->
+      <!--
         <div>
           <label>Depósito en Garantía</label>
           <div class="chip-group">
@@ -107,13 +150,27 @@
         </div>
         -->
 
-        <div>
-          <label for="insuranceSelect">Seguro de Unidad</label>
-          <select id="insuranceSelect" formControlName="isInsuranceEstimated" class="preset-select">
-            <option [ngValue]="false">Pendiente ($0)</option>
-            <option [ngValue]="true">Estimado (3.5%)</option>
-          </select>
+      <div class="full-width">
+        <label>Seguro de Unidad</label>
+        <div class="toggle-group">
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="quoteForm.get('isInsuranceEstimated')?.value === false"
+            (click)="setInsurance(false)"
+          >
+            Pendiente ($0)
+          </button>
+          <button
+            type="button"
+            class="toggle-btn"
+            [class.active]="quoteForm.get('isInsuranceEstimated')?.value === true"
+            (click)="setInsurance(true)"
+          >
+            Estimado (3.5%)
+          </button>
         </div>
       </div>
+    </div>
   </form>
 </div>
