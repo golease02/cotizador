@@ -8,8 +8,8 @@ import { ThemeService } from '../../services/theme.service';
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './header.component.html',
-  styleUrls: ['./header.component.css'],
+    templateUrl: './header.html',
+  styleUrls: ['./header.css'],
 })
 export class HeaderComponent {
   public auth = inject(AuthService);

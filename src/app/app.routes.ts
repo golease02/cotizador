@@ -34,7 +34,7 @@ export const routes: Routes = [
     },
     {
         path: 'perfil',
-        loadComponent: () => import('./components/perfil/perfil.component').then(m => m.PerfilComponent),
+                loadComponent: () => import('./components/perfil/perfil').then(m => m.PerfilComponent),
         canActivate: [AuthGuard]
     },
     // ✅ Ruta alternativa por si alguien escribe /mis-cotizaciones (redirige a raíz)

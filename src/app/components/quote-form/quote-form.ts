@@ -16,8 +16,8 @@ import { formatPrice } from './price-format';
   selector: 'app-quote-form',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './quote-form.component.html',
-  styleUrls: ['./quote-form.component.css'],
+    templateUrl: './quote-form.html',
+  styleUrls: ['./quote-form.css'],
 })
 export class QuoteFormComponent implements OnInit {
   private fb = inject(FormBuilder);

@@ -7,8 +7,8 @@ import { AdminService } from '../../../services/admin.service';
   selector: 'app-admin-stats',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './admin-stats.component.html',
-  styleUrls: ['./admin-stats.component.css']
+    templateUrl: './admin-stats.html',
+  styleUrls: ['./admin-stats.css']
 })
 export class AdminStatsComponent implements OnInit {
   private admin = inject(AdminService);

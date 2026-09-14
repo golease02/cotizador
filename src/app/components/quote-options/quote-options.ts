@@ -6,8 +6,8 @@ import { QuoteCalculationResult } from '../../models/leasing.model';
   selector: 'app-quote-options',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './quote-options.component.html',
-  styleUrls: ['./quote-options.component.css']
+    templateUrl: './quote-options.html',
+  styleUrls: ['./quote-options.css']
 })
 export class QuoteOptionsComponent {
   @Input() calculation!: QuoteCalculationResult | null;

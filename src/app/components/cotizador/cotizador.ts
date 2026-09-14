@@ -1,8 +1,8 @@
 import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { QuoteFormComponent } from '../quote-form/quote-form.component';
+import { QuoteFormComponent } from '../quote-form/quote-form';
 import { RouterModule } from '@angular/router';
-import { QuoteBreakdownComponent } from '../quote-breakdown/quote-breakdown.component';
+import { QuoteBreakdownComponent } from '../quote-breakdown/quote-breakdown';
 import { FinancialCalculatorService } from '../../services/financial-calculator.service';
 import { QuotesService } from '../../services/quotes.service';
 import { AuthService } from '../../services/auth.service';

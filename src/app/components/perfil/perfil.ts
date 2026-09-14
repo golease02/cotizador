@@ -8,8 +8,8 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-perfil',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  templateUrl: './perfil.component.html',
-  styleUrls: ['./perfil.component.css']
+    templateUrl: './perfil.html',
+  styleUrls: ['./perfil.css']
 })
 export class PerfilComponent implements OnInit {
   private auth = inject(AuthService);

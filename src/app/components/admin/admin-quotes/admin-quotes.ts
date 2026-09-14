@@ -6,7 +6,7 @@ import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { getSupabaseClient, sessionReady } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
-import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
+import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { CatalogService } from '../../../services/catalog.service';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
@@ -15,8 +15,8 @@ import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasi
   selector: 'app-admin-quotes',
   standalone: true,
   imports: [CommonModule, FormsModule, QuoteBreakdownComponent],
-  templateUrl: './admin-quotes.component.html',
-  styleUrls: ['./admin-quotes.component.css']
+    templateUrl: './admin-quotes.html',
+  styleUrls: ['./admin-quotes.css']
 })
 export class AdminQuotesComponent implements OnInit {
   private quotesService = inject(QuotesService);

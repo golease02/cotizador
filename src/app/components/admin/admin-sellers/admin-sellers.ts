@@ -10,8 +10,8 @@ import { ToastService } from '../../../services/toast.service';
   selector: 'app-admin-sellers',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './admin-sellers.component.html',
-  styleUrls: ['./admin-sellers.component.css']
+    templateUrl: './admin-sellers.html',
+  styleUrls: ['./admin-sellers.css']
 })
 export class AdminSellersComponent implements OnInit {
   private admin = inject(AdminService);

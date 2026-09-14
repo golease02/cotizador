@@ -9,8 +9,8 @@ import { Subscription, filter } from 'rxjs';
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterModule],
-  templateUrl: './admin-dashboard.component.html',
-  styleUrls: ['./admin-dashboard.component.css'],
+    templateUrl: './admin-dashboard.html',
+  styleUrls: ['./admin-dashboard.css'],
 })
 export class AdminDashboardComponent implements OnDestroy {
   public auth = inject(AuthService);

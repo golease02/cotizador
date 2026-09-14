@@ -8,8 +8,8 @@ import { CatalogService } from '../../services/catalog.service';
   selector: 'app-quote-breakdown',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './quote-breakdown.component.html',
-  styleUrls: ['./quote-breakdown.component.css']
+    templateUrl: './quote-breakdown.html',
+  styleUrls: ['./quote-breakdown.css']
 })
 export class QuoteBreakdownComponent {
   private pdfExport = inject(PdfExportService);

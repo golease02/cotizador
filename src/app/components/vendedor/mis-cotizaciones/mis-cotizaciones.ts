@@ -7,7 +7,7 @@ import { FinancialCalculatorService } from '../../../services/financial-calculat
 import { CatalogService } from '../../../services/catalog.service';
 import { QuoteDraftService } from '../../../services/quote-draft.service';
 import { ToastService } from '../../../services/toast.service';
-import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown.component';
+import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
 import { computeValidUntil, getValidityLabel, getValidityStatus, ValidityStatus } from '../../../utils/quote-validity';
 import { FormsModule } from '@angular/forms';
