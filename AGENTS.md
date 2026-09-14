@@ -273,7 +273,7 @@ npm test -- --run           # Ejecución única (CI)
   - `Bloque 2: sin mapas, ubicacion por texto libre (registro, vendedores, perfil) + refinamientos permisos/contacto GoLease`
   - `Bloque 1`
 - Algunos commits hacen referencia a "Bloque N" → sugiere planificación por bloques/sprints.
-- Los archivos `a1_rpcs.txt`, `a5_rpcs_clean.sql`, `a6_test_rpc_scope.mjs` en la raíz son artefactos de debugging, no parte del build.
+  - Los artefactos de debugging de la raíz (`a1_rpcs.txt`, `a2_schema.sql`, `a3_b64.txt`, `a5_rpcs_clean.sql`, `a6_test_rpc_scope.mjs`) han sido **eliminados** del repositorio, y los directorios de build `.kilo/` y `dist-check/` han sido **desversionados** (se mantienen en disco). No son parte del build.
 
 ## 6. Reglas para los agentes de IA
 
@@ -336,7 +336,7 @@ npm test -- --run           # Ejecución única (CI)
 
 3. **Fallbacks en `admin.service.ts`:** Las RPCs `get_admin_stats()` y `get_sellers_with_quote_counts()` pueden no existir en la BD si las migraciones no se aplicaron. El servicio tiene fallbacks con consultas REST + agregaciones locales (`computeQuoteColor`). Si la RPC falla con `PGRST202` o "could not find the function", usa el fallback.
 
-4. **Color de cotización recalculado:** El color (`rojo`/`amarillo`/`reciente`/`verde`) se recalcula en cliente (`admin.service.ts` `computeQuoteColor`) y en RPC (`a5_rpcs_clean.sql`). Regla: revisada=verde, >7 días=rojo, >2 días=amarillo, resto=reciente.
+4. **Color de cotización recalculado:** El color (`rojo`/`amarillo`/`reciente`/`verde`) se recalcula en cliente (`admin.service.ts` `computeQuoteColor`) y en RPC (`supabase/migrations/20260910000005_socio_scope_rpcs.sql` → `get_admin_stats`). Regla: revisada=verde, >7 días=rojo, >2 días=amarillo, resto=reciente.
 
 5. **Snapshot vs recálculo:** Cuando se abre el detalle de una cotización, se prefiere el **snapshot guardado en JSONB** (`calculation` column) sobre recalcular. Si no existe, se recalcular con los datos de la fila (`buildInputFromRow`).
 
@@ -344,9 +344,9 @@ npm test -- --run           # Ejecución única (CI)
 
 7. **Hash routing:** La app usa `withHashLocation()` → todas las rutas usan `#` (ej. `/#/login`). Esto afecta el `redirectTo` en password recovery (`window.location.origin}/#/reset-password`).
 
-8. **No hay backend propio:** Todo el login, validación y autorización se hace en Supabase (RLS + RPCs). No hay servidor Express/Fastify. Los archivos `a1_rpcs.txt`, `a5_rpcs_clean.sql`, `a6_test_rpc_scope.mjs` en la raíz son artefactos de diagnóstico, no parte del build.
+8. **No hay backend propio:** Todo el login, validación y autorización se hace en Supabase (RLS + RPCs). No hay servidor Express/Fastify. Los antiguos artefactos de diagnóstico de la raíz (`a1_rpcs.txt`, `a2_schema.sql`, `a3_b64.txt`, `a5_rpcs_clean.sql`, `a6_test_rpc_scope.mjs`) han sido **eliminados**; el SQL canónico de las RPCs vive en `supabase/migrations/20260910000005_socio_scope_rpcs.sql`.
 
-9. **`.kilo/skills/`:** Contiene referencias de patrones Angular de Kilo Code (`component-patterns.md`). No afecta el build; es documentación de estilo.
+9. **`.kilo/`:** Carpeta local de herramientas de IA (planes de Kilo Code + referencias de patrones Angular en `/.kilo/skills/`). Está en `.gitignore` y ha sido **desversionada** del índice (se mantiene en disco, no en el repo). No afecta el build; sirve como documentación de estilo.
 
-10. **Commit `d63ddf0` — "Remove build/test/audit logs and update gitignore":** Los archivos `.txt`, `.sql`, `.mjs` de diagnóstico están pendientes de ser limpiados del repositorio (aparecen como no trackeados en `git status`).
+10. **Commit `d63ddf0` — "Remove build/test/audit logs and update gitignore":** La limpieza de los archivos de diagnóstico de la raíz y de los directorios `dist-check/`/`.kilo/` **se ha completado**: `a*` se borraron físicamente, `dist-check/` y `.kilo/` se remitieron del índice con `git rm --cached`, y se añadió `/dist-check` al `.gitignore`.
 ```
