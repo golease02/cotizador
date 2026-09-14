@@ -3,15 +3,6 @@ import { StatePlateOption, STATE_PLATES_CATALOG, CalculatorConfig, DEFAULT_CALCU
 import { getSupabaseClient, currentUserSignal } from './supabase-client';
 import { AuthService } from './auth.service';
 
-export interface VehicleCatalogItem {
-  id: string;
-  brand: string;
-  model: string;
-  suggestedPriceNet: number;
-  isHybridOrElectric: boolean;
-  year: number;
-}
-
 @Injectable({
   providedIn: 'root',
 })
@@ -119,83 +110,7 @@ export class CatalogService {
     };
   }
 
-  // ==================== CATÁLOGO DE VEHÍCULOS ====================
-
-  public async getVehicleCatalog(): Promise<VehicleCatalogItem[]> {
-    return this.fetchVehicles();
-  }
-
-  public async getAllVehicles(): Promise<{ data: VehicleCatalogItem[]; error: any }> {
-    const items = await this.fetchVehicles();
-    return { data: items, error: null };
-  }
-
-  private async fetchVehicles(): Promise<VehicleCatalogItem[]> {
-    const { data, error } = await this.client
-      .from('vehicles')
-      .select('id, brand, model, suggestedpricenet, ishybridorelectric, year')
-      .order('brand', { ascending: true });
-    if (error) {
-      console.error('Error fetching vehicles:', error);
-      return [];
-    }
-    return data.map((item: any) => ({
-      id: item.id,
-      brand: item.brand,
-      model: item.model,
-      suggestedPriceNet: Number(item.suggestedpricenet) || 0,
-      isHybridOrElectric: Boolean(item.ishybridorelectric) || false,
-      year: Number(item.year) || new Date().getFullYear(),
-    }));
-  }
-
-  public async createVehicle(vehicle: {
-    brand: string;
-    model: string;
-    year: number;
-    suggestedPriceNet: number;
-    isHybridOrElectric: boolean;
-  }): Promise<{ error: any }> {
-    const { error } = await this.client.from('vehicles').insert([{
-      id: crypto.randomUUID(),
-      brand: vehicle.brand,
-      model: vehicle.model,
-      suggestedpricenet: vehicle.suggestedPriceNet,
-      ishybridorelectric: vehicle.isHybridOrElectric,
-      year: vehicle.year,
-    }]);
-    return { error };
-  }
-
-  public async updateVehicle(
-    id: string,
-    vehicle: {
-      brand: string;
-      model: string;
-      year: number;
-      suggestedPriceNet: number;
-      isHybridOrElectric: boolean;
-    }
-  ): Promise<{ error: any }> {
-    const { error } = await this.client
-      .from('vehicles')
-      .update({
-        brand: vehicle.brand,
-        model: vehicle.model,
-        suggestedpricenet: vehicle.suggestedPriceNet,
-        ishybridorelectric: vehicle.isHybridOrElectric,
-        year: vehicle.year,
-      })
-      .eq('id', id);
-    return { error };
-  }
-
-  public async deleteVehicle(id: string): Promise<{ error: any }> {
-    const { error } = await this.client.from('vehicles').delete().eq('id', id);
-    return { error };
-  }
-
-  // ==================== CRUD: PLACAS DE ESTADO ====================
+    // ==================== CRUD: PLACAS DE ESTADO ====================
 
   public async getAllStatePlates(): Promise<{ data: StatePlateOption[]; error: any }> {
     const { data, error } = await this.client

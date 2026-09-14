@@ -68,10 +68,11 @@ export const routes: Routes = [
                 canActivate: [moduleGuard('quotes')],
                 loadComponent: () => import('./components/admin/admin-quotes/admin-quotes').then(m => m.AdminQuotesComponent)
             },
-            {
+                        {
+                // Redirect obsoleto: el CRUD de vehículos fue eliminado.
                 path: 'vehicles',
-                canActivate: [moduleGuard('vehicles')],
-                loadComponent: () => import('./components/admin/admin-vehicles/admin-vehicles').then(m => m.AdminVehiclesComponent)
+                redirectTo: '',
+                pathMatch: 'full'
             },
             {
                 path: 'plates',
