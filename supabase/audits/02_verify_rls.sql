@@ -59,7 +59,7 @@ SELECT 'CHECK 1: RLS enabled en tablas críticas' AS check_name,
          JOIN pg_namespace n ON n.oid = c.relnamespace
          WHERE n.nspname = 'public'
            AND c.relkind = 'r'
-           AND c.relname IN ('profiles','quotes','notas','vehicles','state_plates','calculator_settings')
+           AND c.relname IN ('profiles','quotes','notas','state_plates','calculator_settings')
            AND c.relrowsecurity IS NOT TRUE
        ) THEN 'FAIL' ELSE 'PASS' END AS result;
 

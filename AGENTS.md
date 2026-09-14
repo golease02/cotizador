@@ -64,7 +64,7 @@ cotizador/
 │   │   │   ├── auth.service.ts         # Auth, perfiles, roles, saneado de datos
 │   │   │   ├── financial-calculator.service.ts  # Motor de cálculo (PMT 3 opciones)
 │   │   │   ├── quotes.service.ts       # CRUD de cotizaciones
-│   │   │   ├── catalog.service.ts      # Catálogo vehículos/placas + config del cotizador
+│   │   │   ├── catalog.service.ts      # Catálogo de placas + config del cotizador
 │   │   │   ├── admin.service.ts        # RPCs de dashboard + fallbacks
 │   │   │   ├── pdf-export.service.ts   # Exportación a PDF (lazy load html2canvas/jspdf)
 │   │   │   ├── quote-draft.service.ts  # Borrador en sessionStorage (duplicar/editar)
@@ -90,7 +90,6 @@ cotizador/
 │   │   │   │   ├── admin-sellers/     # CRUD de vendedores
 │   │   │   │   ├── admin-admins/      # CRUD de socios (super-admin only)
 │   │   │   │   ├── admin-quotes/      # Lista y gestión de todas las cotizaciones
-│   │   │   │   ├── admin-vehicles/    # CRUD de catálogo de vehículos
 │   │   │   │   ├── admin-plates/      # CRUD de placas por estado
 │   │   │   │   └── admin-parameters/  # Configuración del cotizador (porcentajes, etc.)
 │   │   │   ├── perfil/                # Perfil de usuario
@@ -102,7 +101,10 @@ cotizador/
 │   └── styles.css
 ├── supabase/
 │   ├── migrations/                    # Migraciones SQL (timestamps 20260309 + 20260910)
-│   │   └── 20260910000005_socio_scope_rpcs.sql  # RPCs con scope por socio
+│   │   ├── 20260910000005_socio_scope_rpcs.sql  # RPCs con scope por socio
+│   │   └── 20260910000009_drop_vehicles_table.sql  # Drop del catálogo `vehicles`
+│   ├── audits/
+│   │   └── 02_verify_rls.sql          # Checklist de verificación RLS
 │   └── config.toml                    # [gitignored] Config local de Supabase CLI
 ├── package.json / package-lock.json
 ├── angular.json
@@ -122,7 +124,7 @@ cotizador/
 | CRUDs de admin              | `components/admin/admin-*/`                             |
 | Dashboard                   | `components/admin/admin-stats/`, `admin-dashboard/`    |
 | Registro de vendedor        | `components/auth/register/register.ts`                 |
-| Catálogo de vehículos/placas| `catalog.service.ts`, `admin-vehicles/`, `admin-plates/` |
+| Catálogo de placas / config cotizador | `catalog.service.ts`, `admin-plates/`, `admin-parameters/` |
 | Estado de cotizaciones      | `utils/quote-validity.ts`                               |
 
 ## 3. Roles y permisos
@@ -250,14 +252,18 @@ cotizador/
   5. `20260910000003_superadmin_credentials.sql` — credenciales del super-admin
   6. `20260910000004_fix_rls_recursion.sql` — fix de recursión RLS
   7. `20260910000005_socio_scope_rpcs.sql` — RPCs con scope por socio
+  8. `20260910000006_public_socios_rpc.sql` — RPC pública de socios (registro anónimo)
+  9. `20260910000007_rls_scope_indexes.sql` — índices + policies de `quotes` con alcance por socio
+  10. `20260910000008_fix_delete_user.sql` — fix de referencia ambigua en RPC `delete_user`
+  11. `20260910000009_drop_vehicles_table.sql` — drop del catálogo `vehicles` (CRUD eliminado)
 - **Aplicar cambios:** `npx supabase db push` (o `supabase db reset` para desarrollo)
-- **No hay seeders tradicionales** — los catálogos base se insertan en `000001_bootstrap_super_admin.sql` (vehículos, placas)
+- **No hay seeders tradicionales** — los catálogos base se insertan en `000001_bootstrap_super_admin.sql` (placas). El catálogo de **vehículos** (`vehicles`) fue **eliminado** en `20260910000009_drop_vehicles_table.sql`.
 
 ### Tests
 
 ```bash
 npm test                    # Vitest vía ng test (watch mode por defecto)
-npm test -- --run           # Ejecución única (CI)
+npm test -- --watch=false  # Ejecución única (CI, sin watch)
 ```
 
 - **Framework:** Vitest globals (`describe`, `it`, `expect`, `vi`)
@@ -273,7 +279,7 @@ npm test -- --run           # Ejecución única (CI)
   - `Bloque 2: sin mapas, ubicacion por texto libre (registro, vendedores, perfil) + refinamientos permisos/contacto GoLease`
   - `Bloque 1`
 - Algunos commits hacen referencia a "Bloque N" → sugiere planificación por bloques/sprints.
-  - Los artefactos de debugging de la raíz (`a1_rpcs.txt`, `a2_schema.sql`, `a3_b64.txt`, `a5_rpcs_clean.sql`, `a6_test_rpc_scope.mjs`) han sido **eliminados** del repositorio, y los directorios de build `.kilo/` y `dist-check/` han sido **desversionados** (se mantienen en disco). No son parte del build.
+  - Los artefactos de debugging de la raíz (`a1_rpcs.txt`, `a2_schema.sql`, `a3_b64.txt`, `a5_rpcs_clean.sql`, `a6_test_rpc_scope.mjs`) han sido **eliminados** del repositorio. El directorio de build `dist-check/` fue **desversionado y eliminado del disco**; `.kilo/` sigue **desversionado** (se mantiene en disco). Ninguno es parte del build.
 
 ## 6. Reglas para los agentes de IA
 
@@ -283,7 +289,7 @@ npm test -- --run           # Ejecución única (CI)
 4. **No reescribir código existente sin avisar** — propone primero; si hay refactor necesario, hazlo en un commit separado.
 5. **Usar el modo Debug para diagnosticar, no para construir** — lee logs, revisa errores, inspecciona la BD; no uses el debug como justificación para añadir features no solicitadas.
 6. **No tocar el PDF salvo requerimiento explícito** — el componente `quote-breakdown` y su HTML son el motor de generación de PDF; no modificar salvo que se pida expresamente.
-7. **Al terminar un bloque, correr pruebas** — `npm test -- --run` y verificar que nada rompa.
+7. **Al terminar un bloque, correr pruebas** — `npm test -- --watch=false` y verificar que nada rompa.
 8. **Resumir cambios** — al finalizar, lista qué se modificó, por qué, y cómo probarlo.
 9. **Si hay dudas, preguntar antes de asumir** — marca incertidumbres como `[POR CONFIRMAR]` en vez de inventar.
 10. **Respeta el stack existente** — no agregues librerías nuevas sin consultar.
@@ -348,5 +354,6 @@ npm test -- --run           # Ejecución única (CI)
 
 9. **`.kilo/`:** Carpeta local de herramientas de IA (planes de Kilo Code + referencias de patrones Angular en `/.kilo/skills/`). Está en `.gitignore` y ha sido **desversionada** del índice (se mantiene en disco, no en el repo). No afecta el build; sirve como documentación de estilo.
 
-10. **Commit `d63ddf0` — "Remove build/test/audit logs and update gitignore":** La limpieza de los archivos de diagnóstico de la raíz y de los directorios `dist-check/`/`.kilo/` **se ha completado**: `a*` se borraron físicamente, `dist-check/` y `.kilo/` se remitieron del índice con `git rm --cached`, y se añadió `/dist-check` al `.gitignore`.
-```
+10. **Commit `d63ddf0` — "Remove build/test/audit logs and update gitignore":** La limpieza de los archivos de diagnóstico de la raíz y de los directorios `dist-check/`/`.kilo/` **se ha completado**: `a*` se borraron físicamente, `dist-check/` y `.kilo/` se remitieron del índice con `git rm --cached`, y se añadió `/dist-check` al `.gitignore`. En una limpieza posterior (Paso 4), el directorio `dist-check/` fue además **eliminado físicamente del disco** (ya no existe en el working tree).
+
+11. **Catálogo de vehículos eliminado (`vehicles`):** El CRUD `admin-vehicles/` (componente TS/HTML/CSS), su ruta, su enlace en el sidebar (`admin-dashboard.html`) y sus métodos en `catalog.service.ts` fueron **eliminados** (commit `dc8944f`); la tabla `public.vehicles` se elimina en la migración `20260910000009_drop_vehicles_table.sql`. El ranking `topVehicles` del dashboard **no** depende de la tabla: se calcula sobre `public.quotes` (RPC `get_admin_stats` + fallback local en `admin.service.ts`). Limpieza **completa** de residuos: sin ruta `/admin/vehicles` (se quitó el stub de redirect), sin reglas CSS `.vehicles-container`/`.vehicle-card` en `styles.css`, sin `INSERT INTO public.vehicles` en la migración `000001` (además se consolidaron los 3 bloques duplicados de catálogos en uno) y sin filas de `vehicles` en `supabase/RLS_POLICY_MATRIX.md`. **Se conserva** `html[data-theme='dark'] .vehicle-name` en CSS porque lo usan `mis-cotizaciones` y `admin-quotes`, y el tipo `VehicleQuoteInput` de `leasing.model.ts` (es el input del cotizador, no el CRUD).

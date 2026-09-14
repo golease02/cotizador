@@ -30,7 +30,9 @@
 
 **Trigger `trg_quotes_secure_row`:** impide transferir `seller_id`, cambiar `revisada`/`fijada`, y restaura `color`/`status_color`/`last_reviewed_at` a sus valores anteriores. Admin exento.
 
-### `vehicles` / `state_plates`
+### `state_plates`
+> Nota: el catálogo `vehicles` fue **eliminado** (migración `20260910000009_drop_vehicles_table.sql`).
+
 | Operación | Rol | Condición |
 |-----------|-----|-----------|
 | SELECT | anon, authenticated | `true` (catálogo público) |
@@ -93,7 +95,7 @@ supabase db query --linked --file supabase/audits/02_verify_rls.sql
 ```
 
 Resultado esperado:
-- `RLS_CHECK`: PASS (6/6 tablas con RLS)
+- `RLS_CHECK`: PASS (5/5 tablas con RLS)
 - 4 políticas por tabla
 - 0 funciones expuestas a anon/PUBLIC (excepto las esperadas)
 - 0 políticas `USING(true)` en tablas sensibles
@@ -122,10 +124,6 @@ Resultado esperado:
 |                               | ✗          | ✓ INSERT require admin   | ✓                       | ✓              | ✓           |
 |                               | ✗          | ✓ UPDATE propio          | ✓                       | ✓              | ✓           |
 |                               | ✗          | ✓ DELETE propio o admin  | ✓                       | ✓              | ✓           |
-| **vehicles**                  | ✓ SELECT   | ✓ SELECT                 | ✓ SELECT                | ✓ SELECT       | ✓ SELECT    |
-|                               | ✗ INSERT   | ✗                        | ✓                       | ✓              | ✓           |
-|                               | ✗ UPDATE   | ✗                        | ✓                       | ✓              | ✓           |
-|                               | ✗ DELETE   | ✗                        | ✓                       | ✓              | ✓           |
 | **state_plates**              | ✓ SELECT   | ✓ SELECT                 | ✓ SELECT                | ✓ SELECT       | ✓ SELECT    |
 |                               | ✗ INSERT   | ✗                        | ✓                       | ✓              | ✓           |
 |                               | ✗ UPDATE   | ✗                        | ✓                       | ✓              | ✓           |

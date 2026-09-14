@@ -1,7 +1,7 @@
 -- ============================================================
 -- 2026-09-10 — Bootstrap (Opción A del usuario)
 --   * Wipe de datos de prueba: quotes, notas, profiles, auth.users
---   * Se conservan catálogos: vehicles, state_plates, calculator_settings
+--   * Se conservan catálogos: state_plates, calculator_settings
 --   * Alta del Super Admin: golease02@gmail.com
 --   * Idempotente y seguro: si ya hay usuarios (ej. producción),
 --     NO borra nada y delega el alta a 000003_superadmin_credentials.
@@ -73,67 +73,7 @@ BEGIN
   RAISE NOTICE 'Super Admin creado: % (número: %)', v_email, v_number;
 END $$;
 
--- 3. Catálogos base por si faltaran
-INSERT INTO public.vehicles (id, brand, model, suggestedPriceNet, isHybridOrElectric, year) VALUES
-  ('v0', 'Audi', 'Q3 Sportback', 969900, FALSE, 2026),
-  ('v1', 'HINO', '616 LONG', 407900, FALSE, 2026),
-  ('v2', 'TOYOTA', 'HILUX DOBLE CABINA', 520000, FALSE, 2026),
-  ('v3', 'TOYOTA', 'PRIUS HEV', 485000, TRUE, 2026),
-  ('v4', 'NISSAN', 'NP300', 450000, FALSE, 2026),
-  ('v5', 'BYD', 'DOLPHIN MINI EV', 399800, TRUE, 2026),
-  ('v6', 'FORD', 'TRANSIT CUSTOM', 780000, FALSE, 2026)
-ON CONFLICT (id) DO UPDATE SET
-  brand = EXCLUDED.brand, model = EXCLUDED.model,
-  suggestedPriceNet = EXCLUDED.suggestedPriceNet,
-  isHybridOrElectric = EXCLUDED.isHybridOrElectric, year = EXCLUDED.year;
-
-INSERT INTO public.state_plates (id, name, costNet) VALUES
-  ('cdmx', 'Ciudad de México', 2500),
-  ('jalisco', 'Jalisco', 1800),
-  ('nuevo_leon', 'Nuevo León', 2000),
-  ('queretaro', 'Querétaro', 1500),
-  ('edomex', 'Estado de México', 2200),
-  ('pendiente', 'Pendiente (Sin placa)', 0)
-ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name, costNet = EXCLUDED.costNet;
-
--- 3. Catálogos base por si faltaran
-INSERT INTO public.vehicles (id, brand, model, suggestedPriceNet, isHybridOrElectric, year) VALUES
-  ('v0', 'Audi', 'Q3 Sportback', 969900, FALSE, 2026),
-  ('v1', 'HINO', '616 LONG', 407900, FALSE, 2026),
-  ('v2', 'TOYOTA', 'HILUX DOBLE CABINA', 520000, FALSE, 2026),
-  ('v3', 'TOYOTA', 'PRIUS HEV', 485000, TRUE, 2026),
-  ('v4', 'NISSAN', 'NP300', 450000, FALSE, 2026),
-  ('v5', 'BYD', 'DOLPHIN MINI EV', 399800, TRUE, 2026),
-  ('v6', 'FORD', 'TRANSIT CUSTOM', 780000, FALSE, 2026)
-ON CONFLICT (id) DO UPDATE SET
-  brand = EXCLUDED.brand, model = EXCLUDED.model,
-  suggestedPriceNet = EXCLUDED.suggestedPriceNet,
-  isHybridOrElectric = EXCLUDED.isHybridOrElectric, year = EXCLUDED.year;
-
-INSERT INTO public.state_plates (id, name, costNet) VALUES
-  ('cdmx', 'Ciudad de México', 2500),
-  ('jalisco', 'Jalisco', 1800),
-  ('nuevo_leon', 'Nuevo León', 2000),
-  ('queretaro', 'Querétaro', 1500),
-  ('edomex', 'Estado de México', 2200),
-  ('pendiente', 'Pendiente (Sin placa)', 0)
-ON CONFLICT (id) DO UPDATE SET
-  name = EXCLUDED.name, costNet = EXCLUDED.costNet;
--- 3. Catálogos base por si faltaran
-INSERT INTO public.vehicles (id, brand, model, suggestedPriceNet, isHybridOrElectric, year) VALUES
-  ('v0', 'Audi', 'Q3 Sportback', 969900, FALSE, 2026),
-  ('v1', 'HINO', '616 LONG', 407900, FALSE, 2026),
-  ('v2', 'TOYOTA', 'HILUX DOBLE CABINA', 520000, FALSE, 2026),
-  ('v3', 'TOYOTA', 'PRIUS HEV', 485000, TRUE, 2026),
-  ('v4', 'NISSAN', 'NP300', 450000, FALSE, 2026),
-  ('v5', 'BYD', 'DOLPHIN MINI EV', 399800, TRUE, 2026),
-  ('v6', 'FORD', 'TRANSIT CUSTOM', 780000, FALSE, 2026)
-ON CONFLICT (id) DO UPDATE SET
-  brand = EXCLUDED.brand, model = EXCLUDED.model,
-  suggestedPriceNet = EXCLUDED.suggestedPriceNet,
-  isHybridOrElectric = EXCLUDED.isHybridOrElectric, year = EXCLUDED.year;
-
+-- Catálogos base por si faltaran (el catálogo `vehicles` se eliminó; ver migración 000009)
 INSERT INTO public.state_plates (id, name, costNet) VALUES
   ('cdmx', 'Ciudad de México', 2500),
   ('jalisco', 'Jalisco', 1800),
