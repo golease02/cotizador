@@ -143,8 +143,10 @@ export class AdminSellersComponent implements OnInit {
   ];
 
   async ngOnInit() {
+    // loadSellers(false): los colores se cargan en paralelo justo abajo, así que
+    // loadSellers NO debe volver a pedirlos (antes duplicaba la consulta de quotes).
     await Promise.all([
-      this.loadSellers(),
+      this.loadSellers(false),
       this.loadSellersQuoteColors(),
       this.loadSociosIfNeeded()
     ]);
@@ -176,13 +178,15 @@ export class AdminSellersComponent implements OnInit {
 
   // ===================== LISTADO =====================
 
-  async loadSellers() {
+  async loadSellers(refreshColors = true) {
     this.loading = true;
     const { data, error } = await this.admin.getSellersWithQuoteCount();
     if (!error) {
       this.sellers.set(data || []);
       this.applyFilters();
-      await this.loadSellersQuoteColors();
+      // En el ngOnInit los colores se piden en paralelo (refreshColors=false).
+      // En los refrescos tras crear/editar/eliminar vendedor sí se recalculan.
+      if (refreshColors) await this.loadSellersQuoteColors();
     } else {
       this.toastService.error('No se pudieron cargar los vendedores');
     }

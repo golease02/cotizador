@@ -114,12 +114,19 @@ export class LoginComponent {
         return;
       }
 
-      const loggedProfile = await this.auth.loadProfile(user.id);
+      // signIn() ya cargó el perfil en la señal: no repetimos el viaje de red.
+      // Solo si por alguna razón no quedó cargado, lo pedimos (caso excepcional).
+      let loggedProfile = this.auth.currentProfile();
+      if (!loggedProfile) {
+        loggedProfile = await this.auth.loadProfile(user.id);
+      }
 
+      // No bloqueamos el spinner con la navegación: la página destino muestra su
+      // propio estado de carga, así el login deja de verse colgado en "Ingresando...".
       if (loggedProfile?.role === 'super_admin' || loggedProfile?.role === 'socio') {
-        this.router.navigate(['/admin']);
+        void this.router.navigate(['/admin']);
       } else {
-        this.router.navigate(['/']);
+        void this.router.navigate(['/']);
       }
     } catch {
       // Error silencioso: no se muestra en consola
