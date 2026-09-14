@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -22,15 +22,19 @@ export class RegisterComponent implements OnInit {
   otherBrand = '';
   manualAddress = '';
   contactoGoLease = '';
-  errorMessage = '';
-  socios: any[] = [];
+  // Signals: la app corre en zoneless, así que una promesa que resuelve por su
+  // cuenta (carga de contactos, resultado del registro) NO dispara change
+  // detection. Con propiedades planas el select salía vacío al primer intento y
+  // el spinner/errores nunca se pintaban. Con signals el template se actualiza solo.
+  errorMessage = signal('');
+  socios = signal<any[]>([]);
 
   // Errores de validación por campo
   phoneError = '';
   passwordError = '';
 
   // Estado de UI
-  isLoading = false;
+  isLoading = signal(false);
   showPassword = false;
 
   private readonly phoneRegex = /^\d{10}$/;
@@ -40,10 +44,10 @@ export class RegisterComponent implements OnInit {
     const { data, error } = await this.auth.getPublicSocios();
     if (error) {
       console.error('[register] No se pudo cargar la lista de contactos GoLease:', error.message);
-      this.socios = [];
+      this.socios.set([]);
       return;
     }
-    this.socios = (data ?? []).filter((s: any) => s.active !== false);
+    this.socios.set((data ?? []).filter((s: any) => s.active !== false));
   }
 
   /** Filtra en vivo: solo dígitos, máximo 10 caracteres. */
@@ -128,7 +132,7 @@ export class RegisterComponent implements OnInit {
   ];
 
   async onRegister() {
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     // Validar número de celular y contraseña (errores por campo)
     const phoneOk = this.validatePhone();
@@ -137,52 +141,52 @@ export class RegisterComponent implements OnInit {
 
     // Validar nombre
     if (!this.fullName.trim()) {
-      this.errorMessage = 'El nombre completo es obligatorio';
+      this.errorMessage.set('El nombre completo es obligatorio');
       return;
     }
 
     // Validar marca
     if (!this.agencyBrand) {
-      this.errorMessage = 'Selecciona la marca de tu agencia';
+      this.errorMessage.set('Selecciona la marca de tu agencia');
       return;
     }
 
-        // Validar ubicación
+    // Validar ubicación
     const finalLocation = this.manualAddress.trim();
     if (!finalLocation) {
-      this.errorMessage = 'Escribe la ubicación de tu sucursal';
+      this.errorMessage.set('Escribe la ubicación de tu sucursal');
       return;
     }
 
     // Validar contacto GoLease
     if (!this.contactoGoLease) {
-      this.errorMessage = 'Selecciona tu contacto en GoLease';
+      this.errorMessage.set('Selecciona tu contacto en GoLease');
       return;
     }
 
     // Marca final
     const finalBrand = this.agencyBrand === 'Otro' ? this.otherBrand : this.agencyBrand;
     if (!finalBrand) {
-      this.errorMessage = 'Debes escribir el nombre de la marca';
+      this.errorMessage.set('Debes escribir el nombre de la marca');
       return;
     }
 
     // Crear email
     const email = `vendedor_${this.phoneNumber}@golease.com`;
 
-    this.isLoading = true;
+    this.isLoading.set(true);
     try {
       // Registrar en Supabase Auth
       const { error: authError } = await this.auth.signUp(email, this.password, this.fullName);
       if (authError) {
-        this.errorMessage = authError.message || 'Error al registrarse';
+        this.errorMessage.set(authError.message || 'Error al registrarse');
         return;
       }
 
       // Obtener usuario
       const user = this.auth.currentUser();
       if (!user) {
-        this.errorMessage = 'No se pudo obtener el usuario después del registro';
+        this.errorMessage.set('No se pudo obtener el usuario después del registro');
         return;
       }
 
@@ -201,16 +205,16 @@ export class RegisterComponent implements OnInit {
       const { error: profileError } = await this.auth.updateProfile(user.id, profileData);
 
       if (profileError) {
-        this.errorMessage = `Error al guardar datos: ${profileError.message || 'desconocido'}`;
+        this.errorMessage.set(`Error al guardar datos: ${profileError.message || 'desconocido'}`);
         return;
       }
 
       // Redirigir al inicio
       await this.router.navigate(['/']);
     } catch (error: any) {
-      this.errorMessage = error.message || 'Error inesperado. Intenta de nuevo.';
+      this.errorMessage.set(error.message || 'Error inesperado. Intenta de nuevo.');
     } finally {
-      this.isLoading = false;
+      this.isLoading.set(false);
     }
   }
 }
