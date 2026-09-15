@@ -59,6 +59,12 @@ export const routes: Routes = [
                 loadComponent: () => import('./components/admin/admin-sellers/admin-sellers').then(m => m.AdminSellersComponent)
             },
             {
+                // Dashboard de rendimiento por vendedor (mismo permiso que Vendedores).
+                path: 'rendimiento',
+                canActivate: [moduleGuard('sellers')],
+                loadComponent: () => import('./components/admin/admin-seller-performance/admin-seller-performance').then(m => m.AdminSellerPerformanceComponent)
+            },
+            {
                 path: 'admins',
                 canActivate: [superAdminGuard],
                 loadComponent: () => import('./components/admin/admin-admins/admin-admins').then(m => m.AdminAdminsComponent)

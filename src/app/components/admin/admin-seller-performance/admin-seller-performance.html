@@ -1,0 +1,274 @@
+﻿<div class="rendimiento-container">
+  <!-- Encabezado con selector de periodo -->
+  <header class="rendimiento-header">
+    <div>
+      <h1>Rendimiento del equipo</h1>
+      <span class="subtitle">Actividad y seguimiento de tus vendedores</span>
+    </div>
+    <div class="header-actions">
+      <div class="period-selector" role="group" aria-label="Periodo de análisis">
+        <button
+          type="button"
+          *ngFor="let p of periods"
+          class="period-btn"
+          [class.active]="period() === p"
+          [attr.aria-pressed]="period() === p"
+          (click)="setPeriod(p)"
+        >
+          {{ p }} días
+        </button>
+      </div>
+      <span class="update-badge">Actualizado: {{ today | date: 'dd/MM/yyyy HH:mm' }}</span>
+    </div>
+  </header>
+
+  <!-- Error -->
+  <div *ngIf="error()" class="error-banner" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" class="retry-btn" (click)="cargar()">Reintentar</button>
+  </div>
+
+  <!-- Cargando -->
+  <div *ngIf="loading()" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Cargando rendimiento del equipo...</p>
+  </div>
+
+  <ng-container *ngIf="!loading() && !error()">
+    <!-- KPIs del periodo -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Cotizaciones del periodo</span>
+          <span class="metric-value">{{ team()?.quotesPeriod || 0 }}</span>
+          <span class="metric-delta" [ngClass]="equipoDeltaClass()">
+            {{ equipoDeltaLabel() }} <em>{{ equipoDeltaDetalle() }}</em>
+          </span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Vendedores activos</span>
+          <span class="metric-value">{{ team()?.activeSellers || 0 }}</span>
+          <span class="metric-sub">de {{ sellers().length }} · activos en 14 días</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon amber">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Ticket promedio</span>
+          <span class="metric-value">{{ team()?.avgTicket || 0 | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
+          <span class="metric-sub">precio neto por cotización</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-icon red">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+            <polyline points="17 6 23 6 23 12" />
+          </svg>
+        </div>
+        <div class="metric-info">
+          <span class="metric-label">Valor del pipeline</span>
+          <span class="metric-value">{{ team()?.pipelineValue || 0 | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
+          <span class="metric-sub">cotizaciones generadas en el periodo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tendencia semanal -->
+    <div class="chart-card weekly-card">
+      <div class="chart-header">
+        <h3>Tendencia semanal</h3>
+        <span class="chart-sub">Cotizaciones por semana (últimas 8)</span>
+      </div>
+      <div class="weekly-chart" *ngIf="(team()?.weeklySeries?.length || 0) > 0">
+        <div class="weekly-item" *ngFor="let w of team()?.weeklySeries">
+          <span class="weekly-count">{{ w.count }}</span>
+          <div class="weekly-track">
+            <div class="weekly-fill" [style.height.%]="weeklyHeight(w.count)"></div>
+          </div>
+          <span class="weekly-label">{{ weekLabel(w.weekStart) }}</span>
+        </div>
+      </div>
+      <div *ngIf="!(team()?.weeklySeries?.length || 0)" class="empty-chart">Sin datos</div>
+    </div>
+
+    <!-- Alertas del equipo -->
+    <section class="alertas-panel" *ngIf="alertas().length > 0">
+      <div class="alertas-header">
+        <span class="section-kicker">Centro de atención</span>
+        <h2>Alertas del equipo</h2>
+      </div>
+      <div class="alertas-list">
+        <div class="alerta-item" *ngFor="let a of alertas()" [ngClass]="'alerta-' + a.type">
+          <span class="alerta-indicator"></span>
+          <div class="alerta-copy">
+            <strong>{{ a.title }}</strong>
+            <span>{{ a.detail }}</span>
+          </div>
+          <div class="alerta-names">
+            <button
+              type="button"
+              *ngFor="let s of a.sellers"
+              class="alerta-chip"
+              (click)="abrirVendedor(s.id)"
+              [title]="'Ver detalle de ' + s.full_name"
+            >
+              {{ s.full_name }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detalle por vendedor -->
+    <section class="sellers-panel">
+      <div class="sellers-header">
+        <div>
+          <span class="section-kicker">Equipo</span>
+          <h2>Detalle por vendedor</h2>
+        </div>
+        <div class="sort-group" role="group" aria-label="Ordenar por">
+          <button type="button" class="sort-btn" [class.active]="sortKey() === 'actividad'"
+            [attr.aria-pressed]="sortKey() === 'actividad'" (click)="setSort('actividad')">Actividad</button>
+          <button type="button" class="sort-btn" [class.active]="sortKey() === 'cotizaciones'"
+            [attr.aria-pressed]="sortKey() === 'cotizaciones'" (click)="setSort('cotizaciones')">Más cotizaciones</button>
+          <button type="button" class="sort-btn" [class.active]="sortKey() === 'pipeline'"
+            [attr.aria-pressed]="sortKey() === 'pipeline'" (click)="setSort('pipeline')">Mayor pipeline</button>
+        </div>
+      </div>
+
+      <div class="sellers-table" *ngIf="sortedSellers().length > 0">
+        <div class="table-head">
+          <span>Vendedor</span>
+          <span>Cotizaciones</span>
+          <span>Última actividad</span>
+          <span>Estado de cotizaciones</span>
+          <span>Pipeline</span>
+          <span>Notas</span>
+          <span>Acciones</span>
+        </div>
+
+        <div class="seller-block" *ngFor="let s of sortedSellers(); trackBy: trackBySeller" [id]="'vendedor-' + s.id">
+          <div class="seller-row" [class.is-open]="expandedId() === s.id">
+            <div class="seller-cell cell-seller">
+              <span class="seller-avatar">{{ (s.full_name || '?').charAt(0).toUpperCase() }}</span>
+              <span class="seller-copy">
+                <span class="seller-name">{{ s.full_name }}</span>
+                <span class="seller-meta">
+                  <span *ngIf="s.seller_number">Cel. {{ s.seller_number }}</span>
+                  <span *ngIf="s.agency_brand">{{ s.agency_brand }}</span>
+                  <span *ngIf="s.agency_location">{{ s.agency_location }}</span>
+                </span>
+              </span>
+            </div>
+
+            <div class="seller-cell cell-quotes">
+              <span class="cell-value">{{ s.quotesPeriod }}</span>
+              <span class="cell-delta" [ngClass]="deltaClass(s)">{{ deltaLabel(s) }}</span>
+              <span class="cell-sub">{{ s.totalQuotes }} totales</span>
+            </div>
+
+            <div class="seller-cell cell-activity">
+              <span class="estado-badge" [ngClass]="estadoActividad(s).className">{{ estadoActividad(s).label }}</span>
+              <span class="cell-sub">{{ s.quotesWeek }} en 7 días</span>
+            </div>
+
+            <div class="seller-cell cell-status">
+              <div class="status-bar" *ngIf="totalColores(s) > 0">
+                <span class="seg seg-reciente" [style.width.%]="colorWidth(s, 'reciente')"
+                  [title]="'Recientes: ' + s.byColor.reciente"></span>
+                <span class="seg seg-amarillo" [style.width.%]="colorWidth(s, 'amarillo')"
+                  [title]="'Pendientes: ' + s.byColor.amarillo"></span>
+                <span class="seg seg-rojo" [style.width.%]="colorWidth(s, 'rojo')"
+                  [title]="'Por caducar: ' + s.byColor.rojo"></span>
+                <span class="seg seg-verde" [style.width.%]="colorWidth(s, 'verde')"
+                  [title]="'Revisadas: ' + s.byColor.verde"></span>
+              </div>
+              <span class="cell-sub" *ngIf="totalColores(s) > 0">
+                {{ s.byColor.reciente }} rec · {{ s.byColor.amarillo }} pend ·
+                {{ s.byColor.rojo }} x caducar · {{ s.byColor.verde }} rev
+              </span>
+              <span class="cell-sub" *ngIf="totalColores(s) === 0">Sin cotizaciones</span>
+            </div>
+
+            <div class="seller-cell cell-pipeline">
+              <span class="cell-value">{{ s.pipelineValue | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
+              <span class="cell-sub">Ticket: {{ s.avgTicket | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
+            </div>
+
+            <div class="seller-cell cell-notes">
+              <span class="cell-value">{{ s.notasCount }}</span>
+              <span class="cell-sub">notas</span>
+            </div>
+
+            <div class="seller-cell cell-actions">
+              <a class="btn-quotes" [routerLink]="['/admin/quotes']" [queryParams]="{ seller: s.id }">
+                Ver cotizaciones
+              </a>
+              <button type="button" class="btn-toggle" (click)="toggleDetalle(s.id)"
+                [attr.aria-expanded]="expandedId() === s.id">
+                {{ expandedId() === s.id ? 'Ocultar' : 'Detalle' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Drill-down: últimas cotizaciones del vendedor -->
+          <div class="seller-detail" *ngIf="expandedId() === s.id">
+            <h4>Últimas cotizaciones</h4>
+            <div class="quote-list" *ngIf="s.recentQuotes.length > 0">
+              <div *ngFor="let q of s.recentQuotes" class="quote-card-mini" [ngClass]="getColorClase(q)">
+                <div class="card-color-indicator"></div>
+                <div class="card-header">
+                  <span class="client-name">{{ q.client_name || 'Cliente sin nombre' }}</span>
+                  <span class="price-tag">{{ q.pricenet | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
+                </div>
+                <div class="vehicle-name">{{ q.brand }} {{ q.model }}</div>
+                <div class="card-footer">
+                  <span class="seller-name">{{ q.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  <span class="status-badge">{{ getEtiqueta(q) }}</span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="s.recentQuotes.length === 0" class="empty-chart">
+              Este vendedor aún no tiene cotizaciones
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="sortedSellers().length === 0" class="empty-state">
+        <p>No hay vendedores en tu alcance.</p>
+      </div>
+    </section>
+  </ng-container>
+</div>

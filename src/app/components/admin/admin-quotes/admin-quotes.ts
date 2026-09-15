@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { QuotesService } from '../../../services/quotes.service';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
@@ -26,6 +27,7 @@ export class AdminQuotesComponent implements OnInit {
   private calculator = inject(FinancialCalculatorService);
   private catalog = inject(CatalogService);
   private cdr = inject(ChangeDetectorRef);
+  private route = inject(ActivatedRoute);
   readonly toastService = inject(ToastService);
 
   // Listado
@@ -62,6 +64,13 @@ export class AdminQuotesComponent implements OnInit {
   notaToDelete: any = null;
 
   async ngOnInit() {
+    // Drill-down desde el dashboard de rendimiento: /admin/quotes?seller=<id>
+    // preselecciona el filtro de vendedor antes de aplicar los filtros.
+    const sellerParam = this.route.snapshot.queryParamMap.get('seller');
+    if (sellerParam) {
+      this.filtroVendedor = sellerParam;
+    }
+
     await Promise.all([
       this.loadQuotes(),
       this.loadVendedores(),
