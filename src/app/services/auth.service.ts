@@ -253,16 +253,18 @@ export class AuthService {
     return 'Vendedor';
   }
 
-  /** Evalúa un permiso granular definido para socios (ej: 'dashboard', 'quotes', ...).
-   *  El super admin y el vendedor tienen todo su rol implícito. */
+  /** Evalúa un permiso granular definido para socios (ej: 'quotes', 'sellers', 'plates', ...).
+   *  El super admin y el vendedor tienen acceso implícito a todo.
+   *  Socio: 'dashboard'/'stats' son exclusivos del super admin; 'rendimiento'
+   *  es inherente al rol (siempre disponible); el resto se evalúa vía JSONB. */
   public canAccessModule(module: string): boolean {
     const profile = this.currentProfileSignal();
     if (!profile) return false;
     if (profile.role === 'super_admin') return true;
     if (profile.role === 'seller') return true;
-    // socio: revisa su JSONB de permisos (por defecto ninguno salvo dashboard)
+    if (module === 'dashboard' || module === 'stats') return false;
+    if (module === 'rendimiento') return profile.role === 'socio';
     const permisos: Record<string, boolean> = profile.permisos || {};
-    if (module === 'dashboard') return permisos['dashboard'] !== false;
     return permisos[module] === true;
   }
 

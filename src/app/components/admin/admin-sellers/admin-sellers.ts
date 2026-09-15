@@ -20,6 +20,10 @@ export class AdminSellersComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
 
+  get canManageNotas(): boolean {
+    return this.auth.canAccessModule('notas');
+  }
+
   // ------------------- LISTADO -------------------
   sellers = signal<any[]>([]);
   filteredSellers = signal<any[]>([]);
@@ -677,6 +681,7 @@ export class AdminSellersComponent implements OnInit {
   // ===================== NOTAS =====================
 
   async abrirNotas(seller: any) {
+    if (!this.canManageNotas) return;
     this.selectedSellerId = seller.id;
     this.showNotasModal = true;
     this.notaText = '';
@@ -708,6 +713,7 @@ export class AdminSellersComponent implements OnInit {
   }
 
   async guardarNota() {
+    if (!this.canManageNotas) return;
     if (!this.notaText.trim()) return;
     this.notaLoading = true;
     this.notaError = '';
@@ -747,17 +753,20 @@ export class AdminSellersComponent implements OnInit {
   }
 
   editarNota(nota: any) {
+    if (!this.canManageNotas) return;
     this.notaEditando = nota;
     this.notaText = nota.texto;
   }
 
   eliminarNota(nota: any) {
+    if (!this.canManageNotas) return;
     this.notaToDelete = nota;
     this.showNotaConfirmModal = true;
     this.cdr.detectChanges();
   }
 
   async confirmarEliminarNota() {
+    if (!this.canManageNotas) return;
     if (!this.notaToDelete) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
@@ -795,6 +804,7 @@ export class AdminSellersComponent implements OnInit {
   // ===================== TOOLTIP =====================
 
   mostrarNotasTooltip(event: MouseEvent, seller: any) {
+    if (!this.canManageNotas) return;
     this.client
       .from('notas')
       .select('texto, created_at')

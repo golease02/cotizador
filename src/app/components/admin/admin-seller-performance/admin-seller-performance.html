@@ -135,17 +135,25 @@
             <strong>{{ a.title }}</strong>
             <span>{{ a.detail }}</span>
           </div>
-          <div class="alerta-names">
-            <button
-              type="button"
-              *ngFor="let s of a.sellers"
-              class="alerta-chip"
-              (click)="abrirVendedor(s.id)"
-              [title]="'Ver detalle de ' + s.full_name"
-            >
-              {{ s.full_name }}
+          <div class="alerta-names" *ngIf="a.type === 'rojo'; else chipsTemplate">
+            <button type="button" class="alerta-chip alerta-link" (click)="verPorCaducar()"
+              title="Ver todas las cotizaciones por caducar">
+              Ver {{ totalPorCaducar() }} cotizaciones por caducar
             </button>
           </div>
+          <ng-template #chipsTemplate>
+            <div class="alerta-names">
+              <button
+                type="button"
+                *ngFor="let s of a.sellers"
+                class="alerta-chip"
+                (click)="abrirVendedor(s.id)"
+                [title]="'Ver detalle de ' + s.full_name"
+              >
+                {{ s.full_name }}
+              </button>
+            </div>
+          </ng-template>
         </div>
       </div>
     </section>

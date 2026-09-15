@@ -57,7 +57,7 @@ export class AdminAdminsComponent implements OnInit {
     password: '',
     role: 'socio' as 'super_admin' | 'socio',
     active: true,
-    permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true } as Record<string, boolean>
+    permisos: {} as Record<string, boolean>
   };
 
   // Catálogos CONSTANTES (readonly). NO convertir a getters: en zoneless, un
@@ -73,11 +73,11 @@ export class AdminAdminsComponent implements OnInit {
   ];
 
   readonly permissionCatalog: { key: string; label: string; description: string }[] = [
-    { key: 'dashboard', label: 'Dashboard', description: 'Ver el panel principal con metricas y atajos.' },
-    { key: 'quotes', label: 'Cotizaciones', description: 'Ver, crear y gestionar cotizaciones.' },
-    { key: 'sellers', label: 'Vendedores', description: 'Administrar los vendedores del socio.' },
-    { key: 'stats', label: 'Estadisticas', description: 'Acceder a reportes y estadisticas avanzadas.' },
-    { key: 'notas', label: 'Notas', description: 'Agregar y editar notas de seguimiento.' }
+    { key: 'sellers', label: 'Vendedores', description: 'Ver y administrar los vendedores del socio: crear, editar, activar/desactivar y reasignar.' },
+    { key: 'quotes', label: 'Cotizaciones', description: 'Ver y gestionar todas las cotizaciones: detalle, estado de revisión y por caducar.' },
+    { key: 'plates', label: 'Placas de Estado', description: 'Administrar el catálogo de placas por estado.' },
+    { key: 'parameters', label: 'Parámetros del cotizador', description: 'Configurar IVA, comisión, seguros y valores residuales.' },
+    { key: 'notas', label: 'Notas de seguimiento', description: 'Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones.' }
   ];
 
   // ------------------- DRAWER DE DETALLE -------------------
@@ -312,7 +312,7 @@ export class AdminAdminsComponent implements OnInit {
         password: '',
         role: data.role === 'super_admin' ? 'super_admin' : 'socio',
         active: data.active !== false,
-        permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true, ...(data.permisos || {}) }
+        permisos: { ...(data.permisos || {}) }
       };
 
       this.formLoading = false;
@@ -328,7 +328,7 @@ export class AdminAdminsComponent implements OnInit {
     this.adminForm = {
       id: '', seller_number: '', full_name: '', password: '',
       role: 'socio', active: true,
-      permisos: { dashboard: true, quotes: true, sellers: true, stats: false, notas: true }
+      permisos: {} as Record<string, boolean>
     };
     this.formError = '';
     this.fieldErrors = {};
@@ -666,6 +666,6 @@ export class AdminAdminsComponent implements OnInit {
 
   getPermissionState(admin: any, key: string): boolean {
     const permisos = admin?.permisos || {};
-    return key === 'dashboard' ? permisos[key] !== false : permisos[key] === true;
+    return permisos[key] === true;
   }
 }

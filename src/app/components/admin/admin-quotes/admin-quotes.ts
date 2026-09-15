@@ -44,9 +44,12 @@ export class AdminQuotesComponent implements OnInit {
   filtroPrecioMin: number | null = null;
   filtroPrecioMax: number | null = null;
   filtroColor: string = 'todos';
+  filtroBrand: string = 'todos';
 
   // Vendedores
   vendedores: any[] = [];
+  // Marcas de agencia únicas (para el filtro desplegable)
+  brandsList: string[] = [];
 
   // Modal de cotización
   showModal = false;
@@ -170,8 +173,15 @@ export class AdminQuotesComponent implements OnInit {
       this.vendedores = data.map((v: any) => ({
         id: v.id,
         full_name: v.full_name,
-        seller_number: v.seller_number || 'Sin número'
+        seller_number: v.seller_number || 'Sin número',
+        agency_brand: v.agency_brand || '',
       }));
+      // Marcas de agencia únicas para el filtro desplegable
+      const brands = new Set<string>();
+      for (const v of this.vendedores) {
+        if (v.agency_brand) brands.add(v.agency_brand);
+      }
+      this.brandsList = Array.from(brands).sort();
     }
   }
 
@@ -223,6 +233,10 @@ export class AdminQuotesComponent implements OnInit {
       filtered = filtered.filter(q => q.color === this.filtroColor);
     }
 
+    if (this.filtroBrand !== 'todos') {
+      filtered = filtered.filter(q => (q.seller_agency_brand || '') === this.filtroBrand);
+    }
+
     filtered.sort((a, b) => {
       if (a.fijada && !b.fijada) return -1;
       if (!a.fijada && b.fijada) return 1;
@@ -252,6 +266,7 @@ export class AdminQuotesComponent implements OnInit {
     this.filtroPrecioMin = null;
     this.filtroPrecioMax = null;
     this.filtroColor = 'todos';
+    this.filtroBrand = 'todos';
     this.applyFilters();
   }
 
@@ -443,6 +458,16 @@ export class AdminQuotesComponent implements OnInit {
       rojo: 'Por caducar'
     };
     return labels[quote.color] || 'Reciente';
+  }
+
+  /** True cuando la cotización fue marcada como revisada. */
+  isQuoteReviewedPublic(quote: any): boolean {
+    return this.isQuoteReviewed(quote);
+  }
+
+  /** Total de cotizaciones revisadas (revisada=true) en el listado filtrado. */
+  countReviewed(): number {
+    return this.filteredQuotes().filter(q => this.isQuoteReviewedPublic(q)).length;
   }
 
   // ===================== FIJAR COTIZACIÓN =====================

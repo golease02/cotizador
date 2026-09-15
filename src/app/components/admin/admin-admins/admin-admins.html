@@ -219,7 +219,7 @@
 
                 <div class="form-group permisos-group" *ngIf="adminForm.role === 'socio'">
                     <label>Permisos granulares</label>
-                    <p class="field-hint">Controla a qué módulos puede acceder este socio.</p>
+                    <p class="field-hint">El socio siempre puede ver Rendimiento (su panel principal). Marca los módulos adicionales que podrá usar. Los Socios solo se gestionan desde Super Admin.</p>
                     <div class="permisos-grid">
                         <label class="permiso-item" *ngFor="let perm of permissionCatalog">
                             <input type="checkbox" [(ngModel)]="adminForm.permisos[perm.key]" [name]="'perm_' + perm.key" />

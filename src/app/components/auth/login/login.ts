@@ -78,6 +78,23 @@ export class LoginComponent {
     this.showPassword = !this.showPassword;
   }
 
+  /**
+   * Envuelve una promesa con un timeout para que el login jamás se quede
+   * colgado en "Ingresando..." si la red o Supabase no responden.
+   * Si expira, rechaza con un Error cuyo mensaje ya es mostrable.
+   */
+  private async withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      clearTimeout(timer!);
+    }
+  }
+
   async onLogin(): Promise<void> {
     this.errorMessage.set('');
 
@@ -88,7 +105,11 @@ export class LoginComponent {
 
     this.isLoading.set(true);
     try {
-      const { data: profile, error: profileError } = await this.auth.getProfileBySellerNumber(this.phoneNumber);
+      const { data: profile, error: profileError } = await this.withTimeout(
+        this.auth.getProfileBySellerNumber(this.phoneNumber),
+        15000,
+        'No se pudo contactar al servidor. Revisa tu conexión e intenta de nuevo.'
+      );
       if (profileError || !profile) {
         this.errorMessage.set('Número de celular no registrado.');
         return;
@@ -102,7 +123,11 @@ export class LoginComponent {
         this.errorMessage.set('La cuenta no tiene un correo de autenticación configurado.');
         return;
       }
-      const { error } = await this.auth.signIn(email, this.password);
+      const { error } = await this.withTimeout(
+        this.auth.signIn(email, this.password),
+        20000,
+        'El servidor tardó demasiado en responder al iniciar sesión. Revisa tu conexión e intenta de nuevo.'
+      );
       if (error) {
         this.errorMessage.set(error.message || 'Error al iniciar sesión.');
         return;
@@ -118,7 +143,18 @@ export class LoginComponent {
       // Solo si por alguna razón no quedó cargado, lo pedimos (caso excepcional).
       let loggedProfile = this.auth.currentProfile();
       if (!loggedProfile) {
-        loggedProfile = await this.auth.loadProfile(user.id);
+        try {
+          loggedProfile = await this.withTimeout(
+            this.auth.loadProfile(user.id),
+            15000,
+            'Se inició sesión pero no se pudo cargar el perfil. Revisa tu conexión e intenta de nuevo.'
+          );
+        } catch (e: any) {
+          this.errorMessage.set(
+            e?.message || 'Se inició sesión pero no se pudo cargar el perfil.'
+          );
+          return;
+        }
       }
 
       // No bloqueamos el spinner con la navegación: la página destino muestra su

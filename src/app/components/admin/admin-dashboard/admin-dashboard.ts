@@ -1,8 +1,10 @@
-import { Component, inject, signal, OnDestroy } from '@angular/core';
+import { Component, inject, signal, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { ThemeService } from '../../../services/theme.service';
+import { ToastService } from '../../../services/toast.service';
+import { getSupabaseClient, sessionReady } from '../../../services/supabase-client';
 import { Subscription, filter } from 'rxjs';
 
 @Component({
@@ -12,22 +14,71 @@ import { Subscription, filter } from 'rxjs';
     templateUrl: './admin-dashboard.html',
   styleUrls: ['./admin-dashboard.css'],
 })
-export class AdminDashboardComponent implements OnDestroy {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   public auth = inject(AuthService);
   public theme = inject(ThemeService);
   private router = inject(Router);
+  public toastService = inject(ToastService);
+  private client = getSupabaseClient();
   private routerEventsSub: Subscription;
 
   sidebarOpen = signal(false);
+  private alertaRojaTimeout: any = null;
 
   constructor() {
     this.routerEventsSub = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => this.sidebarOpen.set(false));
+      .subscribe(() => {
+        this.sidebarOpen.set(false);
+        this.verificarAlertasPorCaducar();
+      });
+  }
+
+  async ngOnInit(): Promise<void> {
+    await this.verificarAlertasPorCaducar();
   }
 
   ngOnDestroy(): void {
     this.routerEventsSub?.unsubscribe();
+    this.limpiarTimeout();
+  }
+
+  /** Polling ligero: cada 5 minutos verifica cotizaciones por caducar. */
+  private scheduleAlertasPorCaducar(): void {
+    this.limpiarTimeout();
+    this.alertaRojaTimeout = setTimeout(() => {
+      this.verificarAlertasPorCaducar();
+    }, 5 * 60 * 1000);
+  }
+
+  private limpiarTimeout(): void {
+    if (this.alertaRojaTimeout) {
+      clearTimeout(this.alertaRojaTimeout);
+      this.alertaRojaTimeout = null;
+    }
+  }
+
+  /** Cuenta cotizaciones con color rojo (>7 días, no revisadas) y muestra toast. */
+  async verificarAlertasPorCaducar(): Promise<void> {
+    try {
+      await sessionReady();
+      const { count, error } = await this.client
+        .from('quotes')
+        .select('*', { count: 'exact', head: true })
+        .eq('color', 'rojo');
+      if (error) return;
+      if (count && count > 0) {
+        this.toastService.info(
+          `${count} cotización${count === 1 ? '' : 'es'} por caducar`,
+          10000,
+          'Ver',
+          () => this.router.navigate(['/admin/quotes'], { queryParams: { color: 'rojo' } }),
+        );
+      }
+      this.scheduleAlertasPorCaducar();
+    } catch (e) {
+      this.scheduleAlertasPorCaducar();
+    }
   }
 
   toggleSidebar(): void {
@@ -45,5 +96,10 @@ export class AdminDashboardComponent implements OnDestroy {
   async logout(): Promise<void> {
     await this.auth.signOut();
     this.router.navigate(['/login']);
+  }
+
+  handleToast(t: any): void {
+    if (t.action) t.action();
+    this.toastService.dismiss(t.id);
   }
 }

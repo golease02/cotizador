@@ -516,6 +516,22 @@
   color: var(--danger);
 }
 
+/* Badge de "Revisada" explicito (además del color verde) */
+.reviewed-badge {
+  display: inline-block;
+  padding: 0.12rem 0.5rem;
+  margin-left: 0.3rem;
+  border-radius: 20px;
+  background: var(--accent-green-light);
+  color: var(--accent-green-dark);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
 .card-details {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

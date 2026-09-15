@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
-import { adminGuard, moduleGuard } from './guards/admin-guard';
+import { adminGuard, moduleGuard, adminHomeGuard } from './guards/admin-guard';
 import { superAdminGuard } from './guards/super-admin-guard';
 
 export const routes: Routes = [
@@ -32,9 +32,9 @@ export const routes: Routes = [
         loadComponent: () => import('./components/cotizador/cotizador').then(m => m.CotizadorComponent),
         canActivate: [AuthGuard]
     },
-    {
+                                {
         path: 'perfil',
-                loadComponent: () => import('./components/perfil/perfil').then(m => m.PerfilComponent),
+        loadComponent: () => import('./components/perfil/perfil').then(m => m.PerfilComponent),
         canActivate: [AuthGuard]
     },
     // ✅ Ruta alternativa por si alguien escribe /mis-cotizaciones (redirige a raíz)
@@ -50,7 +50,7 @@ export const routes: Routes = [
         children: [
             {
                 path: '',
-                canActivate: [moduleGuard('dashboard')],
+                canActivate: [adminHomeGuard],
                 loadComponent: () => import('./components/admin/admin-stats/admin-stats').then(m => m.AdminStatsComponent)
             },
             {
@@ -59,9 +59,9 @@ export const routes: Routes = [
                 loadComponent: () => import('./components/admin/admin-sellers/admin-sellers').then(m => m.AdminSellersComponent)
             },
             {
-                // Dashboard de rendimiento por vendedor (mismo permiso que Vendedores).
+                // Rendimiento: panel principal del socio (inherente al rol).
+                // Acceso para super_admin y socio activo — lo restringe el adminGuard del padre.
                 path: 'rendimiento',
-                canActivate: [moduleGuard('sellers')],
                 loadComponent: () => import('./components/admin/admin-seller-performance/admin-seller-performance').then(m => m.AdminSellerPerformanceComponent)
             },
             {
@@ -69,7 +69,7 @@ export const routes: Routes = [
                 canActivate: [superAdminGuard],
                 loadComponent: () => import('./components/admin/admin-admins/admin-admins').then(m => m.AdminAdminsComponent)
             },
-            {
+                                                {
                 path: 'quotes',
                 canActivate: [moduleGuard('quotes')],
                 loadComponent: () => import('./components/admin/admin-quotes/admin-quotes').then(m => m.AdminQuotesComponent)
@@ -83,6 +83,13 @@ export const routes: Routes = [
                 path: 'parameters',
                 canActivate: [moduleGuard('parameters')],
                 loadComponent: () => import('./components/admin/admin-parameters/admin-parameters').then(m => m.AdminParametersComponent)
+            },
+            // ✅ Página "Sin acceso" — no tiene guards; es el destino al que el moduleGuard
+            // redirige cuando un socio no tiene permiso para un módulo. Al no tener
+            // canActivate, la navegación siempre completa y evita el bucle infinito.
+            {
+                path: 'sin-acceso',
+                loadComponent: () => import('./components/admin/admin-sin-acceso/admin-sin-acceso').then(m => m.AdminSinAccesoComponent)
             }
         ]
     },

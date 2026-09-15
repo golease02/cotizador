@@ -36,8 +36,8 @@ export class ToastService {
     this.push({ id: ++toastCounter, type: 'error', message }, duration);
   }
 
-  info(message: string, duration = 4000): void {
-    this.push({ id: ++toastCounter, type: 'info', message }, duration);
+  info(message: string, duration = 4000, actionLabel?: string, action?: () => void): void {
+    this.push({ id: ++toastCounter, type: 'info', message, actionLabel, action }, duration);
   }
 
   /** Toast con acción de deshacer (por ejemplo, para el toggle de estado). */

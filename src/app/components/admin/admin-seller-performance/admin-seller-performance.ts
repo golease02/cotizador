@@ -1,6 +1,6 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import {
   AdminService,
   SellerPerformance,
@@ -26,6 +26,7 @@ interface AlertaEquipo {
 })
 export class AdminSellerPerformanceComponent implements OnInit {
   private admin = inject(AdminService);
+  private router = inject(Router);
 
   public today = new Date();
   public loading = signal(true);
@@ -252,6 +253,16 @@ export class AdminSellerPerformanceComponent implements OnInit {
 
   weekLabel(weekStart: string): string {
     return new Date(weekStart).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' });
+  }
+
+  /** Navega a /admin/quotes con el filtro de color rojo pre-aplicado. */
+  verPorCaducar(): void {
+    this.router.navigate(['/admin/quotes'], { queryParams: { color: 'rojo' } });
+  }
+
+  /** Total de cotizaciones "por caducar" (color rojo) en el equipo. */
+  totalPorCaducar(): number {
+    return this.sellers().reduce((sum, s) => sum + s.byColor.rojo, 0);
   }
 
   trackBySeller(_index: number, seller: SellerPerformance): string {

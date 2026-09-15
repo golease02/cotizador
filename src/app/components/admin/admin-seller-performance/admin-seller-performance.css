@@ -490,6 +490,17 @@
   color: var(--accent-green-dark);
 }
 
+.alerta-link {
+  border-color: var(--accent-green-dark);
+  background: var(--surface-card);
+  color: var(--accent-green-dark);
+}
+
+.alerta-link:hover {
+  background: var(--accent-green-dark);
+  color: var(--text-on-accent);
+}
+
 /* ============================================
    DETALLE POR VENDEDOR
    ============================================ */

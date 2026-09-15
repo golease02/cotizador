@@ -1,3 +1,0 @@
--- Stub local: esta migración ya está aplicada remotamente.
--- Se crea un archivo vacío para que el historial local coincida con el remoto
--- y permita `supabase db push` de las migraciones nuevas.

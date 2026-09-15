@@ -134,8 +134,30 @@ cotizador/
 | Rol          | Descripción                                                                 |
 |-------------|------------------------------------------------------------------------------|
 | `super_admin` | Acceso total. Ve todas las cotizaciones de todos los vendedores. Puede crear/eliminar cualquier usuario, asignar roles, cambiar socio de un vendedor, y otorgar permisos granulares. |
-| `socio`    | (antes llamado `admin`) Ve solo sus vendedores asociados (vía `socio_id`). Tiene los permisos que el super-admin le otorgue (`permisos` JSONB). Puede crear vendedores bajo su red. |
+| `socio`    | Ve solo sus vendedores asociados (vía `socio_id`). **Rendimiento es su panel principal** (inherente al rol, no es un permiso JSON). Los demás módulos se controlan vía `permisos` JSONB otorgados por el super-admin. Puede crear vendedores bajo su red. |
 | `seller`   | Solo ve y crea sus propias cotizaciones. No accede al panel admin.           |
+
+#### Acceso por pantalla
+
+| Pantalla | Super Admin | Socio | Seller |
+|---|---|---|---|
+| `admin-stats` (`/admin`) | Panel principal | ❌ Redirigido a Rendimiento | ❌ |
+| `Rendimiento` (`/admin/rendimiento`) | Sí | ✅ **Panel principal, siempre** | ❌ |
+| Vendedores / Cotizaciones / Placas / Parámetros | Sí | Según permiso JSONB | ❌ |
+| Notas de seguimiento | Sí | Según permiso `notas` | ❌ |
+| Socios (`/admin/admins`) | Sí | ❌ | ❌ |
+
+#### Catálogo de permisos granulares (`permisos` JSONB del socio)
+
+| Key | Nombre en UI | Descripción |
+|---|---|---|
+| `sellers` | Vendedores | Ver y administrar los vendedores del socio: crear, editar, activar/desactivar y reasignar. |
+| `quotes` | Cotizaciones | Ver y gestionar todas las cotizaciones: detalle, estado de revisión y por caducar. |
+| `plates` | Placas de Estado | Administrar el catálogo de placas por estado. |
+| `parameters` | Parámetros del cotizador | Configurar IVA, comisión, seguros y valores residuales. |
+| `notas` | Notas de seguimiento | Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones. |
+
+Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats` (no se usaba). `rendimiento` también se eliminó del JSONB: ahora es inherente al rol socio. Default del socio nuevo: **sin permisos marcados** — el super-admin elige cuáles otorgar.
 
 ### Dónde está implementada la lógica
 
@@ -144,17 +166,19 @@ cotizador/
   - `auth.guard.ts` → requiere sesión activa (`AuthGuard`)
   - `admin-guard.ts` → requiere `super_admin` o `socio` activo (`adminGuard`)
   - `super-admin-guard.ts` → requiere `super_admin` (`superAdminGuard`)
-- **Lógica de roles** — `src/app/services/auth.service.ts`:
-  - `isAdmin()` → true para `super_admin` | `socio`
-  - `isSuperAdmin()` → true solo para `super_admin`
-  - `isSocio()` → true para `socio`
-  - `canManageProfile(targetUserId)` → propietario, super_admin, o socio del mismo grupo
-  - `canAccessModule(module)` → super_admin = todo; seller = todo; socio = revisa `permisos` JSONB
-  - `createUserAsAdmin()` → super_admin crea cualquier rol; socio solo crea `seller`
-- **Routing** — `src/app/app.routes.ts`:
-  - `/` → Mis Cotizaciones (seller) con `AuthGuard`
-  - `/cotizador` → Cotizador con `AuthGuard`
-  - `/admin` → AdminDashboard con `AuthGuard` + `adminGuard`, hijos con `superAdminGuard` en `/admin/admins`
+ - **Lógica de roles** — `src/app/services/auth.service.ts`:
+   - `isAdmin()` → true para `super_admin` | `socio`
+   - `isSuperAdmin()` → true solo para `super_admin`
+   - `isSocio()` → true para `socio`
+   - `canAccessModule(module)` → super_admin = todo; seller = todo; socio = `dashboard`/`stats` → false; `rendimiento` → true (inherente); resto revisa `permisos` JSONB
+   - `createUserAsAdmin()` → super_admin crea cualquier rol; socio solo crea `seller`
+ - **Routing** — `src/app/app.routes.ts`:
+   - `/` → Mis Cotizaciones (seller) con `AuthGuard`
+   - `/cotizador` → Cotizador con `AuthGuard`
+   - `/admin` → AdminDashboard con `AuthGuard` + `adminGuard`
+   - `/admin` (child `''`) → `adminHomeGuard`: super_admin → AdminStats; socio → redirect `/admin/rendimiento`
+   - `/admin/rendimiento` → child sin `moduleGuard`; accede super_admin y socio activo (via parent `adminGuard`)
+   - `/admin/admins` → `superAdminGuard`
 
 **Backend (Supabase RLS + RPCs):**
 - Migración `20260910000000_socios_superadmin.sql`:
@@ -170,8 +194,8 @@ cotizador/
 
 ### Pendientes de permisos
 
-- El super-admin debe poder **asignar/cambiar el socio de un vendedor** — el trigger `secure_profiles_row` impide que no-socios cambien `socio_id`, pero **falta la UI en `admin-sellers`** para que el super-admin seleccione el socio.(Aun no existe)
-- Los permisos granulares (`permisos` JSONB) están modelados en BD y en `AdminAdminsComponent`, pero **falta aplicar `canAccessModule()` en las rutas hijas del admin** (actualmente `adminGuard` solo verifica rol, no permisos específicos).
+- **Asignar/cambiar socio de un vendedor (super-admin):** implementado en `admin-sellers` (selector de socio en edición) y en `admin-admins` (drawer de detalle con botón "Reasignar"). El trigger `secure_profiles_row` impide que no-socios cambien `socio_id`.
+- **Permisos granulares en rutas admin:** implementado vía `adminHomeGuard` (redirección raíz), `moduleGuard` (permisos JSONB en rutas hijas) y `canAccessModule()` actualizado. `Rendimiento` es inherente al socio.
 
 ## 4. Reglas de negocio del cotizador
 
@@ -201,7 +225,7 @@ cotizador/
 6. **Híbrido** — toggle Sí/No (implementado en `quote-form.component.html`). La renta básica cambia de $6,000 a $8,550.
 7. **Seguro** — actualmente es un toggle (Pendiente $0 / Estimado 3.5%). Regla: **cambiar a menú desplegable**. [NO IMPLEMENTADO]
 8. **Porcentajes 10% y 2%** — deben alinearse a la derecha. [NO IMPLEMENTADO — ver Pendientes]
-9. **Nomenclatura del dashboard** — usar **"Por caducar"** en lugar de "Urgentes". Actualmente se usa "Urgentes"/"Urgente" en `admin-quotes`, `admin-stats`, y los RPCs (`totalUrgentes`, `urgentes`). [NO IMPLEMENTADO — ver Pendientes]
+9. **Nomenclatura del dashboard** — usar **"Por caducar"** en lugar de "Urgentes". **Implementado** en UI (`admin-stats`, `admin-quotes`, `admin-seller-performance`). Las variables internas y campos RPC siguen usando `totalUrgentes`/`urgentes` como nombre técnico.
 10. **PDF** — el PDF (componente `quote-breakdown`) **no se toca** salvo indicación explícita. Los cambios de "opciones de arrendamiento" son solo en la interfaz del cotizador.
 
 ### Motor de cálculo
@@ -256,6 +280,8 @@ cotizador/
   9. `20260910000007_rls_scope_indexes.sql` — índices + policies de `quotes` con alcance por socio
   10. `20260910000008_fix_delete_user.sql` — fix de referencia ambigua en RPC `delete_user`
   11. `20260910000009_drop_vehicles_table.sql` — drop del catálogo `vehicles` (CRUD eliminado)
+  12. `20260911000000_seller_performance_rpcs.sql` — RPCs de rendimiento por vendedor
+  13. `20260911000100_cleanup_permisos_obsoletos.sql` — limpieza idempotente de claves `dashboard`/`stats`/`rendimiento` del JSONB `permisos` de socios (Rendimiento pasa a ser inherente al rol)
 - **Aplicar cambios:** `npx supabase db push` (o `supabase db reset` para desarrollo)
 - **No hay seeders tradicionales** — los catálogos base se insertan en `000001_bootstrap_super_admin.sql` (placas). El catálogo de **vehículos** (`vehicles`) fue **eliminado** en `20260910000009_drop_vehicles_table.sql`.
 
@@ -310,8 +336,8 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 | Requerimiento | Estado | Archivo(s) |
 |--------------|--------|-----------|
-| Renombrar "Urgentes" → "Por caducar" en el dashboard | **Pendiente** | `admin-stats.ts` (línea 72, 110), `admin-stats.component.html` (línea 46), `admin-quotes.ts` (línea 110), `admin-quotes.component.html` (líneas 13, 38) |
-| Aplicar permisos granulares (`permisos` JSONB) en rutas admin | **Pendiente** | `admin-guard.ts`, `auth.service.ts` (`canAccessModule`) |
+| Renombrar "Urgentes" → "Por caducar" en el dashboard | **Implementado** | `admin-stats.ts`, `admin-stats.html`, `admin-quotes.ts`, `admin-quotes.html` |
+| Aplicar permisos granulares (`permisos` JSONB) en rutas admin | **Implementado** | `admin-guard.ts` (`adminHomeGuard`, `moduleGuard`), `auth.service.ts` (`canAccessModule`) |
 
 ### Registro
 
@@ -324,7 +350,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 | Requerimiento | Estado | Archivo(s) |
 |--------------|--------|-----------|
-| Asignar/cambiar socio de un vendedor (super-admin) | Parcial (BD lo permite, falta la UI) | `admin-sellers.ts/.html` |
+| Asignar/cambiar socio de un vendedor (super-admin) | Implementado | `admin-sellers.ts/.html`, `admin-admins.ts/.html` |
 | CRUD de notas de seguimiento | Implementado | `admin-sellers.ts`, `admin-quotes.ts` (tabla `notas`) |
 
 ### Despliegue móvil

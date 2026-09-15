@@ -196,4 +196,16 @@
     <main class="admin-content">
         <router-outlet></router-outlet>
     </main>
+
+    <!-- Toast host para notificaciones in-app en rutas admin -->
+    <div class="toast-host" aria-live="polite" *ngIf="toastService.toasts().length">
+        <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
+            (click)="handleToast(t)">
+            <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+            <span class="toast-msg">{{ t.message }}</span>
+            <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+            <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()"
+                aria-label="Cerrar">×</button>
+        </div>
+    </div>
 </div>
