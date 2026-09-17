@@ -75,6 +75,7 @@ export class AdminAdminsComponent implements OnInit {
   readonly permissionCatalog: { key: string; label: string; description: string }[] = [
     { key: 'sellers', label: 'Vendedores', description: 'Ver y administrar los vendedores del socio: crear, editar, activar/desactivar y reasignar.' },
     { key: 'quotes', label: 'Cotizaciones', description: 'Ver y gestionar todas las cotizaciones: detalle, estado de revisión y por caducar.' },
+    { key: 'seguimiento', label: 'Seguimiento', description: 'Tablero Kanban/lista del pipeline de cierre: etapas, fechas y datos operativos.' },
     { key: 'plates', label: 'Placas de Estado', description: 'Administrar el catálogo de placas por estado.' },
     { key: 'parameters', label: 'Parámetros del cotizador', description: 'Configurar IVA, comisión, seguros y valores residuales.' },
     { key: 'notas', label: 'Notas de seguimiento', description: 'Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones.' }

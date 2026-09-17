@@ -254,15 +254,27 @@ export class AuthService {
   }
 
   /** Evalúa un permiso granular definido para socios (ej: 'quotes', 'sellers', 'plates', ...).
-   *  El super admin y el vendedor tienen acceso implícito a todo.
+   *  El super admin tiene acceso implícito a todo.
+   *  Vendedor: acceso a todo salvo los módulos exclusivos del panel admin
+   *  ('dashboard', 'stats' y 'seguimiento').
    *  Socio: 'dashboard'/'stats' son exclusivos del super admin; 'rendimiento'
    *  es inherente al rol (siempre disponible); el resto se evalúa vía JSONB. */
   public canAccessModule(module: string): boolean {
     const profile = this.currentProfileSignal();
     if (!profile) return false;
     if (profile.role === 'super_admin') return true;
+
+    // Módulos exclusivos del panel de administración: nunca para vendedores.
+    if (module === 'dashboard' || module === 'stats' || module === 'seguimiento') {
+      if (profile.role === 'seller') return false;
+      if (module === 'seguimiento') {
+        const permisosSocio: Record<string, boolean> = profile.permisos || {};
+        return permisosSocio['seguimiento'] === true;
+      }
+      return false;
+    }
+
     if (profile.role === 'seller') return true;
-    if (module === 'dashboard' || module === 'stats') return false;
     if (module === 'rendimiento') return profile.role === 'socio';
     const permisos: Record<string, boolean> = profile.permisos || {};
     return permisos[module] === true;

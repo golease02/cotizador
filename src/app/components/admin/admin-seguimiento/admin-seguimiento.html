@@ -1,0 +1,321 @@
+<div class="seguimiento-panel">
+    <!-- ===================== CABECERA ===================== -->
+    <div class="page-header">
+        <div class="page-heading">
+            <span class="page-kicker">Operación y cierre</span>
+            <h2>Seguimiento de Negocios</h2>
+            <p>Del expediente al cierre: controla cada etapa del pipeline en un solo tablero.</p>
+            <div class="quote-summary">
+                <span class="badge badge-total"><strong>{{ resumen().total }}</strong> negocios</span>
+                <span class="badge badge-pending"><strong>{{ resumen().enProceso }}</strong> en proceso</span>
+                <span class="badge badge-reviewed"><strong>{{ resumen().cerrados }}</strong> cerrados</span>
+                <span class="badge badge-recent"><strong>{{ resumen().diasPromedio }}</strong> días prom. en etapa</span>
+            </div>
+        </div>
+
+        <div class="vista-toggle" role="group" aria-label="Cambiar vista del tablero">
+            <button type="button" class="toggle-btn" [class.is-active]="vista() === 'kanban'"
+                (click)="setVista('kanban')" title="Vista Kanban">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="3" width="6" height="18"></rect>
+                    <rect x="10" y="3" width="6" height="12"></rect>
+                    <rect x="17" y="3" width="4" height="15"></rect>
+                </svg>
+                Kanban
+            </button>
+            <button type="button" class="toggle-btn" [class.is-active]="vista() === 'lista'"
+                (click)="setVista('lista')" title="Vista de lista">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                Lista
+            </button>
+        </div>
+    </div>
+
+    <!-- Aviso cuando la migración aún no se aplicó en la BD -->
+    <div class="aviso-migracion" *ngIf="!loading() && !tablaDisponible()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <div>
+            <strong>El tablero está en modo lectura.</strong>
+            La tabla <code>quote_seguimiento</code> todavía no existe en la base de datos. Aplica
+            <code>supabase/migrations/20260917000000_quote_seguimiento.sql</code> para poder mover
+            negocios entre etapas.
+        </div>
+    </div>
+
+    <!-- ===================== TOOLBAR ===================== -->
+    <div class="toolbar">
+        <div class="search-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
+                placeholder="Buscar por cliente, activo, asesor o referenciado..." class="search-input" />
+            <button *ngIf="searchTerm" type="button" class="search-clear" (click)="searchTerm = ''; applyFilters()"
+                aria-label="Limpiar búsqueda">×</button>
+        </div>
+
+        <label class="toolbar-select">
+            <select [(ngModel)]="filtroVendedor" (change)="applyFilters()">
+                <option value="todos">Todos los asesores</option>
+                <option *ngFor="let v of vendedores()" [value]="v.id">{{ v.nombre }}</option>
+            </select>
+        </label>
+
+        <label class="toolbar-select">
+            <select [(ngModel)]="filtroEtapa" (change)="applyFilters()">
+                <option value="todas">Todas las etapas</option>
+                <option value="proceso">En proceso</option>
+                <option value="cerrados">Cerrados</option>
+                <option *ngFor="let c of columnas" [value]="c.index">{{ c.label }}</option>
+            </select>
+        </label>
+
+        <label class="toolbar-select">
+            <select [(ngModel)]="filtroPeriodo" (change)="applyFilters()">
+                <option value="todos">Todo el tiempo</option>
+                <option value="7dias">Últimos 7 días</option>
+                <option value="30dias">Últimos 30 días</option>
+                <option value="90dias">Últimos 90 días</option>
+            </select>
+        </label>
+
+        <button type="button" class="btn-secondary" *ngIf="hayFiltros" (click)="clearFilters()">
+            Limpiar filtros
+        </button>
+
+        <span class="results-count" *ngIf="!loading()">{{ filtrados().length }} resultado(s)</span>
+    </div>
+
+    <!-- ===================== SKELETON ===================== -->
+    <div *ngIf="loading()" class="skeleton-grid" aria-label="Cargando seguimiento">
+        <div class="skeleton-card" *ngFor="let i of [0,1,2,3]"></div>
+    </div>
+
+    <!-- ===================== ESTADO VACÍO ===================== -->
+    <div *ngIf="!loading() && filtrados().length === 0" class="empty-state">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <h3>Sin negocios en seguimiento</h3>
+        <p *ngIf="hayFiltros">Ningún negocio coincide con los filtros aplicados.</p>
+        <p *ngIf="!hayFiltros">Aún no hay cotizaciones para dar seguimiento.</p>
+    </div>
+
+    <!-- ===================== VISTA KANBAN ===================== -->
+    <div class="kanban" *ngIf="!loading() && vista() === 'kanban' && filtrados().length > 0">
+        <section class="kanban-columna" *ngFor="let col of columnas"
+            [class.is-over]="columnaOver === col.index"
+            [class.is-cierre]="col.index === columnas.length - 1"
+            (dragover)="onDragOver($event, col.index)"
+            (dragleave)="onDragLeave(col.index)"
+            (drop)="onDrop($event, col.index)">
+            <header class="col-header">
+                <div class="col-titulo">
+                    <span class="col-short">{{ col.short }}</span>
+                    <span class="col-label">{{ col.label }}</span>
+                </div>
+                <span class="col-contador">{{ itemsDeColumna(col.index).length }}</span>
+            </header>
+            <span class="col-valor">{{ formatMoneda(valorColumna(col.index)) }}</span>
+
+            <div class="col-cuerpo">
+                <article class="negocio-card" *ngFor="let item of itemsDeColumna(col.index); trackBy: trackByQuote"
+                    draggable="true" [class.is-dragging]="draggingId === item.quoteId"
+                    [ngClass]="'aging-' + nivelItem(item)"
+                    (dragstart)="onDragStart($event, item)" (dragend)="onDragEnd()"
+                    (click)="abrirDetalle(item)">
+                    <div class="card-top">
+                        <span class="card-cliente">{{ item.clientName }}</span>
+                        <span class="aging-pill" [ngClass]="'aging-' + nivelItem(item)"
+                            [title]="'Días en la etapa actual'">{{ diasEnEtapa(item) }}d</span>
+                    </div>
+                    <div class="card-activo">{{ item.activo }}</div>
+                    <div class="card-meta">
+                        <span class="card-asesor">{{ item.sellerName }}</span>
+                        <span class="card-fecha">{{ formatFecha(item.createdAt) }}</span>
+                    </div>
+                    <div class="card-ref" *ngIf="item.referenciado">Ref: {{ item.referenciado }}</div>
+                    <div class="card-progress" [title]="progreso(item) + '% del pipeline'">
+                        <span [style.width.%]="progreso(item)"></span>
+                    </div>
+                    <div class="card-pie">
+                        <span class="card-financiera">{{ item.financiera }}</span>
+                        <label class="mover-select" (click)="$event.stopPropagation()">
+                            <select (change)="onSelectorMover(item, $event)" title="Mover a otra etapa"
+                                aria-label="Mover negocio a otra etapa">
+                                <option value="">Mover a…</option>
+                                <option *ngFor="let c of columnas" [value]="c.index">{{ c.label }}</option>
+                            </select>
+                        </label>
+                    </div>
+                </article>
+                <p class="col-vacio" *ngIf="itemsDeColumna(col.index).length === 0">Sin negocios</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- ===================== VISTA LISTA (estilo Excel) ===================== -->
+    <div class="lista-wrapper" *ngIf="!loading() && vista() === 'lista' && filtrados().length > 0">
+        <table class="seguimiento-tabla">
+            <thead>
+                <tr>
+                    <th class="th-fecha">F. Inicio</th>
+                    <th class="th-asesor">Asesor</th>
+                    <th class="th-ref">Referenciado</th>
+                    <th class="th-cliente">Cliente</th>
+                    <th class="th-activo">Activo</th>
+                    <th class="th-financiera">Financiera</th>
+                    <th class="th-etapas" *ngFor="let e of etapas" [title]="e.label">{{ e.short }}</th>
+                    <th class="th-cierre">F. Cierre</th>
+                    <th class="th-acciones"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of filtrados(); trackBy: trackByQuote"
+                    [class.is-cerrado]="!!item.fechaCierre" (click)="abrirDetalle(item)">
+                    <td class="td-fecha">
+                        <span class="celda-fecha">{{ formatFecha(item.createdAt) }}</span>
+                        <span class="aging-pill" [ngClass]="'aging-' + nivelItem(item)">{{ diasEnEtapa(item) }}d</span>
+                    </td>
+                    <td class="td-asesor">{{ item.sellerName }}</td>
+                    <td class="td-ref">{{ item.referenciado || '—' }}</td>
+                    <td class="td-cliente">{{ item.clientName }}</td>
+                    <td class="td-activo">{{ item.activo }}</td>
+                    <td class="td-financiera"><span class="financiera-chip">{{ item.financiera }}</span></td>
+                    <td class="td-etapa" *ngFor="let e of etapas">
+                        <button type="button" class="etapa-chip"
+                            [class.is-done]="etapaCompletada(item, e.key)"
+                            [title]="e.label + ': ' + formatFechaEtapa(item, e.key)"
+                            (click)="$event.stopPropagation(); toggleEtapa(item, e.key)">
+                            {{ etapaCompletada(item, e.key) ? '✓' : '' }}
+                        </button>
+                    </td>
+                    <td class="td-cierre">
+                        <span *ngIf="item.fechaCierre" class="cierre-chip">{{ formatFecha(item.fechaCierre) }}</span>
+                        <span *ngIf="!item.fechaCierre" class="cierre-vacio">—</span>
+                    </td>
+                    <td class="td-acciones">
+                        <button type="button" class="btn-cerrar" *ngIf="!item.fechaCierre"
+                            (click)="$event.stopPropagation(); cerrarNegocio(item)" title="Marcar como cerrado">
+                            Cerrar
+                        </button>
+                        <button type="button" class="btn-reabrir" *ngIf="item.fechaCierre"
+                            (click)="$event.stopPropagation(); reabrirNegocio(item)" title="Reabrir negocio">
+                            Reabrir
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===================== DRAWER DE DETALLE ===================== -->
+<div class="drawer-overlay" *ngIf="showDetalle && detalle()" (click)="cerrarDetalle()"></div>
+<aside class="drawer" *ngIf="showDetalle && detalle()" role="dialog" aria-modal="true"
+    aria-label="Detalle del negocio">
+    <header class="drawer-header">
+        <div class="drawer-heading">
+            <span class="drawer-kicker">Negocio</span>
+            <h3>{{ detalle()!.clientName }}</h3>
+            <span class="drawer-sub">{{ detalle()!.activo }}</span>
+        </div>
+        <button type="button" class="drawer-close" (click)="cerrarDetalle()" aria-label="Cerrar">×</button>
+    </header>
+
+    <div class="drawer-body">
+        <!-- Estado y acciones -->
+        <section class="drawer-section">
+            <div class="drawer-estado">
+                <span class="estado-chip"
+                    [ngClass]="detalle()!.fechaCierre ? 'estado-cerrado' : 'aging-' + nivelItem(detalle()!)">
+                    {{ detalle()!.fechaCierre ? 'Cerrado' : 'En proceso' }}
+                </span>
+                <span class="drawer-meta">F. Inicio: {{ formatFecha(detalle()!.createdAt) }}</span>
+                <span class="drawer-meta" *ngIf="detalle()!.fechaCierre">
+                    F. Cierre: {{ formatFecha(detalle()!.fechaCierre) }}
+                </span>
+                <span class="drawer-meta">{{ diasEnEtapa(detalle()!) }} días en la etapa actual</span>
+            </div>
+            <div class="drawer-acciones">
+                <button type="button" class="btn-primary" *ngIf="!detalle()!.fechaCierre"
+                    (click)="cerrarNegocio(detalle()!)">Marcar como cerrado</button>
+                <button type="button" class="btn-secondary" *ngIf="detalle()!.fechaCierre"
+                    (click)="reabrirNegocio(detalle()!)">Reabrir negocio</button>
+            </div>
+        </section>
+
+        <!-- Datos editables -->
+        <section class="drawer-section">
+            <h4>Datos del negocio</h4>
+            <div class="form-group">
+                <label for="seg-activo">Activo</label>
+                <input id="seg-activo" type="text" [(ngModel)]="formActivo" name="segActivo"
+                    placeholder="Marca, modelo y año (o descripción libre)" />
+            </div>
+            <div class="form-group">
+                <label for="seg-ref">Referenciado</label>
+                <input id="seg-ref" type="text" [(ngModel)]="formReferenciado" name="segReferenciado"
+                    placeholder="¿Quién refirió al cliente?" />
+            </div>
+            <div class="form-group">
+                <label for="seg-fin">Financiera</label>
+                <input id="seg-fin" type="text" [(ngModel)]="formFinanciera" name="segFinanciera"
+                    placeholder="SIMPLE LEASE" />
+            </div>
+            <button type="button" class="btn-primary btn-block" [disabled]="guardando" (click)="guardarDetalle()">
+                {{ guardando ? 'Guardando…' : 'Guardar datos' }}
+            </button>
+        </section>
+
+        <!-- Timeline de etapas -->
+        <section class="drawer-section">
+            <h4>Etapas del pipeline</h4>
+            <ul class="timeline">
+                <li class="timeline-item" *ngFor="let e of etapas; let i = index"
+                    [class.is-done]="etapaCompletada(detalle()!, e.key)">
+                    <button type="button" class="timeline-check" (click)="toggleEtapa(detalle()!, e.key)"
+                        [attr.aria-pressed]="etapaCompletada(detalle()!, e.key)"
+                        [title]="etapaCompletada(detalle()!, e.key) ? 'Desmarcar etapa' : 'Marcar etapa como completada'">
+                        {{ etapaCompletada(detalle()!, e.key) ? '✓' : i + 1 }}
+                    </button>
+                    <div class="timeline-info">
+                        <span class="timeline-label">{{ e.label }}</span>
+                        <span class="timeline-fecha">{{ formatFechaEtapa(detalle()!, e.key) }}</span>
+                    </div>
+                </li>
+                <li class="timeline-item is-cierre" [class.is-done]="!!detalle()!.fechaCierre">
+                    <span class="timeline-check">{{ detalle()!.fechaCierre ? '✓' : '★' }}</span>
+                    <div class="timeline-info">
+                        <span class="timeline-label">Cierre</span>
+                        <span class="timeline-fecha">{{ formatFecha(detalle()!.fechaCierre) }}</span>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Cotización de origen -->
+        <section class="drawer-section">
+            <h4>Cotización</h4>
+            <p class="drawer-meta">Asesor: {{ detalle()!.sellerName }}</p>
+            <p class="drawer-meta">Precio neto: {{ formatMoneda(detalle()!.priceNet) }}</p>
+            <a class="drawer-link" [routerLink]="['/admin/quotes']" [queryParams]="{ seller: detalle()!.sellerId }"
+                (click)="cerrarDetalle()">Ver cotizaciones del asesor →</a>
+        </section>
+    </div>
+</aside>
