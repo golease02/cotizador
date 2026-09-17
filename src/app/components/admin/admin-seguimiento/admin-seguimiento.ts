@@ -292,12 +292,13 @@ export class AdminSeguimientoComponent implements OnInit {
 
   // ===================== DETALLE =====================
 
-  abrirDetalle(item: SeguimientoItem): void {
+    abrirDetalle(item: SeguimientoItem): void {
     this.detalle.set(item);
     this.formReferenciado = item.referenciado;
     this.formFinanciera = item.financiera;
     this.formActivo = item.activo;
     this.showDetalle = true;
+    this.cdr.markForCheck();
   }
 
   cerrarDetalle(): void {
