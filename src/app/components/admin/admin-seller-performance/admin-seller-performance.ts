@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import {
@@ -7,6 +7,7 @@ import {
   SellerPerformanceQuote,
   TeamPerformance,
 } from '../../../services/admin.service';
+import { AdminScopeService } from '../../../services/admin-scope.service';
 
 type SortKey = 'actividad' | 'cotizaciones' | 'pipeline';
 
@@ -26,7 +27,16 @@ interface AlertaEquipo {
 })
 export class AdminSellerPerformanceComponent implements OnInit {
   private admin = inject(AdminService);
+  private readonly scope = inject(AdminScopeService);
   private router = inject(Router);
+  constructor() {
+    effect(() => {
+      if (this.scope.reloadCount() === 0) return;
+      untracked(() => {
+        void this.cargar();
+      });
+    });
+  }
 
   public today = new Date();
   public loading = signal(true);
@@ -47,7 +57,7 @@ export class AdminSellerPerformanceComponent implements OnInit {
     switch (this.sortKey()) {
       case 'cotizaciones':
         return list.sort(
-          (a, b) => b.quotesPeriod - a.quotesPeriod || b.totalQuotes - a.totalQuotes
+          (a, b) => b.quotesPeriod - a.quotesPeriod || b.totalQuotes - a.totalQuotes,
         );
       case 'pipeline':
         return list.sort((a, b) => b.pipelineValue - a.pipelineValue);
@@ -67,7 +77,7 @@ export class AdminSellerPerformanceComponent implements OnInit {
     const list = this.sellers();
     const sinCotizar = list.filter((s) => s.totalQuotes === 0);
     const sinActividad = list.filter(
-      (s) => s.active && s.totalQuotes > 0 && (s.daysSinceLastQuote ?? 0) > 14
+      (s) => s.active && s.totalQuotes > 0 && (s.daysSinceLastQuote ?? 0) > 14,
     );
     const conRojas = list.filter((s) => s.byColor.rojo > 0);
     const desactivados = list.filter((s) => !s.active);
@@ -112,11 +122,20 @@ export class AdminSellerPerformanceComponent implements OnInit {
     await this.cargar();
   }
 
+  private performanceRequest = 0;
+
   async cargar(): Promise<void> {
+    const request = ++this.performanceRequest;
+    const revision = this.scope.reloadCount();
     this.loading.set(true);
     this.error.set(null);
 
-    const { data, error } = await this.admin.getSellerPerformance(this.period());
+    // En modo "Solo mi red" el super admin agrega localmente sobre su red.
+    const scopedIds = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
+    const { data, error } = await (scopedIds
+      ? this.admin.getSellerPerformance(this.period(), scopedIds)
+      : this.admin.getSellerPerformance(this.period()));
+    if (request !== this.performanceRequest || revision !== this.scope.reloadCount()) return;
     if (error || !data) {
       this.error.set('No se pudo cargar el rendimiento del equipo. Intenta de nuevo.');
       this.loading.set(false);

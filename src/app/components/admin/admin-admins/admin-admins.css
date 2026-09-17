@@ -1734,6 +1734,12 @@ button.stat-card:hover {
   }
 }
 
+/* ===== FILTRO DE ROL ===== */
+.role-filter {
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
 /* ===== VENDEDORES VINCULADOS AL SOCIO ===== */
 .sellers-linked-list {
   display: flex;

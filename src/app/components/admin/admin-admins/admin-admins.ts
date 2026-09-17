@@ -25,6 +25,12 @@ export class AdminAdminsComponent implements OnInit {
   filteredAdmins = signal<any[]>([]);
   loading = true;
   actionLoading = false;
+  roleFilter = signal<'todos' | 'socio' | 'super_admin'>('todos');
+  readonly roleFilters = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'socio', label: 'Socios' },
+    { value: 'super_admin', label: 'Super Admins' },
+  ] as const;
   searchTerm = '';
   statusFilter: 'todos' | 'activos' | 'inactivos' = 'todos';
   sortBy: 'recientes' | 'nombre' | 'antiguos' = 'recientes';
@@ -95,12 +101,18 @@ export class AdminAdminsComponent implements OnInit {
   reassignTargetSocioId = '';
   reassignLoading = false;
 
+  private detailRequest = 0;
+
   async ngOnInit() {
     await this.loadAdmins();
   }
 
   @HostListener('document:keydown.escape')
   onEscapeKey() {
+    if (this.reassignSellerId) {
+      if (!this.reassignLoading) this.cancelReassignSeller();
+      return;
+    }
     if (this.showConfirmModal) this.cancelModal();
     if (this.showDetailDrawer) this.closeDetail();
     if (this.showFormDrawer) this.closeFormDrawer();
@@ -114,15 +126,24 @@ export class AdminAdminsComponent implements OnInit {
   // ===================== DETALLE (DRAWER) =====================
 
   openDetail(admin: any) {
+    if (this.reassignLoading) return;
+    this.detailRequest++;
+    this.reassignSellerId = null;
+    this.reassignTargetSocioId = '';
     this.detailAdmin = admin;
     this.showDetailDrawer = true;
     this.linkedSellers.set([]);
-    if (admin.role === 'socio') {
+    if (admin.role === 'socio' || admin.role === 'super_admin') {
       this.loadLinkedSellers();
     }
   }
 
   closeDetail() {
+    if (this.reassignLoading) return;
+    this.detailRequest++;
+    this.reassignSellerId = null;
+    this.reassignTargetSocioId = '';
+    this.sellersLoading = false;
     this.showDetailDrawer = false;
     this.detailAdmin = null;
   }
@@ -155,7 +176,9 @@ export class AdminAdminsComponent implements OnInit {
   }
 
   applyFilters() {
-    let filtered = this.admins();
+    let filtered = this.admins().filter(a =>
+      this.roleFilter() === 'todos' || a.role === this.roleFilter()
+    );
     const term = this.searchTerm.trim().toLowerCase();
     if (term) {
       filtered = filtered.filter(a =>
@@ -191,6 +214,7 @@ export class AdminAdminsComponent implements OnInit {
   }
 
   clearFilters() {
+    this.roleFilter.set('todos');
     this.searchTerm = '';
     this.statusFilter = 'todos';
     this.sortBy = 'recientes';
@@ -552,19 +576,27 @@ export class AdminAdminsComponent implements OnInit {
 
   // ===================== SOCIOS: VENDEDORES VINCULADOS + REASIGNACIÓN =====================
 
-  /** Carga los vendedores vinculados al socio que se está viendo en detalle. */
+  /** Carga la red del socio o super admin, descartando respuestas de otro detalle. */
   async loadLinkedSellers(): Promise<void> {
     if (!this.detailAdmin) return;
+    const request = this.detailRequest;
+    const adminId = this.detailAdmin.id;
     this.sellersLoading = true;
-    const { data, error } = await this.auth.getSellersBySocio(this.detailAdmin.id);
-    if (error) {
+    try {
+      const { data, error } = await this.auth.getSellersBySocio(adminId);
+      if (request !== this.detailRequest) return;
+      if (error) throw error;
+      this.linkedSellers.set(data || []);
+    } catch {
+      if (request !== this.detailRequest) return;
       this.toastService.error('No se pudieron cargar los vendedores vinculados');
       this.linkedSellers.set([]);
-    } else {
-      this.linkedSellers.set(data || []);
+    } finally {
+      if (request === this.detailRequest) {
+        this.sellersLoading = false;
+        this.cdr.detectChanges();
+      }
     }
-    this.sellersLoading = false;
-    this.cdr.detectChanges();
   }
 
   /** Carga todos los socios para el selector de reasignación (excluye el actual). */

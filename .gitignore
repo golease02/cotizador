@@ -71,3 +71,5 @@ a6_test_rpc_scope.mjs
 # Directorio local de herramientas AI (no versionar en nuevos clones)
 .kilo/
 .history/
+.clinerules/
+.clineignore

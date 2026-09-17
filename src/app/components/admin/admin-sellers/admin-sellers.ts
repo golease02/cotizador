@@ -1,9 +1,19 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  OnInit,
+  ChangeDetectorRef,
+  HostListener,
+  effect,
+  untracked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { getSupabaseClient } from '../../../services/supabase-client';
+import { AdminScopeService } from '../../../services/admin-scope.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
@@ -18,6 +28,9 @@ export class AdminSellersComponent implements OnInit {
   public auth = inject(AuthService);
   private client = getSupabaseClient();
   private cdr = inject(ChangeDetectorRef);
+  private readonly scope = inject(AdminScopeService);
+  private sellersRequest = 0;
+  private colorsRequest = 0;
   readonly toastService = inject(ToastService);
 
   get canManageNotas(): boolean {
@@ -103,10 +116,18 @@ export class AdminSellersComponent implements OnInit {
 
   /** Calcula los colores de cotizaciones por vendedor para el semaforo. */
   async loadSellersQuoteColors(): Promise<void> {
+    const request = ++this.colorsRequest;
+    const revision = this.scope.reloadCount();
     try {
-      const { data: quotes, error } = await this.client
-        .from('quotes')
-        .select('seller_id, revisada, created_at');
+      const ids = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
+      if (ids?.size === 0) {
+        this.sellersQuoteColors.set({});
+        return;
+      }
+      let query = this.client.from('quotes').select('seller_id, revisada, created_at');
+      if (ids) query = query.in('seller_id', [...ids]);
+      const { data: quotes, error } = await query;
+      if (request !== this.colorsRequest || revision !== this.scope.reloadCount()) return;
       if (error || !quotes) return;
 
       const now = Date.now();
@@ -146,6 +167,23 @@ export class AdminSellersComponent implements OnInit {
     'LEXUS', 'INFINITI', 'ACURA'
   ];
 
+  constructor() {
+    // La carga inicial corresponde a ngOnInit; el efecto solo atiende cambios de alcance.
+    let revision = this.scope.reloadCount();
+    effect(() => {
+      const nextRevision = this.scope.reloadCount();
+      if (nextRevision === revision) return;
+      revision = nextRevision;
+      untracked(() => {
+        this.sellers.set([]);
+        this.filteredSellers.set([]);
+        this.sellersQuoteColors.set({});
+        this.selectedSellerCardId = null;
+        void this.loadSellers();
+      });
+    });
+  }
+
   async ngOnInit() {
     // loadSellers(false): los colores se cargan en paralelo justo abajo, así que
     // loadSellers NO debe volver a pedirlos (antes duplicaba la consulta de quotes).
@@ -183,10 +221,15 @@ export class AdminSellersComponent implements OnInit {
   // ===================== LISTADO =====================
 
   async loadSellers(refreshColors = true) {
+    const request = ++this.sellersRequest;
+    const revision = this.scope.reloadCount();
     this.loading = true;
     const { data, error } = await this.admin.getSellersWithQuoteCount();
+    if (request !== this.sellersRequest || revision !== this.scope.reloadCount()) return;
     if (!error) {
-      this.sellers.set(data || []);
+      // La RPC permite al super admin ver todo; el toggle acota solo este listado.
+      const ids = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
+      this.sellers.set(ids ? (data || []).filter(s => ids.has(s.id)) : (data || []));
       this.applyFilters();
       // En el ngOnInit los colores se piden en paralelo (refreshColors=false).
       // En los refrescos tras crear/editar/eliminar vendedor sí se recalculan.
@@ -194,6 +237,7 @@ export class AdminSellersComponent implements OnInit {
     } else {
       this.toastService.error('No se pudieron cargar los vendedores');
     }
+    if (request !== this.sellersRequest || revision !== this.scope.reloadCount()) return;
     this.loading = false;
     this.cdr.detectChanges();
   }

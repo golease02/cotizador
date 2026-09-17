@@ -1,10 +1,20 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef, HostListener } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  OnInit,
+  ChangeDetectorRef,
+  HostListener,
+  effect,
+  untracked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { QuotesService } from '../../../services/quotes.service';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
+import { AdminScopeService } from '../../../services/admin-scope.service';
 import { getSupabaseClient, sessionReady } from '../../../services/supabase-client';
 import { ToastService } from '../../../services/toast.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
@@ -16,8 +26,8 @@ import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasi
   selector: 'app-admin-quotes',
   standalone: true,
   imports: [CommonModule, FormsModule, QuoteBreakdownComponent],
-    templateUrl: './admin-quotes.html',
-  styleUrls: ['./admin-quotes.css']
+  templateUrl: './admin-quotes.html',
+  styleUrls: ['./admin-quotes.css'],
 })
 export class AdminQuotesComponent implements OnInit {
   private quotesService = inject(QuotesService);
@@ -29,6 +39,19 @@ export class AdminQuotesComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   readonly toastService = inject(ToastService);
+  private readonly scope = inject(AdminScopeService);
+  constructor() {
+    effect(() => {
+      if (this.scope.reloadCount() === 0) return;
+      untracked(() => {
+        this.filtroVendedor = 'todos';
+        void this.loadVendedores();
+        this.showModal = false;
+        this.showNotasModal = false;
+        this.applyFilters();
+      });
+    });
+  }
 
   // Listado
   quotes = signal<any[]>([]);
@@ -102,7 +125,7 @@ export class AdminQuotesComponent implements OnInit {
     if (!error) {
       // Conteo de notas por cotización (una consulta, con fallback por lotes)
       await sessionReady();
-      const quoteIds = (data || []).map((q:any) => q.id);
+      const quoteIds = (data || []).map((q: any) => q.id);
       const conteoNotas = new Map<string, number>();
       const { data: notasData, error: notasError } = await this.client
         .from('notas')
@@ -120,7 +143,10 @@ export class AdminQuotesComponent implements OnInit {
             .in('entidad_id', chunk);
           if (!chunkError) {
             for (const n of chunkData || []) {
-              conteoNotas.set(String(n.entidad_id), (conteoNotas.get(String(n.entidad_id)) || 0) + 1);
+              conteoNotas.set(
+                String(n.entidad_id),
+                (conteoNotas.get(String(n.entidad_id)) || 0) + 1,
+              );
             }
           } else {
             console.warn('Fallback por lote fall:', chunkError);
@@ -153,10 +179,7 @@ export class AdminQuotesComponent implements OnInit {
         }
       }
       for (const [color, ids] of idsPorColor) {
-        await this.client
-          .from('quotes')
-          .update({ color })
-          .in('id', ids);
+        await this.client.from('quotes').update({ color }).in('id', ids);
       }
       this.quotes.set(data || []);
       this.applyFilters();
@@ -170,7 +193,9 @@ export class AdminQuotesComponent implements OnInit {
   async loadVendedores() {
     const { data, error } = await this.admin.getSellersWithQuoteCount();
     if (!error && data) {
-      this.vendedores = data.map((v: any) => ({
+      const ids = this.scope.isRedMode() ? this.scope.sellerIds() : null;
+      const base = ids ? data.filter((v: any) => ids.has(v.id)) : data;
+      this.vendedores = base.map((v: any) => ({
         id: v.id,
         full_name: v.full_name,
         seller_number: v.seller_number || 'Sin número',
@@ -188,18 +213,25 @@ export class AdminQuotesComponent implements OnInit {
   applyFilters() {
     let filtered = this.quotes();
 
+    // Super admin modo "Solo mi red": filtrar a su red de vendedores.
+    if (this.scope.isRedMode()) {
+      const ids = this.scope.sellerIds();
+      filtered = filtered.filter((q) => ids.has(q.seller_id));
+    }
+
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(q =>
-        (q.client_name || '').toLowerCase().includes(term) ||
-        (q.brand || '').toLowerCase().includes(term) ||
-        (q.model || '').toLowerCase().includes(term) ||
-        (q.seller_name || '').toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (q) =>
+          (q.client_name || '').toLowerCase().includes(term) ||
+          (q.brand || '').toLowerCase().includes(term) ||
+          (q.model || '').toLowerCase().includes(term) ||
+          (q.seller_name || '').toLowerCase().includes(term),
       );
     }
 
     if (this.filtroVendedor !== 'todos') {
-      filtered = filtered.filter(q => q.seller_id === this.filtroVendedor);
+      filtered = filtered.filter((q) => q.seller_id === this.filtroVendedor);
     }
 
     if (this.filtroPeriodo !== 'todos') {
@@ -208,33 +240,33 @@ export class AdminQuotesComponent implements OnInit {
       if (this.filtroPeriodo === '7dias') limite.setDate(ahora.getDate() - 7);
       else if (this.filtroPeriodo === '30dias') limite.setDate(ahora.getDate() - 30);
       else if (this.filtroPeriodo === '90dias') limite.setDate(ahora.getDate() - 90);
-      filtered = filtered.filter(q => new Date(q.created_at) >= limite);
+      filtered = filtered.filter((q) => new Date(q.created_at) >= limite);
     }
 
     if (this.filtroFechaInicio) {
       const inicio = new Date(this.filtroFechaInicio);
       inicio.setHours(0, 0, 0);
-      filtered = filtered.filter(q => new Date(q.created_at) >= inicio);
+      filtered = filtered.filter((q) => new Date(q.created_at) >= inicio);
     }
     if (this.filtroFechaFin) {
       const fin = new Date(this.filtroFechaFin);
       fin.setHours(23, 59, 59);
-      filtered = filtered.filter(q => new Date(q.created_at) <= fin);
+      filtered = filtered.filter((q) => new Date(q.created_at) <= fin);
     }
 
     if (this.filtroPrecioMin !== null && this.filtroPrecioMin > 0) {
-      filtered = filtered.filter(q => q.pricenet >= this.filtroPrecioMin!);
+      filtered = filtered.filter((q) => q.pricenet >= this.filtroPrecioMin!);
     }
     if (this.filtroPrecioMax !== null && this.filtroPrecioMax > 0) {
-      filtered = filtered.filter(q => q.pricenet <= this.filtroPrecioMax!);
+      filtered = filtered.filter((q) => q.pricenet <= this.filtroPrecioMax!);
     }
 
     if (this.filtroColor !== 'todos') {
-      filtered = filtered.filter(q => q.color === this.filtroColor);
+      filtered = filtered.filter((q) => q.color === this.filtroColor);
     }
 
     if (this.filtroBrand !== 'todos') {
-      filtered = filtered.filter(q => (q.seller_agency_brand || '') === this.filtroBrand);
+      filtered = filtered.filter((q) => (q.seller_agency_brand || '') === this.filtroBrand);
     }
 
     filtered.sort((a, b) => {
@@ -271,7 +303,7 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   private patchQuote(id: string, patch: any) {
-    this.quotes.update(list => list.map(q => (q.id === id ? { ...q, ...patch } : q)));
+    this.quotes.update((list) => list.map((q) => (q.id === id ? { ...q, ...patch } : q)));
     this.applyFilters();
   }
 
@@ -320,7 +352,7 @@ export class AdminQuotesComponent implements OnInit {
       entidad_id: this.selectedQuoteId,
       texto: this.notaText.trim(),
       creado_por: user?.id || null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     let error = null;
@@ -331,9 +363,7 @@ export class AdminQuotesComponent implements OnInit {
         .eq('id', this.notaEditando.id);
       error = updateError;
     } else {
-      const { error: insertError } = await this.client
-        .from('notas')
-        .insert([payload]);
+      const { error: insertError } = await this.client.from('notas').insert([payload]);
       error = insertError;
     }
 
@@ -346,7 +376,9 @@ export class AdminQuotesComponent implements OnInit {
       this.notaEditando = null;
       await this.cargarNotasQuote(this.selectedQuoteId!);
       this.actualizarConteoNotas(this.selectedQuoteId!, this.notasCotizacion.length);
-      this.toastService.success(eraEdicion ? 'Nota actualizada correctamente' : 'Nota agregada correctamente');
+      this.toastService.success(
+        eraEdicion ? 'Nota actualizada correctamente' : 'Nota agregada correctamente',
+      );
     }
     this.notaLoading = false;
     this.cdr.detectChanges();
@@ -367,10 +399,7 @@ export class AdminQuotesComponent implements OnInit {
     if (!this.notaToDelete) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
-    const { error } = await this.client
-      .from('notas')
-      .delete()
-      .eq('id', this.notaToDelete.id);
+    const { error } = await this.client.from('notas').delete().eq('id', this.notaToDelete.id);
     if (error) {
       this.notaError = 'Error al eliminar nota';
       this.toastService.error('No se pudo eliminar la nota');
@@ -415,11 +444,11 @@ export class AdminQuotesComponent implements OnInit {
       .from('quotes')
       .update({
         revisada: true,
-        color: 'verde'
+        color: 'verde',
       })
       .eq('id', quoteId);
     if (error) return;
-    const updatedQuotes = this.quotes().map(q => {
+    const updatedQuotes = this.quotes().map((q) => {
       if (q.id === quoteId) {
         q.revisada = true;
         q.color = 'verde';
@@ -447,7 +476,7 @@ export class AdminQuotesComponent implements OnInit {
   }
 
   countQuotesByColor(color: string): number {
-    return this.filteredQuotes().filter(quote => (quote.color || 'reciente') === color).length;
+    return this.filteredQuotes().filter((quote) => (quote.color || 'reciente') === color).length;
   }
 
   getEtiqueta(quote: any): string {
@@ -455,7 +484,7 @@ export class AdminQuotesComponent implements OnInit {
       reciente: 'Reciente',
       verde: 'Revisada',
       amarillo: 'Pendiente',
-      rojo: 'Por caducar'
+      rojo: 'Por caducar',
     };
     return labels[quote.color] || 'Reciente';
   }
@@ -467,7 +496,7 @@ export class AdminQuotesComponent implements OnInit {
 
   /** Total de cotizaciones revisadas (revisada=true) en el listado filtrado. */
   countReviewed(): number {
-    return this.filteredQuotes().filter(q => this.isQuoteReviewedPublic(q)).length;
+    return this.filteredQuotes().filter((q) => this.isQuoteReviewedPublic(q)).length;
   }
 
   // ===================== FIJAR COTIZACIÓN =====================
@@ -487,22 +516,16 @@ export class AdminQuotesComponent implements OnInit {
       return;
     }
 
-    this.toastService.undo(
-      nuevoEstado ? 'Cotización fijada' : 'Cotización desfijada',
-      () => {
-        this.patchQuote(quote.id, { fijada: !nuevoEstado });
-        this.client
-          .from('quotes')
-          .update({ fijada: !nuevoEstado })
-          .eq('id', quote.id);
-      }
-    );
+    this.toastService.undo(nuevoEstado ? 'Cotización fijada' : 'Cotización desfijada', () => {
+      this.patchQuote(quote.id, { fijada: !nuevoEstado });
+      this.client.from('quotes').update({ fijada: !nuevoEstado }).eq('id', quote.id);
+    });
   }
 
   // ===================== MODAL DE COTIZACIÓN =====================
 
   async abrirModal(quote: any) {
-// 1. Intentar el snapshot inmutable guardado (fiel al momento de generación. Sí existe, se muestra tal cual.)
+    // 1. Intentar el snapshot inmutable guardado (fiel al momento de generación. Sí existe, se muestra tal cual.)
     const snapshot = await this.quotesService.getQuoteCalculation(quote.id);
 
     if (snapshot) {

@@ -1,4 +1,12 @@
-import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  OnInit,
+  ChangeDetectorRef,
+  effect,
+  untracked,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -14,6 +22,7 @@ import {
   diasEntre,
   nivelAging,
 } from '../../../services/seguimiento.service';
+import { AdminScopeService } from '../../../services/admin-scope.service';
 
 type VistaSeguimiento = 'kanban' | 'lista';
 
@@ -38,6 +47,17 @@ export class AdminSeguimientoComponent implements OnInit {
   private seguimiento = inject(SeguimientoService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
+  private readonly scope = inject(AdminScopeService);
+  constructor() {
+    effect(() => {
+      if (this.scope.reloadCount() === 0) return;
+      untracked(() => {
+        this.filtroVendedor = 'todos';
+        this.showDetalle = false;
+        this.applyFilters();
+      });
+    });
+  }
 
   readonly columnas = SEGUIMIENTO_COLUMNAS;
   readonly etapas = SEGUIMIENTO_ETAPAS;
@@ -100,8 +120,10 @@ export class AdminSeguimientoComponent implements OnInit {
   applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
     const desdePeriodo = this.fechaDesdePeriodo();
+    const scopeIds = this.scope.isRedMode() ? this.scope.sellerIds() : null;
 
     const lista = this.items().filter((i) => {
+      if (scopeIds && !scopeIds.has(i.sellerId)) return false;
       if (this.filtroVendedor !== 'todos' && i.sellerId !== this.filtroVendedor) return false;
 
       if (this.filtroEtapa !== 'todas') {
@@ -140,20 +162,21 @@ export class AdminSeguimientoComponent implements OnInit {
     const enProceso = lista.length - cerrados;
     const conDias = lista.filter((i) => !i.fechaCierre);
     const diasPromedio = conDias.length
-      ? Math.round(
-          conDias.reduce((sum, i) => sum + this.diasEnEtapa(i), 0) / conDias.length
-        )
+      ? Math.round(conDias.reduce((sum, i) => sum + this.diasEnEtapa(i), 0) / conDias.length)
       : 0;
     this.resumen.set({ total: lista.length, enProceso, cerrados, diasPromedio });
   }
 
   private actualizarVendedores(): void {
     const mapa = new Map<string, string>();
-    for (const i of this.items()) mapa.set(i.sellerId, i.sellerName);
+    const ids = this.scope.isRedMode() ? this.scope.sellerIds() : null;
+    for (const i of this.items()) {
+      if (!ids || ids.has(i.sellerId)) mapa.set(i.sellerId, i.sellerName);
+    }
     this.vendedores.set(
       [...mapa.entries()]
         .map(([id, nombre]) => ({ id, nombre }))
-        .sort((a, b) => a.nombre.localeCompare(b.nombre))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre)),
     );
   }
 
@@ -177,9 +200,7 @@ export class AdminSeguimientoComponent implements OnInit {
   // ===================== KANBAN =====================
 
   itemsDeColumna(index: number): SeguimientoItem[] {
-    return this.filtrados().filter(
-      (i) => computeColumnaActual(i.etapas, i.fechaCierre) === index
-    );
+    return this.filtrados().filter((i) => computeColumnaActual(i.etapas, i.fechaCierre) === index);
   }
 
   valorColumna(index: number): number {
@@ -188,7 +209,7 @@ export class AdminSeguimientoComponent implements OnInit {
 
   progreso(item: SeguimientoItem): number {
     return Math.round(
-      (Object.values(item.etapas).filter(Boolean).length / SEGUIMIENTO_ETAPAS.length) * 100
+      (Object.values(item.etapas).filter(Boolean).length / SEGUIMIENTO_ETAPAS.length) * 100,
     );
   }
 
@@ -232,7 +253,9 @@ export class AdminSeguimientoComponent implements OnInit {
 
     const ok = await this.seguimiento.moverAColumna(item, index);
     if (!ok) {
-      this.toastService.error('No se pudo mover el negocio. Revisa tu conexión e intenta de nuevo.');
+      this.toastService.error(
+        'No se pudo mover el negocio. Revisa tu conexión e intenta de nuevo.',
+      );
       return;
     }
     this.applyFilters();
@@ -240,7 +263,7 @@ export class AdminSeguimientoComponent implements OnInit {
     this.toastService.success(
       index >= SEGUIMIENTO_COLUMNAS.length - 1
         ? `${item.clientName} marcado como cerrado.`
-        : `Movido a "${SEGUIMIENTO_COLUMNAS[index].label}".`
+        : `Movido a "${SEGUIMIENTO_COLUMNAS[index].label}".`,
     );
   }
 
@@ -292,7 +315,7 @@ export class AdminSeguimientoComponent implements OnInit {
 
   // ===================== DETALLE =====================
 
-    abrirDetalle(item: SeguimientoItem): void {
+  abrirDetalle(item: SeguimientoItem): void {
     this.detalle.set(item);
     this.formReferenciado = item.referenciado;
     this.formFinanciera = item.financiera;

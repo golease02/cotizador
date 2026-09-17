@@ -31,6 +31,16 @@
         </button>
     </div>
 
+    <!-- FILTRO POR ROL -->
+    <div class="chip-group role-filter" role="group" aria-label="Filtrar por rol">
+      @for (filter of roleFilters; track filter.value) {
+        <button type="button" class="chip"
+          [class.is-active]="roleFilter() === filter.value"
+          [attr.aria-pressed]="roleFilter() === filter.value"
+          (click)="roleFilter.set(filter.value); applyFilters()">{{ filter.label }}</button>
+      }
+    </div>
+
     <!-- BÚSQUEDA Y FILTROS -->
     <div class="toolbar">
         <div class="search-wrapper">
@@ -244,11 +254,11 @@
 
 <!-- DRAWER: DETALLE DE SOCIO -->
 <div class="drawer-overlay" *ngIf="showDetailDrawer && detailAdmin" (click)="closeDetail()">
-    <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" aria-label="Detalle del socio">
+    <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" [attr.aria-label]="'Detalle del ' + getRoleLabel(detailAdmin.role)">
         <div class="drawer-header">
             <div>
-                <span class="page-kicker">Socio</span>
-                <h3>Detalle del Socio</h3>
+                <span class="page-kicker">{{ getRoleLabel(detailAdmin.role) }}</span>
+                <h3>Detalle del {{ getRoleLabel(detailAdmin.role) }}</h3>
             </div>
             <button class="drawer-close" (click)="closeDetail()" aria-label="Cerrar detalle">×</button>
         </div>
@@ -305,7 +315,7 @@
             </div>
 
             <!-- VENDEDORES VINCULADOS AL SOCIO -->
-            <div class="detail-section" *ngIf="detailAdmin.role === 'socio'">
+            <div class="detail-section">
                 <h4>Vendedores vinculados ({{ linkedSellers().length }})</h4>
                 <div class="sellers-linked-list" *ngIf="!sellersLoading && linkedSellers().length > 0">
                     <div class="seller-linked-row" *ngFor="let seller of linkedSellers()">
@@ -317,7 +327,7 @@
                     </div>
                 </div>
                 <div class="sellers-linked-empty" *ngIf="!sellersLoading && linkedSellers().length === 0">
-                    <p>Este socio aún no tiene vendedores vinculados.</p>
+                    <p>Este usuario aún no tiene vendedores vinculados.</p>
                 </div>
                 <div class="sellers-linked-loading" *ngIf="sellersLoading">
                     <p>Cargando vendedores…</p>

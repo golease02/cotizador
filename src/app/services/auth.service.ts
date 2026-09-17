@@ -154,7 +154,11 @@ export class AuthService {
     resetSessionReady();
     this.currentProfileSignal.set(null);
     if (typeof window !== 'undefined') {
-      try { localStorage.removeItem('golease_quotes'); } catch { /* noop */ }
+      try {
+        localStorage.removeItem('golease_quotes');
+      } catch {
+        /* noop */
+      }
     }
   }
 
@@ -185,7 +189,7 @@ export class AuthService {
     const { data, error } = await this.client
       .from('profiles')
       .select(
-        'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude, socio_id, permisos'
+        'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude, socio_id, permisos',
       )
       .eq('id', userId)
       .maybeSingle();
@@ -196,10 +200,7 @@ export class AuthService {
     return null;
   }
 
-  public async updateProfile(
-    userId: string,
-    data: Record<string, unknown>
-  ): Promise<AuthResult> {
+  public async updateProfile(userId: string, data: Record<string, unknown>): Promise<AuthResult> {
     if (!userId || !this.canManageProfile(userId)) {
       return { error: { message: 'No tienes permisos para modificar este perfil.' } };
     }
@@ -255,27 +256,41 @@ export class AuthService {
 
   /** Evalúa un permiso granular definido para socios (ej: 'quotes', 'sellers', 'plates', ...).
    *  El super admin tiene acceso implícito a todo.
-   *  Vendedor: acceso a todo salvo los módulos exclusivos del panel admin
-   *  ('dashboard', 'stats' y 'seguimiento').
-   *  Socio: 'dashboard'/'stats' son exclusivos del super admin; 'rendimiento'
-   *  es inherente al rol (siempre disponible); el resto se evalúa vía JSONB. */
+   *  - 'dashboard' es el panel principal y es INHERENTE al socio (como 'rendimiento');
+   *    los vendedores nunca acceden al panel admin.
+   *  - 'stats' es una clave JSONB muerta, exclusiva del super admin.
+   *  - 'seguimiento' es un permiso granular (JSONB).
+   *  Socio: el resto de módulos ('sellers', 'quotes', 'plates', 'parameters',
+   *  'notas') se evalúan vía el JSONB de permisos. */
   public canAccessModule(module: string): boolean {
     const profile = this.currentProfileSignal();
     if (!profile) return false;
+    // El super admin accede implícitamente a todo, incluido el Dashboard.
     if (profile.role === 'super_admin') return true;
 
-    // Módulos exclusivos del panel de administración: nunca para vendedores.
-    if (module === 'dashboard' || module === 'stats' || module === 'seguimiento') {
+    // Módulos exclusivos del panel admin: vendedor nunca; socio varía por módulo.
+    if (
+      module === 'dashboard' ||
+      module === 'stats' ||
+      module === 'seguimiento' ||
+      module === 'rendimiento'
+    ) {
       if (profile.role === 'seller') return false;
-      if (module === 'seguimiento') {
-        const permisosSocio: Record<string, boolean> = profile.permisos || {};
-        return permisosSocio['seguimiento'] === true;
-      }
-      return false;
+      // 'dashboard' es el panel principal: INHERENTE al socio (como 'rendimiento').
+      if (module === 'dashboard') return profile.role === 'socio';
+      // 'rendimiento' (rendimiento del equipo) es INHERENTE al socio.
+      if (module === 'rendimiento') return profile.role === 'socio';
+      // 'stats' es una clave JSONB muerta, exclusiva del super admin (retornado arriba).
+      if (module === 'stats') return false;
+      // 'seguimiento': permiso granular definido en el JSONB.
+      const permisosSocio: Record<string, boolean> = profile.permisos || {};
+      return permisosSocio['seguimiento'] === true;
     }
 
-    if (profile.role === 'seller') return true;
-    if (module === 'rendimiento') return profile.role === 'socio';
+    // Los permisos granulares solo habilitan módulos del panel admin.
+    if (profile.role === 'seller') return false;
+    // Socio: permiso granular vía JSONB ('sellers', 'quotes', 'plates',
+    // 'parameters', 'notas'); 'dashboard'/'rendimiento' quedaron resueltos arriba.
     const permisos: Record<string, boolean> = profile.permisos || {};
     return permisos[module] === true;
   }
@@ -283,7 +298,9 @@ export class AuthService {
   public async getSocios(): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('profiles')
-      .select('id, email, full_name, seller_number, recovery_email, role, active, created_at, socio_id, permisos')
+      .select(
+        'id, email, full_name, seller_number, recovery_email, role, active, created_at, socio_id, permisos',
+      )
       .in('role', ['super_admin', 'socio'])
       .order('full_name', { ascending: true });
     return { data, error };
@@ -311,16 +328,14 @@ export class AuthService {
     return { data: data || [], error };
   }
 
-  public async getProfileBySellerNumber(
-    sellerNumber: string
-  ): Promise<{ data: any; error: any }> {
+  public async getProfileBySellerNumber(sellerNumber: string): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client.rpc('get_profile_by_seller', {
       seller_number_input: sellerNumber,
     });
     if (error) {
       return { data: null, error };
     }
-    const profile = Array.isArray(data) && data.length > 0 ? data[0] : data ?? null;
+    const profile = Array.isArray(data) && data.length > 0 ? data[0] : (data ?? null);
     if (!profile || typeof profile.email !== 'string' || !profile.email.trim()) {
       return { data: null, error: { message: 'Perfil sin email de autenticación.' } };
     }
@@ -329,7 +344,7 @@ export class AuthService {
 
   public async requestPasswordRecovery(
     sellerNumber: string,
-    recoveryEmail: string
+    recoveryEmail: string,
   ): Promise<AuthResult> {
     const normalizedSeller = sellerNumber.trim();
     const normalizedEmail = recoveryEmail.trim().toLowerCase();
@@ -427,7 +442,11 @@ export class AuthService {
     if (password.length < 6 || password.length > 128) {
       return { error: { message: 'La contraseña debe tener entre 6 y 128 caracteres.' } };
     }
-    if (currentProfile?.role !== 'super_admin' && currentProfile?.role !== 'socio' && currentUser.id !== userId) {
+    if (
+      currentProfile?.role !== 'super_admin' &&
+      currentProfile?.role !== 'socio' &&
+      currentUser.id !== userId
+    ) {
       return { error: { message: 'No puedes restablecer otra contraseña.' } };
     }
     const { error } = await this.client.rpc('update_user_password', {

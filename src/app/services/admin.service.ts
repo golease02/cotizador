@@ -104,13 +104,21 @@ export class AdminService {
     }
     // Fallback: migración 20260409100000 aún no aplicada en la BD.
     console.warn(
-      'get_sellers_with_quote_counts() no existe aún; usando consulta de respaldo. Aplica la migración supabase/migrations/20260409100000_optimizacion_rendimiento.sql.'
+      'get_sellers_with_quote_counts() no existe aún; usando consulta de respaldo. Aplica la migración supabase/migrations/20260409100000_optimizacion_rendimiento.sql.',
     );
     return this.getSellersLegacy();
   }
 
-  /** Estadísticas completas del dashboard en una sola llamada. */
-  public async getStats(): Promise<{ data: any; error: any }> {
+  /**
+   * Estadísticas completas del dashboard.
+   * Si se pasa `scopeSellerIds` (modo "Solo mi red" del super admin), se agregan
+   * localmente sobre ese conjunto (las RPCs `get_admin_stats` no aceptan scope
+   * del super admin, pues el super admin ve todo por definición).
+   */
+  public async getStats(scopeSellerIds?: Set<string>): Promise<{ data: any; error: any }> {
+    if (scopeSellerIds !== undefined) {
+      return this.getStatsLegacy(scopeSellerIds);
+    }
     const { data, error } = await this.client.rpc('get_admin_stats');
     if (!error && data) {
       return { data, error: null };
@@ -121,7 +129,7 @@ export class AdminService {
     }
     // Fallback: migración 20260409100000 aún no aplicada en la BD.
     console.warn(
-      'get_admin_stats() no existe aún; usando consultas de respaldo. Aplica la migración supabase/migrations/20260409100000_optimizacion_rendimiento.sql.'
+      'get_admin_stats() no existe aún; usando consultas de respaldo. Aplica la migración supabase/migrations/20260409100000_optimizacion_rendimiento.sql.',
     );
     return this.getStatsLegacy();
   }
@@ -132,9 +140,13 @@ export class AdminService {
    * (super_admin = todos, socio = sus vendedores, seller = él mismo).
    */
   public async getSellerPerformance(
-    days = 30
+    days = 30,
+    scopeSellerIds?: Set<string>,
   ): Promise<{ data: SellerPerformancePayload | null; error: any }> {
     const safeDays = Math.max(1, Math.floor(Number(days) || 30));
+    if (scopeSellerIds !== undefined) {
+      return this.getSellerPerformanceLegacy(safeDays, scopeSellerIds);
+    }
     const { data, error } = await this.client.rpc('get_seller_performance', { p_days: safeDays });
     if (!error && data) {
       return { data: data as SellerPerformancePayload, error: null };
@@ -145,7 +157,7 @@ export class AdminService {
     }
     // Fallback: migración 20260911000000 aún no aplicada en la BD.
     console.warn(
-      'get_seller_performance() no existe aún; usando agregación local. Aplica la migración supabase/migrations/20260911000000_seller_performance_rpcs.sql.'
+      'get_seller_performance() no existe aún; usando agregación local. Aplica la migración supabase/migrations/20260911000000_seller_performance_rpcs.sql.',
     );
     return this.getSellerPerformanceLegacy(safeDays);
   }
@@ -161,7 +173,9 @@ export class AdminService {
       .order('created_at', { ascending: false });
     if (error) return { data: [], error };
 
-    const { data: quoteRows, error: quotesError } = await this.client.from('quotes').select('seller_id');
+    const { data: quoteRows, error: quotesError } = await this.client
+      .from('quotes')
+      .select('seller_id');
     if (quotesError) console.warn('No se pudo contar cotizaciones por vendedor:', quotesError);
 
     const counts = new Map<string, number>();
@@ -175,8 +189,10 @@ export class AdminService {
     };
   }
 
-  /** Respaldo de getStats: replica el shape exacto del RPC sin escribir en la BD. */
-  private async getStatsLegacy(): Promise<{ data: any; error: any }> {
+  /** Respaldo de getStats: replica el shape exacto del RPC sin escribir en la BD.
+   *  Si se pasa `scopeSellerIds`, los agregados se restringen a esa red de
+   *  vendedores (super admin en modo "Solo mi red"). */
+  private async getStatsLegacy(scopeSellerIds?: Set<string>): Promise<{ data: any; error: any }> {
     try {
       // --- 1. Perfil de vendedores (contar total e inactivos de una sola consulta) ---
       const { data: sellerProfiles, error: sellersError } = await this.client
@@ -184,27 +200,42 @@ export class AdminService {
         .select('id, active')
         .eq('role', 'seller');
       if (sellersError) throw sellersError;
-      const totalSellers = sellerProfiles?.length ?? 0;
-      const inactiveSellers = (sellerProfiles ?? []).filter((p: any) => p.active === false).length;
 
       // --- 2. Una sola consulta de cotizaciones con join de vendedor (fuente unica de verdad) ---
       const { data: rows, error: quotesError } = await this.client
         .from('quotes')
-        .select('id, client_name, brand, model, pricenet, created_at, revisada, fijada, color, seller_id, profiles!seller_id (full_name, agency_location)')
+        .select(
+          'id, client_name, brand, model, pricenet, created_at, revisada, fijada, color, seller_id, profiles!seller_id (full_name, agency_location)',
+        )
         .order('created_at', { ascending: false });
       if (quotesError) throw quotesError;
-      const allQuotes: any[] = (rows ?? []) as any[];
+
+      // Scope del super admin en modo "Solo mi red": restringir perfiles y
+      // cotizaciones al conjunto de vendedores de su red.
+      const sellerProfilesScoped = scopeSellerIds
+        ? (sellerProfiles ?? []).filter((p: any) => scopeSellerIds.has(p.id))
+        : (sellerProfiles ?? []);
+      const allQuotes: any[] = (
+        scopeSellerIds
+          ? (rows ?? []).filter((q: any) => scopeSellerIds.has(q.seller_id))
+          : (rows ?? [])
+      ) as any[];
+
+      const totalSellers = sellerProfilesScoped.length ?? 0;
+      const inactiveSellers = (sellerProfilesScoped ?? []).filter(
+        (p: any) => p.active === false,
+      ).length;
 
       // --- Contadores derivados del color RECALCULADO (coherentes con los badges de las tarjetas) ---
-      const countByColor = (estado: string): number =>{
-        let count =  0;
+      const countByColor = (estado: string): number => {
+        let count = 0;
         for (const q of allQuotes) {
           if (computeQuoteColor(q) === estado) count++;
         }
         return count;
       };
       const totalQuotes = allQuotes.length;
-      let totalFijadas =  0;
+      let totalFijadas = 0;
       for (const q of allQuotes) {
         if (q.fijada) totalFijadas++;
       }
@@ -289,7 +320,8 @@ export class AdminService {
    * que la RPC (color recalculado con computeQuoteColor, periodos y delta).
    */
   private async getSellerPerformanceLegacy(
-    days: number
+    days: number,
+    scopeSellerIds?: Set<string>,
   ): Promise<{ data: SellerPerformancePayload | null; error: any }> {
     try {
       const now = Date.now();
@@ -301,6 +333,11 @@ export class AdminService {
         .select('id, full_name, seller_number, agency_brand, agency_location, active')
         .eq('role', 'seller');
       if (profilesError) throw profilesError;
+
+      // Scope del super admin en modo "Solo mi red": solo sus vendedores.
+      const scopedProfiles = scopeSellerIds
+        ? (profiles ?? []).filter((p: any) => scopeSellerIds.has(p.id))
+        : (profiles ?? []);
 
       const { data: rows, error: quotesError } = await this.client
         .from('quotes')
@@ -319,7 +356,7 @@ export class AdminService {
         notasPorVendedor.set(key, (notasPorVendedor.get(key) ?? 0) + 1);
       });
 
-      const sellers: SellerPerformance[] = (profiles ?? []).map((p: any) => {
+      const sellers: SellerPerformance[] = (scopedProfiles as any[]).map((p: any) => {
         // allQuotes viene ordenado DESC: el filtro conserva el orden.
         const mine: any[] = allQuotes.filter((q) => q.seller_id === p.id);
         const enPeriodo = mine.filter((q) => new Date(q.created_at).getTime() >= from);
@@ -346,9 +383,8 @@ export class AdminService {
             const t = new Date(q.created_at).getTime();
             return t >= prevFrom && t < from;
           }).length,
-          quotesWeek: mine.filter(
-            (q) => new Date(q.created_at).getTime() >= now - 7 * 86_400_000
-          ).length,
+          quotesWeek: mine.filter((q) => new Date(q.created_at).getTime() >= now - 7 * 86_400_000)
+            .length,
           pipelineValue,
           avgTicket: enPeriodo.length
             ? Math.round((pipelineValue / enPeriodo.length) * 100) / 100
@@ -390,7 +426,7 @@ export class AdminService {
     sellers: SellerPerformance[],
     from: number,
     prevFrom: number,
-    now: number
+    now: number,
   ): TeamPerformance {
     const sellerIds = new Set(sellers.map((s) => s.id));
     const teamQuotes = allQuotes.filter((q) => sellerIds.has(q.seller_id));
@@ -426,7 +462,7 @@ export class AdminService {
         return t >= prevFrom && t < from;
       }).length,
       activeSellers: sellers.filter(
-        (s) => s.lastQuoteAt && new Date(s.lastQuoteAt).getTime() >= now - 14 * 86_400_000
+        (s) => s.lastQuoteAt && new Date(s.lastQuoteAt).getTime() >= now - 14 * 86_400_000,
       ).length,
       activeSellersPeriod: sellers.filter((s) => s.quotesPeriod > 0).length,
       pipelineValue,
@@ -442,10 +478,7 @@ export class AdminService {
       .eq('seller_id', sellerId);
     if (quotesError) return { error: quotesError };
 
-    const { error } = await this.client
-      .from('profiles')
-      .delete()
-      .eq('id', sellerId);
+    const { error } = await this.client.from('profiles').delete().eq('id', sellerId);
     return { error };
   }
 }

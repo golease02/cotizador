@@ -16,10 +16,7 @@ export const adminGuard = async () => {
     }
   }
 
-  if (
-    (profile?.role === 'super_admin' || profile?.role === 'socio') &&
-    profile.active !== false
-  ) {
+  if ((profile?.role === 'super_admin' || profile?.role === 'socio') && profile.active !== false) {
     return true;
   } else {
     if (profile?.active === false) {
@@ -34,7 +31,11 @@ export const adminGuard = async () => {
 
 /** Guard de redirección por rol para la ruta raíz del admin (`/admin`).
  *  - super_admin → carga AdminStatsComponent (Dashboard global).
- *  - socio activo → redirige a /admin/rendimiento (nunca ve admin-stats).
+ *  - socio activo → carga AdminStatsComponent (Dashboard como panel principal;
+ *    Rendimiento queda como sección accesible desde el menú).
+ *  Ambos comparten el Dashboard: el Dashboard acota su alcance a sus
+ *  vendedores vía el toggle global de AdminScopeService, mientras que el
+ *  socio ve siempre su propio alcance (aplicado server-side).
  *  Los vendedores son rechazados por el adminGuard del padre. */
 export const adminHomeGuard = async (): Promise<boolean> => {
   const auth = inject(AuthService);
@@ -59,12 +60,14 @@ export const adminHomeGuard = async (): Promise<boolean> => {
     return false;
   }
 
-  if (currentProfile.role === 'super_admin') {
+  // super_admin y socio activo → Dashboard. Cualquier otro acceso admin
+  // (ej. seller) nunca llega aquí porque el adminGuard del padre ya lo rechazó.
+  if (currentProfile.role === 'super_admin' || currentProfile.role === 'socio') {
     return true;
   }
 
-  // socio activo → su panel principal es Rendimiento
-  router.navigate(['/admin/rendimiento']);
+  // Fallback de seguridad: fuera de los roles admin, al login.
+  router.navigate(['/login']);
   return false;
 };
 

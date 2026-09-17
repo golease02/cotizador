@@ -1,17 +1,27 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
+import { AdminScopeService } from '../../../services/admin-scope.service';
 
 @Component({
   selector: 'app-admin-stats',
   standalone: true,
   imports: [CommonModule, RouterModule],
-    templateUrl: './admin-stats.html',
-  styleUrls: ['./admin-stats.css']
+  templateUrl: './admin-stats.html',
+  styleUrls: ['./admin-stats.css'],
 })
 export class AdminStatsComponent implements OnInit {
   private admin = inject(AdminService);
+  private readonly scope = inject(AdminScopeService);
+  constructor() {
+    effect(() => {
+      if (this.scope.reloadCount() === 0) return;
+      untracked(() => {
+        void this.loadStats();
+      });
+    });
+  }
 
   today = new Date();
 
@@ -37,11 +47,18 @@ export class AdminStatsComponent implements OnInit {
     await this.loadStats();
   }
 
+  private statsRequest = 0;
+
   async loadStats() {
+    const request = ++this.statsRequest;
+    const revision = this.scope.reloadCount();
     this.loading.set(true);
     try {
-      // Una sola llamada RPC en lugar de 10+ consultas + agregaciones en cliente.
-      const { data, error } = await this.admin.getStats();
+      // En modo "Solo mi red" el super admin agrega localmente sobre su red
+      // (la RPC get_admin_stats no admite scope del super admin).
+      const scopedIds = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
+      const { data, error } = await this.admin.getStats(scopedIds);
+      if (request !== this.statsRequest || revision !== this.scope.reloadCount()) return;
       if (error || !data) {
         throw error || new Error('Sin datos de estadísticas');
       }
@@ -66,33 +83,47 @@ export class AdminStatsComponent implements OnInit {
       const inactiveSellersCount = data.inactiveSellers || 0;
 
       this.attentionItems.set([
-        ...(urgentesCount ? [{
-          type: 'urgent',
-          title: 'Cotizaciones por caducar',
-          detail: `${urgentesCount} cotización${urgentesCount === 1 ? '' : 'es'} sin seguimiento reciente.`,
-          link: '/admin/quotes',
-          action: 'Revisar por caducar'
-        }] : []),
-        ...(pendientesCount ? [{
-          type: 'pending',
-          title: 'Cotizaciones pendientes',
-          detail: `${pendientesCount} cotización${pendientesCount === 1 ? '' : 'es'} requiere${pendientesCount === 1 ? '' : 'n'} atención.`,
-          link: '/admin/quotes',
-          action: 'Ver pendientes'
-        }] : []),
-        ...(inactiveSellersCount ? [{
-          type: 'inactive',
-          title: 'Vendedores inactivos',
-          detail: `${inactiveSellersCount} perfil${inactiveSellersCount === 1 ? '' : 'es'} está${inactiveSellersCount === 1 ? '' : 'n'} inactivo${inactiveSellersCount === 1 ? '' : 's'}.`,
-          link: '/admin/sellers',
-          action: 'Gestionar equipo'
-        }] : [])
+        ...(urgentesCount
+          ? [
+              {
+                type: 'urgent',
+                title: 'Cotizaciones por caducar',
+                detail: `${urgentesCount} cotización${urgentesCount === 1 ? '' : 'es'} sin seguimiento reciente.`,
+                link: '/admin/quotes',
+                action: 'Revisar por caducar',
+              },
+            ]
+          : []),
+        ...(pendientesCount
+          ? [
+              {
+                type: 'pending',
+                title: 'Cotizaciones pendientes',
+                detail: `${pendientesCount} cotización${pendientesCount === 1 ? '' : 'es'} requiere${pendientesCount === 1 ? '' : 'n'} atención.`,
+                link: '/admin/quotes',
+                action: 'Ver pendientes',
+              },
+            ]
+          : []),
+        ...(inactiveSellersCount
+          ? [
+              {
+                type: 'inactive',
+                title: 'Vendedores inactivos',
+                detail: `${inactiveSellersCount} perfil${inactiveSellersCount === 1 ? '' : 'es'} está${inactiveSellersCount === 1 ? '' : 'n'} inactivo${inactiveSellersCount === 1 ? '' : 's'}.`,
+                link: '/admin/sellers',
+                action: 'Gestionar equipo',
+              },
+            ]
+          : []),
       ]);
     } catch (error) {
       console.warn('No se pudieron cargar las estadísticas:', error);
     } finally {
-      this.today = new Date();
-      this.loading.set(false);
+      if (request === this.statsRequest && revision === this.scope.reloadCount()) {
+        this.today = new Date();
+        this.loading.set(false);
+      }
     }
   }
 
@@ -107,7 +138,7 @@ export class AdminStatsComponent implements OnInit {
       reciente: 'Reciente',
       verde: 'Revisada',
       amarillo: 'Pendiente',
-      rojo: 'Por caducar'
+      rojo: 'Por caducar',
     };
     return labels[this.getEstado(quote)];
   }
@@ -119,13 +150,13 @@ export class AdminStatsComponent implements OnInit {
 
   getMaxPercentage(count: number, items: any[]): number {
     if (!items || items.length === 0) return 0;
-    const max = Math.max(...items.map(i => i.count));
+    const max = Math.max(...items.map((i) => i.count));
     return max > 0 ? (count / max) * 100 : 0;
   }
 
   getBarColor(count: number, items: any[]): string {
     if (!items || items.length === 0) return '#94a3b8';
-    const max = Math.max(...items.map(i => i.count));
+    const max = Math.max(...items.map((i) => i.count));
     if (max === 0) return '#94a3b8';
     const ratio = count / max;
     if (ratio > 0.7) return '#22c55e';

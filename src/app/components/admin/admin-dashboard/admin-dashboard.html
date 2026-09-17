@@ -1,222 +1,456 @@
 <div class="admin-layout">
-    <div class="admin-mobile-topbar">
-        <button class="menu-toggle" type="button" (click)="toggleSidebar()"
-            [attr.aria-expanded]="sidebarOpen()" aria-label="Abrir menú de navegación" title="Menú">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12h18"></path>
-                <path d="M3 6h18"></path>
-                <path d="M3 18h18"></path>
-            </svg>
-        </button>
-        <div class="mobile-topbar-title">
-            <span class="mobile-brand">Go Lease</span>
-            <span class="mobile-subtitle">Panel Admin</span>
+  <div class="admin-mobile-topbar">
+    <button
+      class="menu-toggle"
+      type="button"
+      (click)="toggleSidebar()"
+      [attr.aria-expanded]="sidebarOpen()"
+      aria-label="Abrir menú de navegación"
+      title="Menú"
+    >
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M3 12h18"></path>
+        <path d="M3 6h18"></path>
+        <path d="M3 18h18"></path>
+      </svg>
+    </button>
+    <div class="mobile-topbar-title">
+      <span class="mobile-brand">Go Lease</span>
+      <span class="mobile-subtitle">Panel Admin</span>
+    </div>
+    <button
+      class="theme-toggle"
+      type="button"
+      (click)="toggleTheme()"
+      [attr.aria-label]="
+        theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
+      "
+      [title]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+    >
+      <svg
+        class="icon-sun"
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+      <svg
+        class="icon-moon"
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    </button>
+  </div>
+
+  <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen()">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <span class="logo-mark">GL</span>
+        <div class="logo-text">
+          <span class="logo-title">Go Lease</span>
+          <span class="logo-subtitle">Panel Admin</span>
         </div>
-        <button class="theme-toggle" type="button" (click)="toggleTheme()"
-            [attr.aria-label]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-            [title]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-            <svg class="icon-sun" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="4"></circle>
-                <path d="M12 2v2"></path><path d="M12 20v2"></path>
-                <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
-                <path d="M2 12h2"></path><path d="M20 12h2"></path>
-                <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-            </svg>
-            <svg class="icon-moon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-            </svg>
-        </button>
+      </div>
+      <button
+        class="drawer-close"
+        type="button"
+        (click)="closeSidebar()"
+        aria-label="Cerrar menú"
+        title="Cerrar"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
     </div>
 
-    <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen()">
-        <div class="sidebar-header">
-            <div class="sidebar-logo">
-                <span class="logo-mark">GL</span>
-                <div class="logo-text">
-                    <span class="logo-title">Go Lease</span>
-                    <span class="logo-subtitle">Panel Admin</span>
-                </div>
-            </div>
-            <button class="drawer-close" type="button" (click)="closeSidebar()" aria-label="Cerrar menú" title="Cerrar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 6 6 18"></path>
-                    <path d="m6 6 12 12"></path>
-                </svg>
-            </button>
+    @if (scope.isScopeVisible()) {
+      <section class="scope-panel" aria-labelledby="scope-label">
+        <span id="scope-label" class="scope-label">Alcance de datos</span>
+        <div class="scope-toggle" role="group" aria-labelledby="scope-label">
+          <button
+            type="button"
+            [attr.aria-pressed]="!scope.isRedMode()"
+            (click)="scope.setScope('todos')"
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="scope.isRedMode()"
+            (click)="scope.setScope('red')"
+          >
+            Mis vendedores
+          </button>
         </div>
+        @if (scope.error()) {
+          <p role="alert" class="scope-error">{{ scope.error() }}</p>
+        }
+      </section>
+    }
 
-        <nav>
-            <span class="nav-section-label">General</span>
-            <ul>
-                <li>
-                    <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-                <li *ngIf="auth.canAccessModule('sellers')">
-                    <a routerLink="/admin/rendimiento" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                            <polyline points="17 6 23 6 23 12"></polyline>
-                        </svg>
-                        Rendimiento
-                    </a>
-                </li>
-            </ul>
+    <nav>
+      <span class="nav-section-label">General</span>
+      <ul>
+        <li>
+          <a
+            routerLink="/admin"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Dashboard
+          </a>
+        </li>
+        <li *ngIf="auth.canAccessModule('rendimiento')">
+          <a routerLink="/admin/rendimiento" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            Rendimiento
+          </a>
+        </li>
+      </ul>
 
-            <span class="nav-section-label">Gestión</span>
-            <ul>
-                <li *ngIf="auth.canAccessModule('sellers')">
-                    <a routerLink="/admin/sellers" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        Vendedores
-                    </a>
-                </li>
-                <li *ngIf="auth.isSuperAdmin()">
-                    <a routerLink="/admin/admins" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2 2 7l10 5 10-5-10-5z"></path>
-                            <path d="M2 17l10 5 10-5"></path>
-                            <path d="M2 12l10 5 10-5"></path>
-                        </svg>
-                        Socios
-                    </a>
-                </li>
-                <li *ngIf="auth.canAccessModule('quotes')">
-                    <a routerLink="/admin/quotes" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                        Cotizaciones
-                    </a>
-                </li>
-                <li *ngIf="auth.canAccessModule('seguimiento')">
-                    <a routerLink="/admin/seguimiento" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="6" height="18" rx="1"></rect>
-                            <rect x="10" y="3" width="6" height="12" rx="1"></rect>
-                            <rect x="17" y="3" width="4" height="15" rx="1"></rect>
-                        </svg>
-                        Seguimiento
-                    </a>
-                </li>
-                                <li *ngIf="auth.canAccessModule('plates')">
-                    <a routerLink="/admin/plates" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="7" width="20" height="10" rx="2"></rect>
-                            <line x1="6" y1="11" x2="18" y2="11"></line>
-                            <circle cx="6" cy="14" r="0.5"></circle>
-                            <circle cx="9" cy="14" r="0.5"></circle>
-                            <circle cx="12" cy="14" r="0.5"></circle>
-                            <circle cx="15" cy="14" r="0.5"></circle>
-                            <circle cx="18" cy="14" r="0.5"></circle>
-                        </svg>
-                        Placas de Estado
-                    </a>
-                </li>
-                <li *ngIf="auth.canAccessModule('parameters')">
-                    <a routerLink="/admin/parameters" routerLinkActive="active">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.8 1.8-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V22h-2.55v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 0 0 8.1 17a1.7 1.7 0 0 0-1.56-1.03H6.45v-2.55h.1A1.7 1.7 0 0 0 8.1 12a1.7 1.7 0 0 0-.34-1.88L7.7 10.06l1.8-1.8.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V7h2.55v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.8 1.8-.06.06A1.7 1.7 0 0 0 19.4 12a1.7 1.7 0 0 0 1.56 1.03h.1v2.55h-.1A1.7 1.7 0 0 0 19.4 15Z"></path>
-                        </svg>
-                        Parámetros del cotizador
-                    </a>
-                </li>
-            </ul>
-        </nav>
+      <span class="nav-section-label">Gestión</span>
+      <ul>
+        <li *ngIf="auth.canAccessModule('sellers')">
+          <a routerLink="/admin/sellers" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Vendedores
+          </a>
+        </li>
+        <li *ngIf="auth.isSuperAdmin()">
+          <a routerLink="/admin/admins" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 2 2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Socios
+          </a>
+        </li>
+        <li *ngIf="auth.canAccessModule('quotes')">
+          <a routerLink="/admin/quotes" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            Cotizaciones
+          </a>
+        </li>
+        <li *ngIf="auth.canAccessModule('seguimiento')">
+          <a routerLink="/admin/seguimiento" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="3" width="6" height="18" rx="1"></rect>
+              <rect x="10" y="3" width="6" height="12" rx="1"></rect>
+              <rect x="17" y="3" width="4" height="15" rx="1"></rect>
+            </svg>
+            Seguimiento
+          </a>
+        </li>
+        <li *ngIf="auth.canAccessModule('plates')">
+          <a routerLink="/admin/plates" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="7" width="20" height="10" rx="2"></rect>
+              <line x1="6" y1="11" x2="18" y2="11"></line>
+              <circle cx="6" cy="14" r="0.5"></circle>
+              <circle cx="9" cy="14" r="0.5"></circle>
+              <circle cx="12" cy="14" r="0.5"></circle>
+              <circle cx="15" cy="14" r="0.5"></circle>
+              <circle cx="18" cy="14" r="0.5"></circle>
+            </svg>
+            Placas de Estado
+          </a>
+        </li>
+        <li *ngIf="auth.canAccessModule('parameters')">
+          <a routerLink="/admin/parameters" routerLinkActive="active">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.8 1.8-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V22h-2.55v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 0 0 8.1 17a1.7 1.7 0 0 0-1.56-1.03H6.45v-2.55h.1A1.7 1.7 0 0 0 8.1 12a1.7 1.7 0 0 0-.34-1.88L7.7 10.06l1.8-1.8.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V7h2.55v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.8 1.8-.06.06A1.7 1.7 0 0 0 19.4 12a1.7 1.7 0 0 0 1.56 1.03h.1v2.55h-.1A1.7 1.7 0 0 0 19.4 15Z"
+              ></path>
+            </svg>
+            Parámetros del cotizador
+          </a>
+        </li>
+      </ul>
+    </nav>
 
-        <div class="sidebar-footer">
-            <div class="sidebar-user">
-                <a class="sidebar-user-link" routerLink="/perfil" routerLinkActive="active" title="Ver mi perfil"
-                    aria-label="Ver mi perfil">
-                    <span class="user-avatar">{{ (auth.currentProfile()?.full_name || 'A').charAt(0).toUpperCase() }}</span>
-                    <div class="user-info">
-                        <span class="user-name">{{ auth.currentProfile()?.full_name || 'Administrador' }}</span>
-                        <span class="user-role">{{ auth.getRoleLabel() }}</span>
-                    </div>
-                </a>
-                <button class="theme-toggle" type="button" (click)="toggleTheme()"
-                    [attr.aria-label]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-                    [title]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-                    <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="4"></circle>
-                        <path d="M12 2v2"></path><path d="M12 20v2"></path>
-                        <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
-                        <path d="M2 12h2"></path><path d="M20 12h2"></path>
-                        <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-                    </svg>
-                    <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-                    </svg>
-                </button>
-                <button class="logout-btn" type="button" (click)="logout()" title="Cerrar sesión" aria-label="Cerrar sesión">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                </button>
-            </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <a
+          class="sidebar-user-link"
+          routerLink="/perfil"
+          routerLinkActive="active"
+          title="Ver mi perfil"
+          aria-label="Ver mi perfil"
+        >
+          <span class="user-avatar">{{
+            (auth.currentProfile()?.full_name || 'A').charAt(0).toUpperCase()
+          }}</span>
+          <div class="user-info">
+            <span class="user-name">{{ auth.currentProfile()?.full_name || 'Administrador' }}</span>
+            <span class="user-role">{{ auth.getRoleLabel() }}</span>
+          </div>
+        </a>
+        <button
+          class="theme-toggle"
+          type="button"
+          (click)="toggleTheme()"
+          [attr.aria-label]="
+            theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
+          "
+          [title]="theme.theme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+        >
+          <svg
+            class="icon-sun"
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg
+            class="icon-moon"
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+        <button
+          class="logout-btn"
+          type="button"
+          (click)="logout()"
+          title="Cerrar sesión"
+          aria-label="Cerrar sesión"
+        >
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      </div>
 
-            <a routerLink="/" class="back-link">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span>Volver al Cotizador</span>
-                <svg class="back-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </a>
-        </div>
-    </aside>
-
-    <button class="sidebar-overlay" *ngIf="sidebarOpen()" (click)="closeSidebar()"
-        aria-label="Cerrar menú"></button>
-
-    <main class="admin-content">
-        <router-outlet></router-outlet>
-    </main>
-
-    <!-- Toast host para notificaciones in-app en rutas admin -->
-    <div class="toast-host" aria-live="polite" *ngIf="toastService.toasts().length">
-        <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
-            (click)="handleToast(t)">
-            <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
-            <span class="toast-msg">{{ t.message }}</span>
-            <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
-            <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()"
-                aria-label="Cerrar">×</button>
-        </div>
+      <a routerLink="/" class="back-link">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>Volver al Cotizador</span>
+        <svg
+          class="back-arrow"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
     </div>
+  </aside>
+
+  <button
+    class="sidebar-overlay"
+    *ngIf="sidebarOpen()"
+    (click)="closeSidebar()"
+    aria-label="Cerrar menú"
+  ></button>
+
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Toast host para notificaciones in-app en rutas admin -->
+  <div class="toast-host" aria-live="polite" *ngIf="toastService.toasts().length">
+    <div
+      *ngFor="let t of toastService.toasts()"
+      class="toast"
+      [class]="'toast-' + t.type"
+      (click)="handleToast(t)"
+    >
+      <span class="toast-icon">{{
+        t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'
+      }}</span>
+      <span class="toast-msg">{{ t.message }}</span>
+      <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
+      <button
+        class="toast-close"
+        (click)="toastService.dismiss(t.id); $event.stopPropagation()"
+        aria-label="Cerrar"
+      >
+        ×
+      </button>
+    </div>
+  </div>
 </div>

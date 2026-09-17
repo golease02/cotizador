@@ -22,7 +22,7 @@ describe('moduleGuard', () => {
 
   const createModuleGuard = (
     role: 'super_admin' | 'socio' | 'seller' | null,
-    permisos: Record<string, boolean> = {}
+    permisos: Record<string, boolean> = {},
   ) => {
     authServiceSpy = {
       waitForSession: vi.fn().mockResolvedValue(undefined),
@@ -33,9 +33,10 @@ describe('moduleGuard', () => {
       }),
       canAccessModule: vi.fn((module: string) => {
         if (role === 'super_admin') return true;
-        if (role === 'seller') return true;
+        if (role === 'seller') return false;
         if (role === 'socio') {
-          if (module === 'dashboard' || module === 'stats') return false;
+          if (module === 'stats') return false;
+          if (module === 'dashboard') return true; // inherente al socio
           if (module === 'rendimiento') return true;
           return permisos[module] === true;
         }
@@ -49,10 +50,7 @@ describe('moduleGuard', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        { provide: AuthService, useValue: authServiceSpy },
-      ],
+      providers: [provideRouter([]), { provide: AuthService, useValue: authServiceSpy }],
     });
 
     TestBed.inject(Router);
@@ -72,11 +70,11 @@ describe('moduleGuard', () => {
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
-  it('should allow seller access to any module', async () => {
+  it('should deny seller access when an admin module is requested', async () => {
     createModuleGuard('seller');
     const result = await executeModuleGuard('quotes');
-    expect(result).toBe(true);
-    expect(routerSpy.navigate).not.toHaveBeenCalled();
+    expect(result).toBe(false);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin/sin-acceso']);
   });
 
   it('should allow socio access when the module is granted', async () => {
@@ -86,12 +84,11 @@ describe('moduleGuard', () => {
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
-  it('should always deny socio access to dashboard (super_admin only)', async () => {
+  it('should allow socio access to dashboard (inherent al rol, panel principal)', async () => {
     createModuleGuard('socio', {});
     const result = await executeModuleGuard('dashboard');
-    expect(result).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin/sin-acceso']);
-    expect(routerSpy.navigate).not.toHaveBeenCalledWith(['/admin']);
+    expect(result).toBe(true);
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
   it('should always deny socio access to stats (super_admin only)', async () => {
@@ -150,7 +147,7 @@ describe('adminHomeGuard', () => {
   const setupGuard = (
     role: 'super_admin' | 'socio' | 'seller' | null,
     active: boolean = true,
-    permisos: Record<string, boolean> = {}
+    permisos: Record<string, boolean> = {},
   ) => {
     const profileObj = role ? { role, active, permisos } : null;
     authServiceSpy = {
@@ -166,10 +163,7 @@ describe('adminHomeGuard', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        { provide: AuthService, useValue: authServiceSpy },
-      ],
+      providers: [provideRouter([]), { provide: AuthService, useValue: authServiceSpy }],
     });
 
     TestBed.inject(Router);
@@ -186,11 +180,11 @@ describe('adminHomeGuard', () => {
     expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
-  it('should redirect socio to /admin/rendimiento (return false)', async () => {
+  it('should allow socio to see admin-stats / Dashboard (return true, no redirect)', async () => {
     setupGuard('socio');
     const result = await TestBed.runInInjectionContext(() => adminHomeGuard());
-    expect(result).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/admin/rendimiento']);
+    expect(result).toBe(true);
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
   it('should redirect inactive socio to /login and signOut', async () => {

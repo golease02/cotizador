@@ -140,15 +140,15 @@ cotizador/
 | Rol          | Descripción                                                                 |
 |-------------|------------------------------------------------------------------------------|
 | `super_admin` | Acceso total. Ve todas las cotizaciones de todos los vendedores. Puede crear/eliminar cualquier usuario, asignar roles, cambiar socio de un vendedor, y otorgar permisos granulares. |
-| `socio`    | Ve solo sus vendedores asociados (vía `socio_id`). **Rendimiento es su panel principal** (inherente al rol, no es un permiso JSON). Los demás módulos se controlan vía `permisos` JSONB otorgados por el super-admin. Puede crear vendedores bajo su red. |
+| `socio`    | Ve solo sus vendedores asociados (vía `socio_id`). **Dashboard y Rendimiento son su panel principal** (inherentes al rol, no son permisos JSON). Los demás módulos se controlan vía `permisos` JSONB otorgados por el super-admin. Puede crear vendedores bajo su red. |
 | `seller`   | Solo ve y crea sus propias cotizaciones. No accede al panel admin.           |
 
 #### Acceso por pantalla
 
 | Pantalla | Super Admin | Socio | Seller |
 |---|---|---|---|
-| `admin-stats` (`/admin`) | Panel principal | ❌ Redirigido a Rendimiento | ❌ |
-| `Rendimiento` (`/admin/rendimiento`) | Sí | ✅ **Panel principal, siempre** | ❌ |
+| `admin-stats` (`/admin`) | ✅ Dashboard (panel principal) | ✅ Dashboard (panel principal) | ❌ |
+| `Rendimiento` (`/admin/rendimiento`) | ✅ Siempre disponible | ✅ Siempre disponible (panel principal alternativo) | ❌ |
 | Vendedores / Cotizaciones / Placas / Parámetros | Sí | Según permiso JSONB | ❌ |
 | `Seguimiento` (`/admin/seguimiento`) | Sí | Según permiso `seguimiento` | ❌ |
 | Notas de seguimiento | Sí | Según permiso `notas` | ❌ |
@@ -178,13 +178,13 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
    - `isAdmin()` → true para `super_admin` | `socio`
    - `isSuperAdmin()` → true solo para `super_admin`
    - `isSocio()` → true para `socio`
-   - `canAccessModule(module)` → super_admin = todo; seller = todo; socio = `dashboard`/`stats` → false; `rendimiento` → true (inherente); resto revisa `permisos` JSONB
+       - `canAccessModule(module)` → super_admin = todo; seller = false (nunca accede al admin); socio = `dashboard`/`rendimiento` → true (inherentes); `stats` → false (clave muelta); `seguimiento` → permiso JSONB; resto revisa `permisos` JSONB
    - `createUserAsAdmin()` → super_admin crea cualquier rol; socio solo crea `seller`
  - **Routing** — `src/app/app.routes.ts`:
    - `/` → Mis Cotizaciones (seller) con `AuthGuard`
    - `/cotizador` → Cotizador con `AuthGuard`
    - `/admin` → AdminDashboard con `AuthGuard` + `adminGuard`
-   - `/admin` (child `''`) → `adminHomeGuard`: super_admin → AdminStats; socio → redirect `/admin/rendimiento`
+       - `/admin` (child `''`) → `adminHomeGuard`: super_admin y socio activo → AdminStats (Dashboard); seller y demás rechazados por `adminGuard` del padre
    - `/admin/rendimiento` → child sin `moduleGuard`; accede super_admin y socio activo (via parent `adminGuard`)
    - `/admin/admins` → `superAdminGuard`
    - `/admin/seguimiento` → child con `moduleGuard('seguimiento')`; solo super_admin y socios con el permiso JSONB. Los vendedores nunca acceden (`canAccessModule('seguimiento')` devuelve false para `seller`)
@@ -204,7 +204,7 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
 ### Pendientes de permisos
 
 - **Asignar/cambiar socio de un vendedor (super-admin):** implementado en `admin-sellers` (selector de socio en edición) y en `admin-admins` (drawer de detalle con botón "Reasignar"). El trigger `secure_profiles_row` impide que no-socios cambien `socio_id`.
-- **Permisos granulares en rutas admin:** implementado vía `adminHomeGuard` (redirección raíz), `moduleGuard` (permisos JSONB en rutas hijas) y `canAccessModule()` actualizado. `Rendimiento` es inherente al socio.
+- **Permisos granulares en rutas admin:** implementado vía `adminHomeGuard` (panel principal), `moduleGuard` (permisos JSONB en rutas hijas) y `canAccessModule()` actualizado. `Dashboard` y `Rendimiento` son inherentes al socio; `dashboard`/`stats` son claves que no se usan como permisos JSONB. **Verificado:** socio entra y aterriza en Dashboard y, además, el super admin dispone de un toggle global "Todos / Solo mi red" que filtra su alcance a sus vendedores asociados (`socio_id = su id`).
 
 ## 4. Reglas de negocio del cotizador
 

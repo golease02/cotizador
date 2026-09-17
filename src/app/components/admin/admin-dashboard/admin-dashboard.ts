@@ -2,6 +2,7 @@ import { Component, inject, signal, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { AdminScopeService } from '../../../services/admin-scope.service';
 import { ThemeService } from '../../../services/theme.service';
 import { ToastService } from '../../../services/toast.service';
 import { getSupabaseClient, sessionReady } from '../../../services/supabase-client';
@@ -11,12 +12,13 @@ import { Subscription, filter } from 'rxjs';
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterModule],
-    templateUrl: './admin-dashboard.html',
+  templateUrl: './admin-dashboard.html',
   styleUrls: ['./admin-dashboard.css'],
 })
 export class AdminDashboardComponent implements OnInit, OnDestroy {
   public auth = inject(AuthService);
   public theme = inject(ThemeService);
+  readonly scope = inject(AdminScopeService);
   private router = inject(Router);
   public toastService = inject(ToastService);
   private client = getSupabaseClient();
@@ -46,9 +48,12 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   /** Polling ligero: cada 5 minutos verifica cotizaciones por caducar. */
   private scheduleAlertasPorCaducar(): void {
     this.limpiarTimeout();
-    this.alertaRojaTimeout = setTimeout(() => {
-      this.verificarAlertasPorCaducar();
-    }, 5 * 60 * 1000);
+    this.alertaRojaTimeout = setTimeout(
+      () => {
+        this.verificarAlertasPorCaducar();
+      },
+      5 * 60 * 1000,
+    );
   }
 
   private limpiarTimeout(): void {
