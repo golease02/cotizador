@@ -48,6 +48,24 @@
 | UPDATE | authenticated | `creado_por = auth.uid()` OR `is_admin()` |
 | DELETE | authenticated | `creado_por = auth.uid()` OR `is_admin()` |
 
+### `quote_seguimiento` (módulo Seguimiento)
+> Migración: `20260917000000_quote_seguimiento.sql` · Tabla 1:1 con `quotes` (`quote_id` = PK/FK).
+
+| Operación | Rol | Condición |
+|-----------|-----|-----------|
+| SELECT | authenticated | `can_access_seguimiento(quote_id)` → super_admin, o socio dueño del vendedor de la cotización |
+| INSERT | authenticated | `can_access_seguimiento(quote_id)` |
+| UPDATE | authenticated | `can_access_seguimiento(quote_id)` (USING + WITH CHECK) |
+| DELETE | authenticated | `is_seguimiento_admin()` (solo super_admin) |
+
+**Helpers (SECURITY DEFINER, `search_path = public`):**
+- `is_seguimiento_admin()` → `true` si el usuario actual es `super_admin` activo.
+- `can_access_seguimiento(bigint)` → `is_seguimiento_admin()` **OR** el `socio_id` del vendedor de la cotización = `auth.uid()` (socio activo).
+
+**Regla de negocio:** los **vendedores no tienen acceso** alguno a esta tabla (ni lectura). El `moduleGuard('seguimiento')` + `canAccessModule()` lo reflejan en el frontend.
+
+**Trigger `trg_seguimiento_touch`:** actualiza `updated_at` en cada UPDATE.
+
 ### `calculator_settings`
 | Operación | Rol | Condición |
 |-----------|-----|-----------|
@@ -103,7 +121,7 @@ Resultado esperado:
 - 4 triggers de seguridad activos
 # 📋 Matriz de Políticas RLS — Cotizador (bcsvqvibccfnsmagwkbr)
 
-**Última actualización:** 2026-03-09
+**Última actualización:** 2026-09-17 (módulo Seguimiento: `quote_seguimiento`)
 **Migración de endurecimiento:** `supabase/migrations/20260309120000_harden_rls.sql`
 
 ---

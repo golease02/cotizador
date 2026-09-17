@@ -64,6 +64,7 @@ cotizador/
 │   │   │   ├── auth.service.ts         # Auth, perfiles, roles, saneado de datos
 │   │   │   ├── financial-calculator.service.ts  # Motor de cálculo (PMT 3 opciones)
 │   │   │   ├── quotes.service.ts       # CRUD de cotizaciones
+│   │   │   ├── seguimiento.service.ts  # Pipeline de cierre (etapas, aging, upsert de seguimiento)
 │   │   │   ├── catalog.service.ts      # Catálogo de placas + config del cotizador
 │   │   │   ├── admin.service.ts        # RPCs de dashboard + fallbacks
 │   │   │   ├── pdf-export.service.ts   # Exportación a PDF (lazy load html2canvas/jspdf)
@@ -90,6 +91,7 @@ cotizador/
 │   │   │   │   ├── admin-sellers/     # CRUD de vendedores
 │   │   │   │   ├── admin-admins/      # CRUD de socios (super-admin only)
 │   │   │   │   ├── admin-quotes/      # Lista y gestión de todas las cotizaciones
+│   │   │   │   ├── admin-seguimiento/  # Pipeline de cierre: Kanban + lista de seguimiento
 │   │   │   │   ├── admin-plates/      # CRUD de placas por estado
 │   │   │   │   └── admin-parameters/  # Configuración del cotizador (porcentajes, etc.)
 │   │   │   ├── perfil/                # Perfil de usuario
@@ -100,11 +102,14 @@ cotizador/
 │   ├── index.html
 │   └── styles.css
 ├── supabase/
-│   ├── migrations/                    # Migraciones SQL (timestamps 20260309 + 20260910)
+│   ├── migrations/                    # Migraciones SQL (timestamps YYYYMMDDHHMMSS)
 │   │   ├── 20260910000005_socio_scope_rpcs.sql  # RPCs con scope por socio
-│   │   └── 20260910000009_drop_vehicles_table.sql  # Drop del catálogo `vehicles`
+│   │   ├── 20260910000009_drop_vehicles_table.sql  # Drop del catálogo `vehicles`
+│   │   └── 20260917000000_quote_seguimiento.sql    # Tabla + RLS del módulo Seguimiento
 │   ├── audits/
 │   │   └── 02_verify_rls.sql          # Checklist de verificación RLS
+│   ├── scripts/
+│   │   └── seed_datos_prueba.sql      # Seed manual: 3 socios + 15 vendedores + 60 cotizaciones (conserva al super admin; no toca placas ni parámetros)
 │   └── config.toml                    # [gitignored] Config local de Supabase CLI
 ├── package.json / package-lock.json
 ├── angular.json
@@ -126,6 +131,7 @@ cotizador/
 | Registro de vendedor        | `components/auth/register/register.ts`                 |
 | Catálogo de placas / config cotizador | `catalog.service.ts`, `admin-plates/`, `admin-parameters/` |
 | Estado de cotizaciones      | `utils/quote-validity.ts`                               |
+| Seguimiento (pipeline de cierre) | `seguimiento.service.ts`, `admin-seguimiento/`     |
 
 ## 3. Roles y permisos
 
@@ -144,6 +150,7 @@ cotizador/
 | `admin-stats` (`/admin`) | Panel principal | ❌ Redirigido a Rendimiento | ❌ |
 | `Rendimiento` (`/admin/rendimiento`) | Sí | ✅ **Panel principal, siempre** | ❌ |
 | Vendedores / Cotizaciones / Placas / Parámetros | Sí | Según permiso JSONB | ❌ |
+| `Seguimiento` (`/admin/seguimiento`) | Sí | Según permiso `seguimiento` | ❌ |
 | Notas de seguimiento | Sí | Según permiso `notas` | ❌ |
 | Socios (`/admin/admins`) | Sí | ❌ | ❌ |
 
@@ -153,6 +160,7 @@ cotizador/
 |---|---|---|
 | `sellers` | Vendedores | Ver y administrar los vendedores del socio: crear, editar, activar/desactivar y reasignar. |
 | `quotes` | Cotizaciones | Ver y gestionar todas las cotizaciones: detalle, estado de revisión y por caducar. |
+| `seguimiento` | Seguimiento | Tablero Kanban/lista del pipeline de cierre: etapas, fechas y datos operativos. |
 | `plates` | Placas de Estado | Administrar el catálogo de placas por estado. |
 | `parameters` | Parámetros del cotizador | Configurar IVA, comisión, seguros y valores residuales. |
 | `notas` | Notas de seguimiento | Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones. |
@@ -179,6 +187,7 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
    - `/admin` (child `''`) → `adminHomeGuard`: super_admin → AdminStats; socio → redirect `/admin/rendimiento`
    - `/admin/rendimiento` → child sin `moduleGuard`; accede super_admin y socio activo (via parent `adminGuard`)
    - `/admin/admins` → `superAdminGuard`
+   - `/admin/seguimiento` → child con `moduleGuard('seguimiento')`; solo super_admin y socios con el permiso JSONB. Los vendedores nunca acceden (`canAccessModule('seguimiento')` devuelve false para `seller`)
 
 **Backend (Supabase RLS + RPCs):**
 - Migración `20260910000000_socios_superadmin.sql`:
@@ -242,6 +251,17 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
 - `src/app/services/financial-calculator.service.spec.ts` — valida PMT contra Excel, casos VW Crafter, límites de 75%, depósitos.
 - `src/app/utils/quote-validity.spec.ts` — vigencia de 7 días, estados "vencida"/"por vencer"/"vigente".
 
+### Módulo de Seguimiento (pipeline de cierre)
+
+- **Ruta:** `/admin/seguimiento` (permiso granular `seguimiento`; solo super_admin y socios — los vendedores no acceden).
+- **Archivos:** `services/seguimiento.service.ts` (lógica pura + Supabase) y `components/admin/admin-seguimiento/` (Kanban + lista).
+- **Tabla:** `public.quote_seguimiento` (1:1 con `quotes`, PK `quote_id`). Guarda `referenciado`, `financiera` (default `SIMPLE LEASE`), `activo_texto` (editable; por defecto "Marca Modelo Año"), `etapas` (JSONB) y `fecha_cierre`.
+- **Etapas (JSONB `etapas`):** `exp`, `analisis`, `pago_ini`, `oc`, `factura`, `contrato`, `gps`, `placas`. El valor es el ISO timestamp en que se completó; ausente = pendiente. La etapa **COT** es implícita: toda cotización entra al tablero (columna "Cotizada").
+- **Semántica de columnas del Kanban:** la columna equivale al **número de etapas completadas** (0 = Cotizada … 8 = Placas). `aplicarColumna(etapas, N)` marca las primeras N etapas y limpia las posteriores, por lo que el drag & drop es invertible; la columna `Cerrado` (9) completa las 8 etapas y fija `fecha_cierre`. Las inversas están en el mismo archivo: `computeColumnaActual`, `computeFechaEntradaEtapa`, `toggleEtapa`, `nivelAging`.
+- **Semáforo de antigüedad:** días desde la etapa completada más reciente (o desde `created_at` si no hay ninguna) → verde <8 días, amarillo 8–15, rojo ≥16.
+- **Fila perezosa:** no se crea registro hasta el primer cambio; el tablero se arma cruzando `quotes` (con `seller_name`) y `quote_seguimiento`. Si la tabla no existe, el servicio degrada a modo lectura (`tablaDisponible()` = false) y la vista muestra un aviso.
+- **UI:** vista **Kanban** (drag & drop HTML5 nativo, sin librerías nuevas, + selector "Mover a…" para móvil) y vista **Lista** estilo Excel (chips de etapas clicables, F. Inicio/Asesor/Referenciado/Cliente/Activo/Financiera/F. Cierre). La preferencia de vista se guarda en `localStorage`.
+
 ## 5. Convenciones de código
 
 ### Idioma
@@ -282,8 +302,11 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
   11. `20260910000009_drop_vehicles_table.sql` — drop del catálogo `vehicles` (CRUD eliminado)
   12. `20260911000000_seller_performance_rpcs.sql` — RPCs de rendimiento por vendedor
   13. `20260911000100_cleanup_permisos_obsoletos.sql` — limpieza idempotente de claves `dashboard`/`stats`/`rendimiento` del JSONB `permisos` de socios (Rendimiento pasa a ser inherente al rol)
+  14. `20260917000000_quote_seguimiento.sql` — tabla `quote_seguimiento` (1:1 con `quotes`) + helpers `is_seguimiento_admin()` / `can_access_seguimiento()` + políticas RLS del módulo Seguimiento
+- **⚠️ Estado real de `supabase/migrations/`:** el commit `e632a0f` ("Corecciones") **eliminó del repositorio** los archivos de migración 1–13: en disco sólo existen las migraciones añadidas después (a partir de la 14). El historial de las anteriores vive en `supabase_migrations.schema_migrations` de la BD remota. Por eso **toda migración nueva debe ser autocontenida** (no asumir que las anteriores están en disco) y aplicar con `npx supabase db push` (pide el password de la BD) o pegándola en el SQL Editor.
 - **Aplicar cambios:** `npx supabase db push` (o `supabase db reset` para desarrollo)
 - **No hay seeders tradicionales** — los catálogos base se insertan en `000001_bootstrap_super_admin.sql` (placas). El catálogo de **vehículos** (`vehicles`) fue **eliminado** en `20260910000009_drop_vehicles_table.sql`.
+- **Seed manual de datos de prueba:** `supabase/scripts/seed_datos_prueba.sql` (no es migración: no se aplica con `db push`). Se ejecuta a mano en el SQL Editor o con `npx supabase db query --linked -f supabase/scripts/seed_datos_prueba.sql`. Es **destructivo**: borra `quotes`, `notas` y todos los usuarios excepto el super admin actual, y crea 3 socios + 15 vendedores + 60 cotizaciones. **No toca** `state_plates` ni `calculator_settings`. Credenciales: socios `4421000001/02/03` y vendedores `44211xxxxx…44213xxxxx`, contraseña `123456` (login por celular). Detalle: publica `request.jwt.claims` del super admin dentro de la transacción para que los triggers `secure_profiles_row`/`secure_quotes_row` tomen la vía exenta (si no, las cotizaciones quedarían sin `seller_id`/`color`).
 
 ### Tests
 
@@ -295,7 +318,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 - **Framework:** Vitest globals (`describe`, `it`, `expect`, `vi`)
 - **Setup:** Angular `TestBed` con componentes standalone
 - **Archivos de test:** `*.spec.ts` al lado del código que testean
-- **Test actuales:** `financial-calculator.service.spec.ts`, `quote-validity.spec.ts`, `login.spec.ts`, `admin-guard.spec.ts`
+- **Test actuales:** `financial-calculator.service.spec.ts`, `quote-validity.spec.ts`, `seguimiento.service.spec.ts`, `login.spec.ts`, `admin-guard.spec.ts`, `admin-seller-performance.spec.ts`, `app.spec.ts`
 
 ### Commits
 
