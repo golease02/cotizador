@@ -94,6 +94,7 @@ cotizador/
 │   │   │   │   ├── admin-seguimiento/  # Pipeline de cierre: Kanban + lista de seguimiento
 │   │   │   │   ├── admin-plates/      # CRUD de placas por estado
 │   │   │   │   └── admin-parameters/  # Configuración del cotizador (porcentajes, etc.)
+97 | │   │   │   │   ├── admin-seller-performance/  # Rendimiento por vendedor (panel principal del socio/super admin; inherentes al rol)
 │   │   │   ├── perfil/                # Perfil de usuario
 │   │   │   └── header/                # Header + navegación móvil
 │   │   └── environments/
