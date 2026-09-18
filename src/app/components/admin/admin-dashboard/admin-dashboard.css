@@ -788,3 +788,31 @@
   background: rgba(255, 255, 255, 0.15);
   color: var(--surface-card);
 }
+
+/* ===== TOASTS EN MODO OSCURO ===== */
+/* En dark, --text-main es casi blanco y --surface-card casi negro, así que los
+   toasts de éxito/error (gradiente oscuro + color var(--surface-card)) quedaban
+   con texto ilegible. Aquí se fijan fondos y textos con los tokens del tema. */
+:host-context(html[data-theme='dark']) .toast,
+:host-context(html[data-theme='dark']) .toast-info {
+  background: var(--surface-muted);
+  color: var(--text-main);
+}
+
+:host-context(html[data-theme='dark']) .toast-success,
+:host-context(html[data-theme='dark']) .toast-error {
+  color: var(--text-main);
+}
+
+:host-context(html[data-theme='dark']) .toast-action {
+  background: var(--accent-green-light);
+  color: var(--accent-green-bright);
+}
+
+:host-context(html[data-theme='dark']) .toast-close {
+  color: rgba(232, 241, 238, 0.75);
+}
+
+:host-context(html[data-theme='dark']) .toast-close:hover {
+  color: var(--text-on-accent);
+}
