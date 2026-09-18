@@ -237,7 +237,8 @@ describe('FinancialCalculatorService', () => {
     });
 
     it('should prevent sum from exceeding 75% with option 2 (20% residual)', () => {
-      // For Option 2 (20% residual), max rent = 75% - 20% = 55%
+      // For Option 2 (20% residual): el techo absoluto de renta es 50% y la
+      // regla de suma permite hasta 55% (75% - 20%). El techo absoluto gana.
       const input: VehicleQuoteInput = {
         brand: 'TEST',
         model: 'TEST',
@@ -253,8 +254,8 @@ describe('FinancialCalculatorService', () => {
 
       const result = service.calculateQuote(input);
 
-      // Option 2: Rent should be capped at 55% (75% - 20%)
-      expect(result.options.option2.initialCosts.extraordinaryRentPct).toBe(0.55);
+      // Option 2: Rent capped at 50% (techo absoluto; 75% - 20% = 55% no aplica)
+      expect(result.options.option2.initialCosts.extraordinaryRentPct).toBe(0.50);
 
       // Verify sum doesn't exceed 75%
       const sum2 = result.options.option2.initialCosts.extraordinaryRentPct + 0.20;
@@ -262,7 +263,8 @@ describe('FinancialCalculatorService', () => {
     });
 
     it('should prevent sum from exceeding 75% with option 3 (5% residual)', () => {
-      // For Option 3 (5% residual), max rent = 75% - 5% = 70%
+      // For Option 3 (5% residual): el techo absoluto de renta es 50% y la
+      // regla de suma permitiría 70% (75% - 5%). El techo absoluto gana.
       const input: VehicleQuoteInput = {
         brand: 'TEST',
         model: 'TEST',
@@ -278,8 +280,8 @@ describe('FinancialCalculatorService', () => {
 
       const result = service.calculateQuote(input);
 
-      // Option 3: Rent should be capped at 70% (75% - 5%)
-      expect(result.options.option3.initialCosts.extraordinaryRentPct).toBe(0.70);
+      // Option 3: Rent capped at 50% (techo absoluto; 75% - 5% = 70% no aplica)
+      expect(result.options.option3.initialCosts.extraordinaryRentPct).toBe(0.50);
 
       // Verify sum doesn't exceed 75%
       const sum3 = result.options.option3.initialCosts.extraordinaryRentPct + 0.05;

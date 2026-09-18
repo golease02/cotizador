@@ -11,6 +11,7 @@ import {
   isExtraordinaryRentAndResidualValid,
   CalculatorConfig,
   DEFAULT_CALCULATOR_CONFIG,
+  MAX_EXTRAORDINARY_RENT_PCT,
 } from '../models/leasing.model';
 import { CatalogService } from './catalog.service';
 
@@ -112,12 +113,19 @@ export class FinancialCalculatorService {
     const minimumRentPct = config.minimumRentPct1;
     const userRentPct = input.extraordinaryRentPct || 0.10;
 
-    // Aplicar validación: nunca permitir menos que el mínimo requerido
+    // Aplicar validacion: nunca permitir menos que el minimo requerido
     let extraordinaryRentPct = Math.max(minimumRentPct, userRentPct);
 
-    // Validar que renta + residual no superen 75%
+    // Techo absoluto de la renta extraordinaria (50%), con independencia del
+    // valor residual de la opción. Se aplica antes de la regla de suma para
+    // que el limite de la Opcion 1 (VR 35%) quede en 40% y no en 50%.
+    if (extraordinaryRentPct > MAX_EXTRAORDINARY_RENT_PCT) {
+      extraordinaryRentPct = MAX_EXTRAORDINARY_RENT_PCT;
+    }
+
+    // Validar que renta + residual no superen maxRentAndResidualPct (75%)
     if (!isExtraordinaryRentAndResidualValid(extraordinaryRentPct, residualPct, config.maxRentAndResidualPct)) {
-      // Si excede, reducir renta al máximo permitido para esta opción
+      // Si excede, reducir renta al maximo permitido para esta opción
       extraordinaryRentPct = config.maxRentAndResidualPct - residualPct;
     }
 

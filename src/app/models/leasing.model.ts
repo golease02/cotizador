@@ -123,6 +123,17 @@ export function getMinimumExtraordinaryRentPct(_priceNet: number): number {
 }
 
 /**
+ * Techo absoluto de la renta extraordinaria (enganche deducible): 50%.
+ *
+ * Regla de negocio: la renta extraordinaria no puede superar el 50% del precio,
+ * con independencia del valor residual de la opción. Se combina con la regla
+ * "renta + residual ≤ maxRentAndResidualPct" (75%): el techo efectivo por
+ * opción es min(50%, maxRentAndResidualPct − residualPct). Así la Opción 1
+ * (VR 35%) se topa en 40% y las opciones 2 y 3 en 50%.
+ */
+export const MAX_EXTRAORDINARY_RENT_PCT = 0.5;
+
+/**
  * Residual values para las 3 opciones
  */
 export const RESIDUAL_PERCENTAGES = {

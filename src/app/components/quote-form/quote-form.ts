@@ -167,10 +167,6 @@ export class QuoteFormComponent implements OnInit {
     this.quoteForm.patchValue({ isHybridOrElectric: isHybrid });
   }
 
-  public setInsurance(isEstimated: boolean): void {
-    this.quoteForm.patchValue({ isInsuranceEstimated: isEstimated });
-  }
-
   public setTerm(months: number): void {
     this.quoteForm.patchValue({ termMonths: months });
   }

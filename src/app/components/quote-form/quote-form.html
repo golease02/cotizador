@@ -138,38 +138,16 @@
         </div>
       </div>
 
-      <!-- Depósito en Garantía: eliminado de la interfaz. Se aplica por defecto en cálculos (securityDepositPct en form model). -->
-      <!--
-        <div>
-          <label>Depósito en Garantía</label>
-          <div class="chip-group">
-            <button type="button" *ngFor="let p of [0, 0.05, 0.10]" class="chip-btn"
-              [class.active]="quoteForm.get('securityDepositPct')?.value === p" (click)="setDeposit(p)">{{ (p * 100)
-              }}%</button>
-          </div>
-        </div>
-        -->
-
-      <div class="full-width">
-        <label>Seguro de Unidad</label>
-        <div class="toggle-group">
-          <button
-            type="button"
-            class="toggle-btn"
-            [class.active]="quoteForm.get('isInsuranceEstimated')?.value === false"
-            (click)="setInsurance(false)"
-          >
-            Pendiente ($0)
-          </button>
-          <button
-            type="button"
-            class="toggle-btn"
-            [class.active]="quoteForm.get('isInsuranceEstimated')?.value === true"
-            (click)="setInsurance(true)"
-          >
-            Estimado (3.5%)
-          </button>
-        </div>
+                  <div class="full-width">
+        <label for="selectSeguro">Seguro de Unidad</label>
+        <select
+          id="selectSeguro"
+          class="preset-select"
+          formControlName="isInsuranceEstimated"
+        >
+          <option [ngValue]="false">Pendiente ($0)</option>
+          <option [ngValue]="true">Estimado (3.5%)</option>
+        </select>
       </div>
     </div>
   </form>
