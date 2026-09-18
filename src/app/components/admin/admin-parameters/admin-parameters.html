@@ -329,13 +329,3 @@
         </div>
     </div>
 </div>
-
-<!-- TOASTS (mismo estilo que admin-sellers / admin-admins) -->
-<div class="toast-host">
-    <div *ngFor="let t of toast.toasts()" class="toast" [class]="'toast-' + t.type" (click)="handleToast(t)">
-        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
-        <span class="toast-msg">{{ t.message }}</span>
-        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
-        <button class="toast-close" (click)="toast.dismiss(t.id); $event.stopPropagation()" aria-label="Cerrar">×</button>
-    </div>
-</div>

@@ -142,17 +142,6 @@
     <div class="seller-notes-tooltip-body">{{ sellerTooltipContent }}</div>
 </div>
 
-<!-- TOASTS -->
-<div class="toast-host">
-    <div *ngFor="let t of toastService.toasts()" class="toast" [class]="'toast-' + t.type"
-        (click)="handleToast(t)">
-        <span class="toast-icon">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
-        <span class="toast-msg">{{ t.message }}</span>
-        <span class="toast-action" *ngIf="t.actionLabel">{{ t.actionLabel }}</span>
-        <button class="toast-close" (click)="toastService.dismiss(t.id); $event.stopPropagation()" aria-label="Cerrar">×</button>
-    </div>
-</div>
-
 <!-- DRAWER: DETALLE DEL VENDEDOR -->
 <div class="drawer-overlay" *ngIf="showDetailDrawer" (click)="closeDetail()">
     <aside class="drawer detail-drawer" (click)="$event.stopPropagation()" role="dialog" aria-label="Detalle del vendedor">

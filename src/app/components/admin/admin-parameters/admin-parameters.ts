@@ -120,12 +120,6 @@ export class AdminParametersComponent implements OnInit {
     });
   }
 
-  // ===== TOASTS (mismo manejo que admin-admins) =====
-  handleToast(t: any): void {
-    if (t.action) t.action();
-    this.toast.dismiss(t.id);
-  }
-
   private validate(): string {
     const c = this.config;
     const percentages = [c.ivaPct, c.advisoryFeePct, c.insurancePct, c.maxRentAndResidualPct, c.minimumRentPct1, c.minimumRentPct2, c.minimumRentPct3, c.fleetManagementPct, c.adminManagementPct, c.residualOption1Pct, c.residualOption2Pct, c.residualOption3Pct];

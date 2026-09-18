@@ -118,11 +118,6 @@ export class AdminAdminsComponent implements OnInit {
     if (this.showFormDrawer) this.closeFormDrawer();
   }
 
-  handleToast(t: any) {
-    if (t.action) t.action();
-    this.toastService.dismiss(t.id);
-  }
-
   // ===================== DETALLE (DRAWER) =====================
 
   openDetail(admin: any) {

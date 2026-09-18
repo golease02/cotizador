@@ -112,11 +112,6 @@ export class AdminQuotesComponent implements OnInit {
     if (this.showModal) this.cerrarModal();
   }
 
-  handleToast(t: any) {
-    if (t.action) t.action();
-    this.toastService.dismiss(t.id);
-  }
-
   // ===================== LISTADO =====================
 
   async loadQuotes() {

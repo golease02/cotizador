@@ -56,11 +56,6 @@ export class AdminPlatesComponent implements OnInit {
     if (this.showFormDrawer) this.closeFormDrawer();
   }
 
-  handleToast(t: any) {
-    if (t.action) t.action();
-    this.toastService.dismiss(t.id);
-  }
-
   // ===================== LISTADO =====================
 
   async loadPlates() {
