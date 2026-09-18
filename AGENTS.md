@@ -229,12 +229,12 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
 
 1. **Sin pago mínimo por precio de vehículo** — no hay un "fee" adicional basado en el precio; la renta extraordinaria es el enganche deducible.
 2. **Sin condición de precio para cotizar** — cualquier precio neto ≥ $10,000 puede cotizarse (`Validators.min(10000)` en `quote-form.component.ts`).
-3. **Renta extraordinaria máxima: 50%** — el slider se limita a `maxRentAndResidualPct − residualOption1Pct` = 75% − 35% = **40%** (opción 1). El super-admin puede ajustar `maxRentAndResidualPct` en `admin-parameters`. **Pendiente:** el negocio indica 50% como techo absoluto; el código actual lo impone a 40%.
-4. **Depósito en garantía** — **sigue visible en la interfaz** (`quote-form.component.html` líneas 117–124). Regla: **eliminar de la interfaz**, siempre aplicado por defecto en cálculos. [NO IMPLEMENTADO — ver Pendientes]
-5. **Comisión del vendedor** — **no se muestra en el cotizador**. [NO IMPLEMENTADO — ver Pendientes]
+3. **Renta extraordinaria máxima: 50%** — techo absoluto de 50% implementado vía `MAX_EXTRAORDINARY_RENT_PCT = 0.5` en `leasing.model.ts`, aplicada en `calculateOption` **antes** de la regla de suma: la Opción 1 (VR 35%) se topa en 40% y las opciones 2 (VR 20%) y 3 (VR 5%) en 50%. El super-admin ajusta `maxRentAndResidualPct` en `admin-parameters`. **Implementado**.
+4. **Depósito en garantía** — **eliminado de la interfaz** (`quote-form.html`). Regla: siempre aplicado por defecto en cálculos; el default del formulario es **0%** (`securityDepositPct: 0.0`) y se suma `0` al desglose. **Implementado**.
+5. **Comisión del vendedor** — **se muestra en el cotizador**: banner al pie del formulario (`cotizador.html`, `sellerCommission` en `cotizador.ts`) calculado sobre la Opción 1 (VR 35%). No aparece en el PDF. **Implementado**.
 6. **Híbrido** — toggle Sí/No (implementado en `quote-form.component.html`). La renta básica cambia de $6,000 a $8,550.
-7. **Seguro** — actualmente es un toggle (Pendiente $0 / Estimado 3.5%). Regla: **cambiar a menú desplegable**. [NO IMPLEMENTADO]
-8. **Porcentajes 10% y 2%** — deben alinearse a la derecha. [NO IMPLEMENTADO — ver Pendientes]
+7. **Seguro** — menú desplegable `<select>` en `quote-form.html` con opciones `Pendiente ($0)` / `Estimado (3.5%)`. **Implementado**.
+8. **Porcentajes 10% y 2%** — alineados a la derecha en el PDF vía `.col-pct` (`quote-breakdown.css`: `text-align: right` + `padding-right: 0.4rem`, alineado a `.col-pct-vr`). **Implementado**.
 9. **Nomenclatura del dashboard** — usar **"Por caducar"** en lugar de "Urgentes". **Implementado** en UI (`admin-stats`, `admin-quotes`, `admin-seller-performance`). Las variables internas y campos RPC siguen usando `totalUrgentes`/`urgentes` como nombre técnico.
 10. **PDF** — el PDF (componente `quote-breakdown`) **no se toca** salvo indicación explícita. Los cambios de "opciones de arrendamiento" son solo en la interfaz del cotizador.
 
@@ -350,11 +350,11 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 | Requerimiento | Estado | Archivo(s) involucrados |
 |--------------|--------|------------------------|
-| Eliminar "Depósito en garantía" de la interfaz (mantener en cálculos) | **Pendiente** | `quote-form.component.html` (líneas 117–124), `quote-form.component.ts` (formControl `securityDepositPct`) |
-| Mostrar comisión del vendedor en el cotizador | **Pendiente** | `quote-breakdown.component.html`, `financial-calculator.service.ts` |
-| Cambiar selector de seguro de toggle a menú desplegable | **Pendiente** | `quote-form.component.html` (líneas 126–136), `quote-form.component.ts` (`setInsurance`) |
-| Alinear porcentajes 10% y 2% a la derecha | **Pendiente** | CSS de `quote-form` / `quote-options` / `quote-breakdown` |
-| Renta extraordinaria máxima: 50% (código impone 40%) | **Pendiente** | `quote-form.component.ts` (`maximumExtraordinaryRentPct`), `leasing.model.ts` |
+| Eliminar "Depósito en garantía" de la interfaz (mantener en cálculos) | **Implementado** | `quote-form.html` (oculto; default 0% `securityDepositPct`) |
+| Mostrar comisión del vendedor en el cotizador | **Implementado** | `cotizador.html` (banner) + `cotizador.ts` (`sellerCommission`) |
+| Cambiar selector de seguro de toggle a menú desplegable | **Implementado** | `quote-form.html` (`<select>`) |
+| Alinear porcentajes 10% y 2% a la derecha | **Implementado** | `quote-breakdown.css` (`.col-pct`) |
+| Renta extraordinaria máxima: 50% (techo 50% por opción) | **Implementado** | `leasing.model.ts` (`MAX_EXTRAORDINARY_RENT_PCT = 0.5`) + `quote-form.ts` |
 
 ### Dashboard / Admin
 
