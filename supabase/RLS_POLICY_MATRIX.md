@@ -212,3 +212,17 @@ Todos los checks deben reportar `PASS`. Verificación post-aplicación:
 - Las políticas usan nombres con sufijo `_v2` para diferenciar de las políticas originales y facilitar el rollback.
 |                               | ✗          | ✗ DELETE                 | ✓                       | ✓              | ✓           |
 **Estado:** ✅ Aplicada y verificada en producción
+
+## 📋 Estado de grants — Endurecimiento 2026-09-18
+> Migraciones: `20260918000000_harden_rpc_grants_search_path.sql` y
+> `20260918001000_fix_grants_public.sql` (autocontenidas, idempotentes, aplicadas con `npx supabase db push`).
+> Auditoría reproducible: `supabase/audits/03_harden_audit.sql` — `npx supabase db query --linked --file supabase/audits/03_harden_audit.sql --output csv`.
+
+| Función | `anon` | `authenticated` | `service_role` | Nota |
+|------------|--------|-----------------|----------------|------|
+| `touch_seguimiento_updated_at`, `set_quotes_valid_until`, `secure_quotes_row`, `secure_profiles_row`, `handle_new_user` | ✗ | ✗ | ✓ | Triggers: `EXECUTE` revocado de `PUBLIC`/`anon`/`authenticated`; el motor de triggers no verifica grants, por lo que no se afecta. `search_path` fijado (`secure_quotes_row`/`touch_seguimiento_updated_at` con `''`; `set_quotes_valid_until` con `'public'`). |
+| Helpers RLS (`is_admin`, `is_super_admin`, `can_view_profile`, `can_view_quote`, `is_socio_owner_of`, `shares_socio_group`, `is_seguimiento_admin`, `can_access_seguimiento`) | ✗ | ✓ | ✓ | Políticas RLS son `TO authenticated`; revocado `anon`/`PUBLIC`. |
+| `delete_user(uuid)`, `get_seller_scope_ids()` | ✗ | ✓ | ✓ | El frontend las llama autenticado; cerrada exposición previa a `anon` (el grant original era a `PUBLIC`). |
+| `get_profile_by_seller`, `get_public_socios`, `request_password_recovery` | ✓ | ✓ | ✓ | Intencionales: login/registro pre-auth. |
+
+**Linter de Supabase resultante:** `function_search_path_mutable` → **0**; `anon_security_definer_function_executable` → 3 (login público, por diseño); `authenticated_security_definer_function_executable` → inherentes al patrón (defensa interna por `is_admin()`). Pendiente manual: activar **Leaked password protection** en Dashboard → Authentication (no es SQL ni código).
