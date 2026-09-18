@@ -25,15 +25,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   private routerEventsSub: Subscription;
 
   sidebarOpen = signal(false);
-  private alertaRojaTimeout: any = null;
 
   constructor() {
     this.routerEventsSub = this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => {
-        this.sidebarOpen.set(false);
-        this.verificarAlertasPorCaducar();
-      });
+      .subscribe(() => this.sidebarOpen.set(false));
   }
 
   async ngOnInit(): Promise<void> {
@@ -42,28 +38,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routerEventsSub?.unsubscribe();
-    this.limpiarTimeout();
   }
 
-  /** Polling ligero: cada 5 minutos verifica cotizaciones por caducar. */
-  private scheduleAlertasPorCaducar(): void {
-    this.limpiarTimeout();
-    this.alertaRojaTimeout = setTimeout(
-      () => {
-        this.verificarAlertasPorCaducar();
-      },
-      5 * 60 * 1000,
-    );
-  }
-
-  private limpiarTimeout(): void {
-    if (this.alertaRojaTimeout) {
-      clearTimeout(this.alertaRojaTimeout);
-      this.alertaRojaTimeout = null;
-    }
-  }
-
-  /** Cuenta cotizaciones con color rojo (>7 días, no revisadas) y muestra toast. */
+  /**
+   * Cuenta las cotizaciones con color rojo (>7 días sin revisar) y muestra un
+   * toast. Se ejecuta una sola vez: al entrar al panel admin justo después de
+   * iniciar sesión. El layout se destruye al cerrar sesión, así que el toast vuelve
+   * a mostrarse una única vez en el siguiente login y NO en cada cambio de panel.
+   */
   async verificarAlertasPorCaducar(): Promise<void> {
     try {
       await sessionReady();
@@ -80,9 +62,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           () => this.router.navigate(['/admin/quotes'], { queryParams: { color: 'rojo' } }),
         );
       }
-      this.scheduleAlertasPorCaducar();
     } catch (e) {
-      this.scheduleAlertasPorCaducar();
+      // Silencioso: no interrumpimos la carga del layout por la alerta.
     }
   }
 
