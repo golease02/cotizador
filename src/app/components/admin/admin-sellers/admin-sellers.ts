@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { getSupabaseClient } from '../../../services/supabase-client';
@@ -19,7 +20,7 @@ import { ToastService } from '../../../services/toast.service';
 @Component({
   selector: 'app-admin-sellers',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
     templateUrl: './admin-sellers.html',
   styleUrls: ['./admin-sellers.css']
 })
@@ -35,6 +36,11 @@ export class AdminSellersComponent implements OnInit {
 
   get canManageNotas(): boolean {
     return this.auth.canAccessModule('notas');
+  }
+
+  /** Acceso directo a las cotizaciones del vendedor (requiere permiso 'quotes'). */
+  get canViewQuotes(): boolean {
+    return this.auth.canAccessModule('quotes');
   }
 
   // ------------------- LISTADO -------------------

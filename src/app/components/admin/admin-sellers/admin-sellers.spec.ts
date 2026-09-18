@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import type { User } from '@supabase/supabase-js';
 import { AdminSellersComponent } from './admin-sellers';
 import { AuthService, Profile } from '../../../services/auth.service';
@@ -79,7 +80,10 @@ describe('AdminSellersComponent scope', () => {
       return query;
     });
     rpc = vi.spyOn(client, 'rpc').mockImplementation((): any => Promise.resolve(payload()));
-    await TestBed.configureTestingModule({ imports: [AdminSellersComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [AdminSellersComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
     auth = TestBed.inject(AuthService);
     setSessionUser({ id: profile.id } as User);
     await auth.loadProfile(profile.id);
@@ -186,5 +190,29 @@ describe('AdminSellersComponent scope', () => {
     await render();
     expect(component.filteredSellers()).toEqual([]);
     expect(scope.error()).toContain('Mis vendedores');
+  });
+
+  it('should link to the seller quotes with the seller filter when the detail drawer opens', async () => {
+    await render();
+    component.openDetail(component.sellers()[0]);
+    fixture.detectChanges();
+    const link = fixture.nativeElement.querySelector(
+      '.detail-drawer .detail-quotes-link',
+    ) as HTMLAnchorElement | null;
+    expect(link).toBeTruthy();
+    expect(link!.getAttribute('href')).toContain('/admin/quotes');
+    expect(link!.getAttribute('href')).toContain('seller=seller-a');
+    expect(link!.textContent).toContain('Ver cotizaciones del vendedor');
+  });
+
+  it('should hide the quotes link when the profile lacks the quotes permission', async () => {
+    profile = { ...profile, role: 'socio', permisos: { sellers: true } };
+    await auth.loadProfile(profile.id);
+    await render();
+    component.openDetail(component.sellers()[0]);
+    fixture.detectChanges();
+    expect(component.canViewQuotes).toBe(false);
+    expect(fixture.nativeElement.querySelector('.detail-quotes-link')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('no tiene acceso al módulo de Cotizaciones');
   });
 });

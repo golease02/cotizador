@@ -170,6 +170,18 @@
             </div>
 
             <div class="detail-section">
+                <h4>Cotizaciones del vendedor</h4>
+                <a *ngIf="canViewQuotes" class="btn-secondary btn-block detail-quotes-link"
+                    [routerLink]="['/admin/quotes']" [queryParams]="{ seller: detailSeller.id }"
+                    (click)="closeDetail()" aria-label="Ver las cotizaciones de este vendedor">
+                    Ver cotizaciones del vendedor →
+                </a>
+                <p *ngIf="!canViewQuotes" class="detail-address">
+                    Tu perfil no tiene acceso al módulo de Cotizaciones.
+                </p>
+            </div>
+
+            <div class="detail-section">
                 <h4>Notas de seguimiento</h4>
                 <button class="btn-secondary btn-block" *ngIf="canManageNotas" (click)="abrirNotas(detailSeller)">💬 Ver y administrar notas</button>
             </div>

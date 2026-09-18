@@ -910,6 +910,20 @@ button.stat-card:hover {
   line-height: 1.45;
 }
 
+/* Acceso directo a las cotizaciones del vendedor (drawer de detalle) */
+.detail-quotes-link {
+  margin-top: 0.2rem;
+  color: var(--accent-green-dark);
+  border-color: var(--accent-green-dark);
+  text-decoration: none;
+}
+
+.detail-quotes-link:hover {
+  color: var(--accent-green-dark);
+  background: var(--accent-green-light);
+  border-color: var(--accent-green);
+}
+
 .field-hint {
   display: block;
   margin-top: 0.35rem;

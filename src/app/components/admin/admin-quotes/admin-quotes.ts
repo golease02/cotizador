@@ -44,13 +44,20 @@ export class AdminQuotesComponent implements OnInit {
     effect(() => {
       if (this.scope.reloadCount() === 0) return;
       untracked(() => {
-        this.filtroVendedor = 'todos';
+        // Conserva el vendedor preseleccionado por la URL (?seller=<id>) para que
+        // una recarga de alcance no pierda el drill-down; sin parámetro → 'todos'.
+        this.filtroVendedor = this.sellerFromRoute();
         void this.loadVendedores();
         this.showModal = false;
         this.showNotasModal = false;
         this.applyFilters();
       });
     });
+  }
+
+  /** Vendedor preseleccionado por la URL (drill-down `?seller=<id>`); 'todos' si no hay. */
+  private sellerFromRoute(): string {
+    return this.route.snapshot.queryParamMap.get('seller') || 'todos';
   }
 
   // Listado
@@ -90,12 +97,9 @@ export class AdminQuotesComponent implements OnInit {
   notaToDelete: any = null;
 
   async ngOnInit() {
-    // Drill-down desde el dashboard de rendimiento: /admin/quotes?seller=<id>
-    // preselecciona el filtro de vendedor antes de aplicar los filtros.
-    const sellerParam = this.route.snapshot.queryParamMap.get('seller');
-    if (sellerParam) {
-      this.filtroVendedor = sellerParam;
-    }
+    // Drill-down desde el rendimiento del equipo / detalle del vendedor:
+    // /admin/quotes?seller=<id> deja el filtro de vendedor pre-aplicado.
+    this.filtroVendedor = this.sellerFromRoute();
 
     await Promise.all([
       this.loadQuotes(),
