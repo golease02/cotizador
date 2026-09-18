@@ -484,16 +484,6 @@ export class AdminQuotesComponent implements OnInit {
     return labels[quote.color] || 'Reciente';
   }
 
-  /** True cuando la cotización fue marcada como revisada. */
-  isQuoteReviewedPublic(quote: any): boolean {
-    return this.isQuoteReviewed(quote);
-  }
-
-  /** Total de cotizaciones revisadas (revisada=true) en el listado filtrado. */
-  countReviewed(): number {
-    return this.filteredQuotes().filter((q) => this.isQuoteReviewedPublic(q)).length;
-  }
-
   // ===================== FIJAR COTIZACIÓN =====================
 
   async toggleFijar(quote: any) {
