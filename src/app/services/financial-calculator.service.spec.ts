@@ -104,6 +104,39 @@ describe('FinancialCalculatorService', () => {
     expect(result.options.option1.initialCosts.adminFeeInitialNet).toBeCloseTo(3334.50, 2);
   });
 
+  it('should compute initial costs with annual insurance cost when "Costo Anual" is selected', () => {
+    const input: VehicleQuoteInput = {
+      brand: 'VOLKSWAGEN',
+      model: 'TIGUAN R LINE',
+      year: 2026,
+      priceNet: 795790,
+      isHybridOrElectric: false,
+      termMonths: 48,
+      extraordinaryRentPct: 0.10,
+      securityDepositPct: 0.0,
+      selectedStatePlateId: 'pendiente',
+      isInsuranceEstimated: false,
+      annualInsuranceCost: 23200, // capturado con IVA -> 20,000 netos
+      customAdminFeeInitial: 3334.50,
+    };
+
+    const result = service.calculateQuote(input);
+    const initialCosts = result.options.option1.initialCosts;
+
+    // El importe capturado se desglosa: neto = 23,200 / 1.16 = 20,000
+    expect(initialCosts.insuranceNoIva).toBeCloseTo(20000, 2);
+    // La regla del 3.5% (Estimado) ya no aplica al elegir Costo Anual
+    expect(initialCosts.insuranceNoIva).not.toBeCloseTo(input.priceNet * 0.035, 2);
+
+    // Precio sin IVA = 795,790 / 1.16 = 686,025.86 -> renta 10% = 68,602.59
+    expect(initialCosts.extraordinaryRentNoIva).toBeCloseTo(68602.59, 1);
+    // Subtotal = renta 68,602.59 + gastos 3,334.50 + asesoría 13,720.52 + placas 0 + seguro 20,000
+    expect(initialCosts.subtotalNoIva).toBeCloseTo(105657.6, 1);
+    // IVA 16% del subtotal y desembolso inicial único = subtotal + IVA
+    expect(initialCosts.ivaAmount).toBeCloseTo(16905.22, 1);
+    expect(initialCosts.totalInitialPayment).toBeCloseTo(122562.82, 1);
+  });
+
   it('should compute exact quotation with insurance estimated (HINO example from Excel)', () => {
     // Data from Excel screenshot: HINO 616 LONG, $407,900, with "Costo anual de seguro estimado"
     const input: VehicleQuoteInput = {

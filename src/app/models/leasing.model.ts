@@ -172,6 +172,7 @@ export interface VehicleQuoteInput {
   securityDepositPct: number; // e.g. 0 (0%)
   selectedStatePlateId: string;
   isInsuranceEstimated: boolean; // True: 3.5% of priceNet, False: 0
+  annualInsuranceCost?: number; // Costo anual de seguro capturado (con IVA); 0/undefined = sin costo
   customAdminFeeInitial?: number; // Default 2565 * 1.3 = 3334.50
 }
 

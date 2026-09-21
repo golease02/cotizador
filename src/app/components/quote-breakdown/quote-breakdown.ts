@@ -61,6 +61,18 @@ export class QuoteBreakdownComponent {
     return found ? found.name : 'Alta de placas pendientes x cotizar';
   }
 
+  /**
+   * Etiqueta de la fila de seguro del desglose. Solo cambia cuando el vendedor
+   * capturó un "Costo Anual"; el resto conserva los textos históricos.
+   */
+  public getInsuranceLabel(insuranceNoIva: number): string {
+    if (!(insuranceNoIva > 0)) {
+      return 'Seguro pendiente x cotizar';
+    }
+    const annualCost = this.calculation?.input?.annualInsuranceCost || 0;
+    return annualCost > 0 ? 'Costo Anual de Seguro' : 'Costo anual de seguro estimado';
+  }
+
   public async downloadPDF(): Promise<void> {
     this.isDownloading.set(true);
     try {

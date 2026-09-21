@@ -39,27 +39,9 @@
                  el vendedor vea su ganancia justo al terminar de capturar. -->
       <div class="seller-commission-banner" *ngIf="calculationResult()">
         <div class="commission-info">
-          <span class="commission-kicker">Tu comisión por esta cotización</span>
-          <span class="commission-amount">{{
-            sellerCommission | currency: 'MXN' : 'symbol' : '1.2-2'
-          }}</span>
+          <span class="commission-kicker">Tu comision para esta operacion seria de:</span>
+          <span class="commission-amount">$ {{ sellerCommission | number: '1.0-0' }}</span>
         </div>
-        <svg
-          class="commission-badge"
-          width="42"
-          height="42"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.6"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <line x1="19" y1="5" x2="5" y2="19" />
-          <circle cx="6.5" cy="6.5" r="2.5" />
-          <circle cx="17.5" cy="17.5" r="2.5" />
-        </svg>
       </div>
     </div>
     <div class="right-column">

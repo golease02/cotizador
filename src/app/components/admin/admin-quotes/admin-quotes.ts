@@ -536,6 +536,7 @@ export class AdminQuotesComponent implements OnInit {
       securityDepositPct: quote.securitydepositpct || 0,
       selectedStatePlateId: quote.selectedstateplateid || 'pendiente',
       isInsuranceEstimated: quote.isinsuranceestimated || false,
+      annualInsuranceCost: quote.annualinsurancecost || 0,
     };
     const result = this.calculator.calculateQuote(input);
     this.selectedQuote.set(result);

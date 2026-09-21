@@ -132,6 +132,12 @@ select:focus {
   font-size: 1.1rem;
 }
 
+/* Recuadro de "Costo Anual" del seguro (aparece solo con esa opción) */
+.annual-insurance-group {
+  margin-top: 0.5rem;
+  max-width: 320px;
+}
+
 .toggle-group {
   display: grid;
   grid-template-columns: 1fr 1fr;

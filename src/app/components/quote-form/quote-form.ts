@@ -10,7 +10,9 @@ import {
 import { VehicleQuoteInput, StatePlateOption, CalculatorConfig } from '../../models/leasing.model';
 import { CatalogService } from '../../services/catalog.service';
 import { QuoteDraftService } from '../../services/quote-draft.service';
-import { formatPrice } from './price-format';
+import { formatPrice, parsePriceInput } from './price-format';
+
+export type InsuranceMode = 'pendiente' | 'estimado' | 'anual';
 
 @Component({
   selector: 'app-quote-form',
@@ -35,14 +37,15 @@ export class QuoteFormComponent implements OnInit {
       clientName: [''],
       brand: ['', Validators.required],
       model: ['', Validators.required],
-      year: [2026, [Validators.required, Validators.min(2015)]],
+      year: [2026, Validators.required],
       priceNet: [null, [Validators.required, Validators.min(10000)]],
       isHybridOrElectric: [false],
       termMonths: [48, Validators.required],
       extraordinaryRentPct: [0.1, [Validators.required, Validators.min(0.1)]],
       securityDepositPct: [0.0],
       selectedStatePlateId: ['pendiente'],
-      isInsuranceEstimated: [false],
+      insuranceMode: ['pendiente'],
+      annualInsuranceCost: [null],
     });
 
     await Promise.all([this.catalog.loadStatePlates(), this.catalog.loadCalculatorConfig()]);
@@ -77,17 +80,13 @@ export class QuoteFormComponent implements OnInit {
       extraordinaryRentPct: input.extraordinaryRentPct,
       securityDepositPct: input.securityDepositPct || 0,
       selectedStatePlateId: input.selectedStatePlateId || 'pendiente',
-      isInsuranceEstimated: input.isInsuranceEstimated,
+      insuranceMode: this.resolveInsuranceMode(input),
+      annualInsuranceCost: input.annualInsuranceCost || null,
     });
     this.quoteForm.updateValueAndValidity();
     this.emitQuoteInput();
     // El borrador ya se consumió: la próxima visita al cotizador arranca en limpio.
     this.draftService.clear();
-  }
-
-  get isPreOwned(): boolean {
-    const y = this.quoteForm.get('year')?.value;
-    return y ? y < 2024 : false;
   }
 
   get vehiclePrice(): number {
@@ -96,6 +95,19 @@ export class QuoteFormComponent implements OnInit {
 
   get priceNetDisplay(): string {
     const v = this.quoteForm?.get('priceNet')?.value;
+    if (v === null || v === undefined || v === '') {
+      return '';
+    }
+    return formatPrice(String(v));
+  }
+
+  /** Modo del seguro: Pendiente | Estimado (3.5%) | Costo Anual (importe capturado). */
+  get insuranceMode(): InsuranceMode {
+    return (this.quoteForm?.get('insuranceMode')?.value as InsuranceMode) || 'pendiente';
+  }
+
+  get annualInsuranceCostDisplay(): string {
+    const v = this.quoteForm?.get('annualInsuranceCost')?.value;
     if (v === null || v === undefined || v === '') {
       return '';
     }
@@ -136,31 +148,53 @@ export class QuoteFormComponent implements OnInit {
     return `La renta se ajustará al 50% (máximo: renta + valor residual no puede superar 75%).`;
   }
 
+  /**
+   * Precio Neto: se muestra y se captura con coma para miles y punto para
+   * centavos (ej. "795,790.00"). El parseo vive en parsePriceInput().
+   */
   public onPriceNetInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const cleaned = input.value.replace(/[^\d.,]/g, '');
-    const commaIdx = cleaned.lastIndexOf(',');
-    let intText = cleaned.replace(/[.,]/g, '');
-    let decText = '';
-    let hasComma = false;
-    if (commaIdx !== -1) {
-      hasComma = true;
-      intText = cleaned.slice(0, commaIdx).replace(/[.,]/g, '');
-      decText = cleaned.slice(commaIdx + 1).replace(/\D/g, '');
-    }
-    const groupedInt = intText.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    const display = groupedInt + (hasComma ? ',' + decText : '');
-    if (input.value !== display) {
-      input.value = display;
-    }
-    let value: number | null = null;
-    if (intText || decText) {
-      value = Number(decText ? `${intText || '0'}.${decText}` : intText);
+    const parsed = parsePriceInput(input.value);
+    if (input.value !== parsed.display) {
+      input.value = parsed.display;
     }
     const current = this.quoteForm.get('priceNet')?.value;
-    if (current !== value) {
-      this.quoteForm.patchValue({ priceNet: value });
+    if (current !== parsed.value) {
+      this.quoteForm.patchValue({ priceNet: parsed.value });
     }
+  }
+
+  /** Año Modelo abierto: solo dígitos, sin rango mínimo ni máximo. */
+  public onYearInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 4);
+    if (input.value !== digits) {
+      input.value = digits;
+    }
+    if (this.quoteForm.get('year')?.value !== digits) {
+      this.quoteForm.patchValue({ year: digits });
+    }
+  }
+
+  /** Recuadro de "Costo Anual": mismo formato de moneda que el precio neto. */
+  public onAnnualInsuranceCostInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const parsed = parsePriceInput(input.value);
+    if (input.value !== parsed.display) {
+      input.value = parsed.display;
+    }
+    const current = this.quoteForm.get('annualInsuranceCost')?.value;
+    if (current !== parsed.value) {
+      this.quoteForm.patchValue({ annualInsuranceCost: parsed.value });
+    }
+  }
+
+  /** Deduce el modo del seguro a partir de los datos guardados de una cotización. */
+  private resolveInsuranceMode(input: VehicleQuoteInput): InsuranceMode {
+    if (input.annualInsuranceCost && input.annualInsuranceCost > 0) {
+      return 'anual';
+    }
+    return input.isInsuranceEstimated ? 'estimado' : 'pendiente';
   }
 
   public setHybrid(isHybrid: boolean): void {
@@ -182,6 +216,8 @@ export class QuoteFormComponent implements OnInit {
   private emitQuoteInput(): void {
     const raw = this.quoteForm.value;
     const priceNet = Number(raw.priceNet) || 0;
+    const insuranceMode = (raw.insuranceMode as InsuranceMode) || 'pendiente';
+    const annualInsuranceCost = Number(raw.annualInsuranceCost) || 0;
     const input: VehicleQuoteInput = {
       clientName: raw.clientName || '',
       brand: raw.brand || '',
@@ -193,7 +229,8 @@ export class QuoteFormComponent implements OnInit {
       extraordinaryRentPct: Number(raw.extraordinaryRentPct) || 0.1,
       securityDepositPct: Number(raw.securityDepositPct) || 0,
       selectedStatePlateId: raw.selectedStatePlateId || 'pendiente',
-      isInsuranceEstimated: Boolean(raw.isInsuranceEstimated),
+      isInsuranceEstimated: insuranceMode === 'estimado',
+      annualInsuranceCost: insuranceMode === 'anual' ? annualInsuranceCost : 0,
     };
     this.quoteChange.emit(input);
   }

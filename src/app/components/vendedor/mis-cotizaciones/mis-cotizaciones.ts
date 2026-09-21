@@ -134,6 +134,7 @@ export class MisCotizacionesComponent implements OnInit {
       securityDepositPct: row.securitydepositpct || 0,
       selectedStatePlateId: row.selectedstateplateid || 'pendiente',
       isInsuranceEstimated: row.isinsuranceestimated || false,
+      annualInsuranceCost: row.annualinsurancecost || 0,
     };
   }
 

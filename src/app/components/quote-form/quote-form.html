@@ -38,8 +38,15 @@
 
       <div>
         <label for="year">Año Modelo *</label>
-        <input id="year" type="number" formControlName="year" min="2015" max="2030" />
-        <div *ngIf="isPreOwned" class="warning">Seminuevo (< 2024): IVA al 16% en factura.</div>
+        <input
+          id="year"
+          type="text"
+          inputmode="numeric"
+          maxlength="4"
+          formControlName="year"
+          placeholder="Ej. 2026"
+          (input)="onYearInput($event)"
+        />
       </div>
 
       <div>
@@ -52,7 +59,7 @@
       </div>
 
       <div class="full-width price-group">
-        <label for="priceNet">Precio Neto del Vehículo (con IVA) *</label>
+        <label for="priceNet">Precio Neto</label>
         <div class="currency-input-wrapper">
           <span class="currency-symbol">$</span>
           <input
@@ -61,7 +68,7 @@
             inputmode="decimal"
             [value]="priceNetDisplay"
             (input)="onPriceNetInput($event)"
-            placeholder="969.900,00"
+            placeholder="0.00"
           />
         </div>
       </div>
@@ -138,16 +145,27 @@
         </div>
       </div>
 
-                  <div class="full-width">
+      <div class="full-width">
         <label for="selectSeguro">Seguro de Unidad</label>
-        <select
-          id="selectSeguro"
-          class="preset-select"
-          formControlName="isInsuranceEstimated"
-        >
-          <option [ngValue]="false">Pendiente ($0)</option>
-          <option [ngValue]="true">Estimado (3.5%)</option>
+        <select id="selectSeguro" class="preset-select" formControlName="insuranceMode">
+          <option value="pendiente">Pendiente</option>
+          <option value="estimado">Estimado</option>
+          <option value="anual">Costo Anual</option>
         </select>
+        <!-- "Costo Anual": recuadro para capturar el importe del seguro -->
+        <div class="annual-insurance-group" *ngIf="insuranceMode === 'anual'">
+          <div class="currency-input-wrapper">
+            <span class="currency-symbol">$</span>
+            <input
+              id="annualInsuranceCost"
+              type="text"
+              inputmode="decimal"
+              [value]="annualInsuranceCostDisplay"
+              (input)="onAnnualInsuranceCostInput($event)"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </form>

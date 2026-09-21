@@ -214,12 +214,7 @@
 
           <tr>
             <td class="col-concept" colspan="2">
-              {{
-                opt1.initialCosts.insuranceNoIva > 0
-                  ? 'Costo anual de
-                            seguro estimado'
-                  : 'Seguro pendiente x cotizar'
-              }}
+              {{ getInsuranceLabel(opt1.initialCosts.insuranceNoIva) }}
             </td>
             <td class="col-sym">$</td>
             <td class="col-val">

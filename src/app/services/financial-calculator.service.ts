@@ -134,7 +134,15 @@ export class FinancialCalculatorService {
     const adminFeeInitialNet = input.customAdminFeeInitial ?? config.adminFeeInitialNet;
     const advisoryFeeNoIva = priceNoIva * config.advisoryFeePct;
     const plateRegistrationNoIva = plateCostNet / (1 + config.ivaPct);
-    const insuranceNoIva = input.isInsuranceEstimated ? input.priceNet * config.insurancePct : 0;
+    // Seguro: "Estimado" aplica 3.5% del precio neto (con IVA); "Costo Anual" usa el
+    // importe capturado por el vendedor (con IVA) y desglosa su parte neta en el
+    // desembolso inicial, igual que el resto de los conceptos.
+    let insuranceNoIva = 0;
+    if (input.isInsuranceEstimated) {
+      insuranceNoIva = input.priceNet * config.insurancePct;
+    } else if (input.annualInsuranceCost && input.annualInsuranceCost > 0) {
+      insuranceNoIva = input.annualInsuranceCost / (1 + config.ivaPct);
+    }
 
     const subtotalNoIva =
       extraordinaryRentNoIva +
