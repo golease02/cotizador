@@ -9,7 +9,7 @@ import { AuthService } from '../../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './register.html',
-  styleUrls: ['./register.css']
+  styleUrls: ['./register.css'],
 })
 export class RegisterComponent implements OnInit {
   private auth = inject(AuthService);
@@ -36,6 +36,10 @@ export class RegisterComponent implements OnInit {
   // Estado de UI
   isLoading = signal(false);
   showPassword = false;
+
+  confirmPassword = '';
+  confirmError = '';
+  showConfirmPassword = false;
 
   private readonly phoneRegex = /^\d{10}$/;
 
@@ -76,7 +80,9 @@ export class RegisterComponent implements OnInit {
   }
 
   onPasswordInput(): void {
-    if (this.passwordError) this.validatePassword();
+    const prevConfirmError = this.confirmError;
+    this.validatePassword();
+    if (prevConfirmError) this.validateConfirmPassword();
   }
 
   onPasswordBlur(): void {
@@ -100,35 +106,65 @@ export class RegisterComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  /** Nivel de fortaleza: 0 vacía · 1 débil · 2 media · 3 fuerte */
-  get passwordStrengthLevel(): number {
-    const p = this.password;
-    if (!p) return 0;
-    let score = 0;
-    if (p.length >= 6) score++;
-    if (p.length >= 8) score++;
-    if (/[A-Za-z]/.test(p) && /\d/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    if (score <= 1) return 1;
-    if (score === 2) return 2;
-    return 3;
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  get passwordStrengthLabel(): string {
-    return ['Sin definir', 'Débil', 'Media', 'Fuerte'][this.passwordStrengthLevel];
+  onConfirmInput(): void {
+    if (this.confirmError) this.validateConfirmPassword();
   }
 
-  get hasLetterAndNumber(): boolean {
-    return /[A-Za-z]/.test(this.password) && /\d/.test(this.password);
+  onConfirmBlur(): void {
+    this.validateConfirmPassword();
   }
 
-    brands = [
-    'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
-    'VOLKSWAGEN', 'CHEVROLET', 'HONDA', 'MAZDA', 'HYUNDAI', 'KIA',
-    'MITSUBISHI', 'SUZUKI', 'RENAULT', 'PEUGEOT', 'BMW', 'MERCEDES-BENZ',
-    'JEEP', 'DODGE', 'RAM', 'SUBARU', 'JAGUAR', 'LAND ROVER',
-    'VOLVO', 'PORSCHE', 'MINI', 'FIAT', 'ALFA ROMEO', 'MASERATI',
-    'LEXUS', 'INFINITI', 'ACURA'
+  validateConfirmPassword(): boolean {
+    if (!this.confirmPassword) {
+      this.confirmError = 'Confirma tu contraseña.';
+      return false;
+    }
+    if (this.confirmPassword !== this.password) {
+      this.confirmError = 'Las contraseñas no coinciden.';
+      return false;
+    }
+    this.confirmError = '';
+    return true;
+  }
+
+  brands = [
+    'HINO',
+    'TOYOTA',
+    'NISSAN',
+    'BYD',
+    'FORD',
+    'AUDI',
+    'VOLKSWAGEN',
+    'CHEVROLET',
+    'HONDA',
+    'MAZDA',
+    'HYUNDAI',
+    'KIA',
+    'MITSUBISHI',
+    'SUZUKI',
+    'RENAULT',
+    'PEUGEOT',
+    'BMW',
+    'MERCEDES-BENZ',
+    'JEEP',
+    'DODGE',
+    'RAM',
+    'SUBARU',
+    'JAGUAR',
+    'LAND ROVER',
+    'VOLVO',
+    'PORSCHE',
+    'MINI',
+    'FIAT',
+    'ALFA ROMEO',
+    'MASERATI',
+    'LEXUS',
+    'INFINITI',
+    'ACURA',
   ];
 
   async onRegister() {
@@ -137,7 +173,8 @@ export class RegisterComponent implements OnInit {
     // Validar número de celular y contraseña (errores por campo)
     const phoneOk = this.validatePhone();
     const passwordOk = this.validatePassword();
-    if (!phoneOk || !passwordOk) return;
+    const confirmOk = this.validateConfirmPassword();
+    if (!phoneOk || !passwordOk || !confirmOk) return;
 
     // Validar nombre
     if (!this.fullName.trim()) {
@@ -199,7 +236,7 @@ export class RegisterComponent implements OnInit {
         full_name: this.fullName.trim(),
         agency_brand: finalBrand,
         agency_location: finalLocation,
-        socio_id: this.contactoGoLease
+        socio_id: this.contactoGoLease,
       };
 
       const { error: profileError } = await this.auth.updateProfile(user.id, profileData);

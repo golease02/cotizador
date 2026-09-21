@@ -115,20 +115,12 @@
   gap: 0.7rem;
 }
 
-.logo-mark {
-  width: 42px;
+.logo-mark-img {
   height: 42px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #8be28c, #20b038);
-  color: var(--accent-slate);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Fjalla One', sans-serif;
-  font-size: 1.05rem;
-  letter-spacing: 0.4px;
+  max-width: 130px;
+  object-fit: contain;
   flex-shrink: 0;
-  box-shadow: 0 8px 18px rgba(32, 176, 56, 0.2);
+  filter: brightness(0) invert(1);
 }
 
 .logo-text {

@@ -1,228 +1,591 @@
-﻿<div class="auth-container">
-    <div class="auth-inner register-inner">
-        <!-- Panel de marca -->
-        <aside class="auth-brand">
-            <div class="brand-blob brand-blob--1"></div>
-            <div class="brand-blob brand-blob--2"></div>
+<div class="auth-container">
+  <div class="auth-inner register-inner">
+    <!-- Panel de marca -->
+    <aside class="auth-brand">
+      <div class="brand-blob brand-blob--1"></div>
+      <div class="brand-blob brand-blob--2"></div>
 
-            <div class="brand-top">
-                <span class="brand-mark">G</span>
-                <div class="brand-names">
-                    <strong class="brand-name">GO LEASE MX</strong>
-                    <em class="brand-tag">Registro de vendedores</em>
+      <div class="brand-hero">
+        <img
+          src="https://img1.wsimg.com/isteam/ip/b2c8c497-599d-4df4-9ab6-2aaaf690a095/LOGO%20GOLEASE%20SIN%20FONDO.png"
+          alt="Go Lease"
+          class="brand-logo-white"
+          loading="lazy"
+        />
+        <p class="brand-slogan-caps">HAZ DE TUS IMPUESTOS,<br />LA RENTA DE TU AUTO.</p>
+      </div>
+
+      <ul class="brand-features">
+        <li>
+          <span class="feature-icon">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </span>
+          Crea tu cuenta en minutos
+        </li>
+        <li>
+          <span class="feature-icon">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 21h18M5 21V7l7-4 7 4v14" />
+            </svg>
+          </span>
+          Selecciona la marca de tu agencia
+        </li>
+        <li>
+          <span class="feature-icon">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+          </span>
+          Indica la ubicación de tu sucursal
+        </li>
+      </ul>
+
+      <div class="brand-footer">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="11" width="18" height="11" rx="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        Datos protegidos y seguros
+      </div>
+    </aside>
+
+    <!-- Panel del formulario -->
+    <section class="auth-form-panel">
+      <div class="auth-card register-card">
+        <span class="card-topline"></span>
+
+        <div class="auth-header">
+          <span class="auth-eyebrow"><span class="pulse-dot"></span>Nuevo usuario</span>
+          <h2 class="auth-title">Registrarse</h2>
+          <p>Ingresa tus datos para comenzar a cotizar</p>
+        </div>
+
+        <form (ngSubmit)="onRegister()">
+          <!-- Sección 1 · Cuenta -->
+          <div class="auth-section">
+            <div class="section-head">
+              <span class="section-badge">1</span>
+              <h3 class="section-name">Cuenta de acceso</h3>
+              <span class="section-line"></span>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-phone">Número de celular *</label>
+              <div
+                class="input-wrapper"
+                [class.is-invalid]="!!phoneError"
+                [class.is-valid]="!phoneError && phoneNumber.length === 10"
+              >
+                <span class="input-icon">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.13a2 2 0 0 1 1.99-2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"
+                    />
+                  </svg>
+                </span>
+                <input
+                  id="reg-phone"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="10"
+                  autocomplete="tel"
+                  [(ngModel)]="phoneNumber"
+                  name="phoneNumber"
+                  placeholder="Ej. 5512345678"
+                  (input)="onPhoneInput($event)"
+                  (blur)="onPhoneBlur()"
+                  [attr.aria-invalid]="phoneError ? true : null"
+                  aria-describedby="reg-phone-error"
+                />
+                <span
+                  class="phone-counter"
+                  *ngIf="phoneNumber.length > 0 && phoneNumber.length < 10"
+                  >{{ phoneNumber.length }}/10</span
+                >
+                <span class="valid-check" *ngIf="phoneNumber.length === 10" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </span>
+              </div>
+              <p class="field-error" id="reg-phone-error" *ngIf="phoneError">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                  />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                {{ phoneError }}
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-name">Nombre Completo *</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21v-1a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v1" />
+                  </svg>
+                </span>
+                <input
+                  id="reg-name"
+                  type="text"
+                  [(ngModel)]="fullName"
+                  name="fullName"
+                  required
+                  placeholder="Juan Pérez"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reg-password">Contraseña *</label>
+              <div
+                class="input-wrapper has-toggle"
+                [class.is-invalid]="
+                  !!passwordError || (confirmPassword.length > 0 && confirmPassword !== password)
+                "
+                [class.is-valid]="
+                  !passwordError &&
+                  password.length >= 6 &&
+                  confirmPassword.length > 0 &&
+                  confirmPassword === password
+                "
+              >
+                <span class="input-icon">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </span>
+                <input
+                  id="reg-password"
+                  [type]="showPassword ? 'text' : 'password'"
+                  autocomplete="new-password"
+                  [(ngModel)]="password"
+                  name="password"
+                  placeholder="Mínimo 6 caracteres"
+                  (input)="onPasswordInput()"
+                  (blur)="onPasswordBlur()"
+                  [attr.aria-invalid]="passwordError ? true : null"
+                  aria-describedby="reg-password-error"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  (click)="togglePasswordVisibility()"
+                  [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                >
+                  <svg
+                    *ngIf="!showPassword"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg
+                    *ngIf="showPassword"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="form-group">
+                <label for="reg-confirm-password">Corroborar contraseña *</label>
+                <div
+                  class="input-wrapper has-toggle"
+                  [class.is-invalid]="!!confirmError"
+                  [class.is-valid]="
+                    !confirmError && confirmPassword.length > 0 && confirmPassword === password
+                  "
+                >
+                  <span class="input-icon">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    id="reg-confirm-password"
+                    [type]="showConfirmPassword ? 'text' : 'password'"
+                    autocomplete="new-password"
+                    [(ngModel)]="confirmPassword"
+                    name="confirmPassword"
+                    placeholder="Repite tu contraseña"
+                    (input)="onConfirmInput()"
+                    (blur)="onConfirmBlur()"
+                    [attr.aria-invalid]="confirmError ? true : null"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle"
+                    (click)="toggleConfirmPasswordVisibility()"
+                    [attr.aria-label]="
+                      showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                    "
+                  >
+                    <svg
+                      *ngIf="!showConfirmPassword"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <svg
+                      *ngIf="showConfirmPassword"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                      />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  </button>
                 </div>
+                <p class="field-error" *ngIf="confirmError">{{ confirmError }}</p>
+              </div>
+
+              <p class="field-error" id="reg-password-error" *ngIf="passwordError">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                  />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                {{ passwordError }}
+              </p>
+            </div>
+          </div>
+          <!-- Sección 2 · Agencia -->
+          <div class="auth-section">
+            <div class="section-head">
+              <span class="section-badge">2</span>
+              <h3 class="section-name">Agencia</h3>
+              <span class="section-line"></span>
             </div>
 
-            <div class="brand-quote">
-                <p>"Haz de tus impuestos, la renta de tu auto"</p>
+            <div class="form-group">
+              <label for="reg-brand">Marca (Agencia) *</label>
+              <div class="input-wrapper select-wrapper">
+                <span class="input-icon">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+                    />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
+                </span>
+                <select id="reg-brand" [(ngModel)]="agencyBrand" name="agencyBrand" required>
+                  <option value="">Selecciona una marca</option>
+                  <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+                  <option value="Otro">Otro</option>
+                </select>
+                <span class="select-arrow">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </div>
+              <input
+                *ngIf="agencyBrand === 'Otro'"
+                class="brand-other"
+                type="text"
+                [(ngModel)]="otherBrand"
+                placeholder="Escribe la marca"
+                name="otherBrand"
+              />
+            </div>
+          </div>
+
+          <!-- Sección 3 · Ubicación -->
+          <div class="auth-section">
+            <div class="section-head">
+              <span class="section-badge">3</span>
+              <h3 class="section-name">Ubicación de la sucursal</h3>
+              <span class="section-line"></span>
             </div>
 
-            <ul class="brand-features">
-                <li>
-                    <span class="feature-icon">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    </span>
-                    Crea tu cuenta en minutos
-                </li>
-                <li>
-                    <span class="feature-icon">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14" /></svg>
-                    </span>
-                    Selecciona la marca de tu agencia
-                </li>
-                <li>
-                    <span class="feature-icon">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                    </span>
-                                        Indica la ubicación de tu sucursal
-                </li>
-            </ul>
-
-            <div class="brand-footer">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                Datos protegidos y seguros
+            <div class="form-group">
+              <label for="reg-location">Ubicación de Sucursal *</label>
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </span>
+                <input
+                  id="reg-location"
+                  type="text"
+                  [(ngModel)]="manualAddress"
+                  name="manualAddress"
+                  placeholder="Ej. Toyota Querétaro, Av. Hidalgo 123"
+                  class="location-input"
+                />
+              </div>
+              <p class="field-hint">Escribe la dirección o colonia de tu sucursal</p>
             </div>
-        </aside>
-
-        <!-- Panel del formulario -->
-        <section class="auth-form-panel">
-            <div class="auth-card register-card">
-                <span class="card-topline"></span>
-
-                <div class="auth-header">
-                    <span class="auth-eyebrow"><span class="pulse-dot"></span>Nuevo usuario</span>
-                    <h2 class="auth-title">Registrarse</h2>
-                    <p>Ingresa tus datos para comenzar a cotizar</p>
-                </div>
-
-                <form (ngSubmit)="onRegister()">
-                    <!-- Sección 1 · Cuenta -->
-                    <div class="auth-section">
-                        <div class="section-head">
-                            <span class="section-badge">1</span>
-                            <h3 class="section-name">Cuenta de acceso</h3>
-                            <span class="section-line"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="reg-phone">Número de celular *</label>
-                            <div class="input-wrapper" [class.is-invalid]="!!phoneError" [class.is-valid]="!phoneError && phoneNumber.length === 10">
-                                <span class="input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.13a2 2 0 0 1 1.99-2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                                </span>
-                                <input id="reg-phone" type="text" inputmode="numeric" maxlength="10" autocomplete="tel"
-                                    [(ngModel)]="phoneNumber" name="phoneNumber" placeholder="Ej. 5512345678"
-                                    (input)="onPhoneInput($event)" (blur)="onPhoneBlur()"
-                                    [attr.aria-invalid]="phoneError ? true : null" aria-describedby="reg-phone-error" />
-                                <span class="phone-counter" *ngIf="phoneNumber.length > 0 && phoneNumber.length < 10">{{ phoneNumber.length }}/10</span>
-                                <span class="valid-check" *ngIf="phoneNumber.length === 10" aria-hidden="true">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                </span>
-                            </div>
-                            <p class="field-error" id="reg-phone-error" *ngIf="phoneError">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                {{ phoneError }}
-                            </p>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="reg-name">Nombre Completo *</label>
-                            <div class="input-wrapper">
-                                <span class="input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v1" /></svg>
-                                </span>
-                                <input id="reg-name" type="text" [(ngModel)]="fullName" name="fullName" required placeholder="Juan Pérez" />
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="reg-password">Contraseña *</label>
-                            <div class="input-wrapper has-toggle" [class.is-invalid]="!!passwordError" [class.is-valid]="!passwordError && password.length >= 6">
-                                <span class="input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                                </span>
-                                <input id="reg-password" [type]="showPassword ? 'text' : 'password'" autocomplete="new-password"
-                                    [(ngModel)]="password" name="password" placeholder="Mínimo 6 caracteres"
-                                    (input)="onPasswordInput()" (blur)="onPasswordBlur()"
-                                    [attr.aria-invalid]="passwordError ? true : null" aria-describedby="reg-password-error" />
-                                <button type="button" class="password-toggle" (click)="togglePasswordVisibility()"
-                                    [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-                                    <svg *ngIf="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg *ngIf="showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                                </button>
-                            </div>
-
-                            <div class="strength-meter" *ngIf="password"
-                                [class.level-1]="passwordStrengthLevel === 1"
-                                [class.level-2]="passwordStrengthLevel === 2"
-                                [class.level-3]="passwordStrengthLevel === 3">
-                                <div class="strength-bars" aria-hidden="true">
-                                    <span class="strength-bar" [class.active]="passwordStrengthLevel >= 1"></span>
-                                    <span class="strength-bar" [class.active]="passwordStrengthLevel >= 2"></span>
-                                    <span class="strength-bar" [class.active]="passwordStrengthLevel >= 3"></span>
-                                </div>
-                                <span class="strength-label">{{ passwordStrengthLabel }}</span>
-                            </div>
-
-                            <ul class="password-checklist" *ngIf="password">
-                                <li [class.met]="password.length >= 6">Mínimo 6 caracteres</li>
-                                <li [class.met]="password.length >= 8">8+ caracteres (recomendado)</li>
-                                <li [class.met]="hasLetterAndNumber">Letras y números (recomendado)</li>
-                            </ul>
-
-                            <p class="field-error" id="reg-password-error" *ngIf="passwordError">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                {{ passwordError }}
-                            </p>
-                        </div>
-                    </div>
-                    <!-- Sección 2 · Agencia -->
-                    <div class="auth-section">
-                        <div class="section-head">
-                            <span class="section-badge">2</span>
-                            <h3 class="section-name">Agencia</h3>
-                            <span class="section-line"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="reg-brand">Marca (Agencia) *</label>
-                            <div class="input-wrapper select-wrapper">
-                                <span class="input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>
-                                </span>
-                                <select id="reg-brand" [(ngModel)]="agencyBrand" name="agencyBrand" required>
-                                    <option value="">Selecciona una marca</option>
-                                    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
-                                <span class="select-arrow">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </span>
-                            </div>
-                            <input *ngIf="agencyBrand === 'Otro'" class="brand-other" type="text" [(ngModel)]="otherBrand"
-                                placeholder="Escribe la marca" name="otherBrand" />
-                        </div>
-                    </div>
-
-                    <!-- Sección 3 · Ubicación -->
-                    <div class="auth-section">
-                        <div class="section-head">
-                            <span class="section-badge">3</span>
-                            <h3 class="section-name">Ubicación de la sucursal</h3>
-                            <span class="section-line"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="reg-location">Ubicación de Sucursal *</label>
-                            <div class="input-wrapper">
-                                <span class="input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                                </span>
-                                <input id="reg-location" type="text" [(ngModel)]="manualAddress" name="manualAddress"
-                                    placeholder="Ej. Toyota Querétaro, Av. Hidalgo 123" class="location-input" />
-                            </div>
-                            <p class="field-hint">Escribe la dirección o colonia de tu sucursal</p>
-                        </div>
-                    </div>
-                    <!-- Seccion 4 - Contacto GoLease -->
-                    <div class="auth-section">
-                        <div class="section-head">
-                            <span class="section-badge">4</span>
-                            <h3 class="section-name">Contacto GoLease</h3>
-                            <span class="section-line"></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="reg-contacto">¿Quien es tu contacto en GoLease? *</label>
-                            <div class="input-wrapper select-wrapper">
-                                <span class="input-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                </span>
-                                <select id="reg-contacto" [(ngModel)]="contactoGoLease" name="contactoGoLease" required>
-                                    <option value="">Selecciona tu contacto</option>
-                                    <option *ngFor="let s of socios()" [value]="s.id">{{ s.full_name }}</option>
-                                </select>
-                                <span class="select-arrow">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-<button type="submit" class="btn-primary" [disabled]="isLoading()">
-                        <span class="spinner" *ngIf="isLoading()" aria-hidden="true"></span>
-                        <span>{{ isLoading() ? 'Creando cuenta...' : 'Registrarse' }}</span>
-                        <svg *ngIf="!isLoading()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    </button>
-                </form>
-
-                <p class="auth-link register-link">
-                    ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
-                </p>
-                <p *ngIf="errorMessage()" class="error">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    <span>{{ errorMessage() }}</span>
-                </p>
+          </div>
+          <!-- Seccion 4 - Contacto GoLease -->
+          <div class="auth-section">
+            <div class="section-head">
+              <span class="section-badge">4</span>
+              <h3 class="section-name">Contacto GoLease</h3>
+              <span class="section-line"></span>
             </div>
-        </section>
-    </div>
+            <div class="form-group">
+              <label for="reg-contacto">¿Quien es tu contacto en GoLease? *</label>
+              <div class="input-wrapper select-wrapper">
+                <span class="input-icon">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </span>
+                <select
+                  id="reg-contacto"
+                  [(ngModel)]="contactoGoLease"
+                  name="contactoGoLease"
+                  required
+                >
+                  <option value="">Selecciona tu contacto</option>
+                  <option *ngFor="let s of socios()" [value]="s.id">{{ s.full_name }}</option>
+                </select>
+                <span class="select-arrow">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" [disabled]="isLoading()">
+            <span class="spinner" *ngIf="isLoading()" aria-hidden="true"></span>
+            <span>{{ isLoading() ? 'Creando cuenta...' : 'Registrarse' }}</span>
+            <svg
+              *ngIf="!isLoading()"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </button>
+        </form>
+
+        <p class="auth-link register-link">
+          ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
+        </p>
+        <p *ngIf="errorMessage()" class="error">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </p>
+      </div>
+    </section>
+  </div>
 </div>

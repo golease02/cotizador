@@ -19,6 +19,15 @@ export class App {
     return this.router.url.startsWith('/admin');
   }
 
+  hideChromeRoute(): boolean {
+    const u = this.router.url;
+    return u.startsWith('/admin') ||
+           u.startsWith('/login') ||
+           u.startsWith('/register') ||
+           u.startsWith('/recuperar-contrasena') ||
+           u.startsWith('/reset-password');
+  }
+
   handleToast(t: any): void {
     if (t.action) t.action();
     this.toastService.dismiss(t.id);
