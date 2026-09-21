@@ -50,8 +50,15 @@
     <div class="official-sheet" id="official-pdf-sheet">
       <!-- Top Header -->
       <div class="sheet-top-header">
-        <h1 class="sheet-main-title">ARRENDAMIENTO PURO</h1>
-        <span class="sheet-date">{{ sheetDate | date: 'dd/MM/yyyy' }}</span>
+        <div class="sheet-header-left">
+          <h1 class="sheet-main-title">ARRENDAMIENTO PURO</h1>
+          <span class="sheet-date">{{ sheetDate | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <img
+          src="https://img1.wsimg.com/isteam/ip/b2c8c497-599d-4df4-9ab6-2aaaf690a095/LOGO%20GOLEASE%20SIN%20FONDO.png"
+          alt="Go Lease Logo"
+          class="sheet-logo-img"
+        />
       </div>
 
       <div class="thick-header-line"></div>
@@ -117,11 +124,6 @@
           <tr class="table-brand-header-row">
             <th colspan="2" class="th-brand-cell">
               <div class="brand-plazo-block">
-                <img
-                  src="https://img1.wsimg.com/isteam/ip/b2c8c497-599d-4df4-9ab6-2aaaf690a095/LOGO%20GOLEASE%20SIN%20FONDO.png"
-                  alt="Go Lease Logo"
-                  class="sheet-logo-img"
-                />
                 <div class="plazo-box">
                   <span class="plazo-title">Plazo</span>
                   <span class="plazo-number">{{ calc.input.termMonths }}</span>
@@ -284,7 +286,7 @@
           </tr>
 
           <!-- Renta mensual neta Section -->
-          <tr>
+          <tr class="row-monthly-section-first">
             <td class="col-concept" colspan="2">Renta mensual básica</td>
             <td class="col-sym">$</td>
             <td class="col-val">{{ opt1.monthlyCosts.basicRentNoIva | number: '1.0-0' }}</td>

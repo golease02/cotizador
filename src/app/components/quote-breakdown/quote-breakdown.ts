@@ -8,8 +8,8 @@ import { CatalogService } from '../../services/catalog.service';
   selector: 'app-quote-breakdown',
   standalone: true,
   imports: [CommonModule],
-    templateUrl: './quote-breakdown.html',
-  styleUrls: ['./quote-breakdown.css']
+  templateUrl: './quote-breakdown.html',
+  styleUrls: ['./quote-breakdown.css'],
 })
 export class QuoteBreakdownComponent {
   private pdfExport = inject(PdfExportService);
@@ -23,27 +23,84 @@ export class QuoteBreakdownComponent {
   public isDownloading = signal(false);
 
   get opt1() {
-    return this.calculation?.options?.option1 || {
-      initialCosts: { extraordinaryRentPct: 0, extraordinaryRentNoIva: 0, adminFeeInitialNet: 0, advisoryFeeNoIva: 0, plateRegistrationNoIva: 0, insuranceNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalInitialPayment: 0 },
-      monthlyCosts: { basicRentNoIva: 0, fleetManagementFeeNoIva: 0, adminManagementFeeNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalMonthlyRentNet: 0 },
-      residualValue: { percentage: 0, valueNet: 0 }
-    };
+    return (
+      this.calculation?.options?.option1 || {
+        initialCosts: {
+          extraordinaryRentPct: 0,
+          extraordinaryRentNoIva: 0,
+          adminFeeInitialNet: 0,
+          advisoryFeeNoIva: 0,
+          plateRegistrationNoIva: 0,
+          insuranceNoIva: 0,
+          subtotalNoIva: 0,
+          ivaAmount: 0,
+          totalInitialPayment: 0,
+        },
+        monthlyCosts: {
+          basicRentNoIva: 0,
+          fleetManagementFeeNoIva: 0,
+          adminManagementFeeNoIva: 0,
+          subtotalNoIva: 0,
+          ivaAmount: 0,
+          totalMonthlyRentNet: 0,
+        },
+        residualValue: { percentage: 0, valueNet: 0 },
+      }
+    );
   }
 
   get opt2() {
-    return this.calculation?.options?.option2 || {
-      initialCosts: { extraordinaryRentPct: 0, extraordinaryRentNoIva: 0, adminFeeInitialNet: 0, advisoryFeeNoIva: 0, plateRegistrationNoIva: 0, insuranceNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalInitialPayment: 0 },
-      monthlyCosts: { basicRentNoIva: 0, fleetManagementFeeNoIva: 0, adminManagementFeeNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalMonthlyRentNet: 0 },
-      residualValue: { percentage: 0, valueNet: 0 }
-    };
+    return (
+      this.calculation?.options?.option2 || {
+        initialCosts: {
+          extraordinaryRentPct: 0,
+          extraordinaryRentNoIva: 0,
+          adminFeeInitialNet: 0,
+          advisoryFeeNoIva: 0,
+          plateRegistrationNoIva: 0,
+          insuranceNoIva: 0,
+          subtotalNoIva: 0,
+          ivaAmount: 0,
+          totalInitialPayment: 0,
+        },
+        monthlyCosts: {
+          basicRentNoIva: 0,
+          fleetManagementFeeNoIva: 0,
+          adminManagementFeeNoIva: 0,
+          subtotalNoIva: 0,
+          ivaAmount: 0,
+          totalMonthlyRentNet: 0,
+        },
+        residualValue: { percentage: 0, valueNet: 0 },
+      }
+    );
   }
 
   get opt3() {
-    return this.calculation?.options?.option3 || {
-      initialCosts: { extraordinaryRentPct: 0, extraordinaryRentNoIva: 0, adminFeeInitialNet: 0, advisoryFeeNoIva: 0, plateRegistrationNoIva: 0, insuranceNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalInitialPayment: 0 },
-      monthlyCosts: { basicRentNoIva: 0, fleetManagementFeeNoIva: 0, adminManagementFeeNoIva: 0, subtotalNoIva: 0, ivaAmount: 0, totalMonthlyRentNet: 0 },
-      residualValue: { percentage: 0, valueNet: 0 }
-    };
+    return (
+      this.calculation?.options?.option3 || {
+        initialCosts: {
+          extraordinaryRentPct: 0,
+          extraordinaryRentNoIva: 0,
+          adminFeeInitialNet: 0,
+          advisoryFeeNoIva: 0,
+          plateRegistrationNoIva: 0,
+          insuranceNoIva: 0,
+          subtotalNoIva: 0,
+          ivaAmount: 0,
+          totalInitialPayment: 0,
+        },
+        monthlyCosts: {
+          basicRentNoIva: 0,
+          fleetManagementFeeNoIva: 0,
+          adminManagementFeeNoIva: 0,
+          subtotalNoIva: 0,
+          ivaAmount: 0,
+          totalMonthlyRentNet: 0,
+        },
+        residualValue: { percentage: 0, valueNet: 0 },
+      }
+    );
   }
 
   get sheetDate(): Date {
@@ -54,11 +111,11 @@ export class QuoteBreakdownComponent {
   }
 
   public getPlateLabel(): string {
-    if (!this.calculation) return 'Alta de placas pendientes x cotizar';
+    if (!this.calculation) return 'Pendiente (Sin placa)';
     const stateId = this.calculation.input.selectedStatePlateId;
     const plates = this.catalog.getStatePlates();
-    const found = plates.find(p => p.id === stateId);
-    return found ? found.name : 'Alta de placas pendientes x cotizar';
+    const found = plates.find((p) => p.id === stateId);
+    return found ? found.name : 'Pendiente (Sin placa)';
   }
 
   /**
@@ -76,7 +133,10 @@ export class QuoteBreakdownComponent {
   public async downloadPDF(): Promise<void> {
     this.isDownloading.set(true);
     try {
-      const model = this.calculation?.input?.model?.trim() || this.calculation?.input?.brand?.trim() || 'VEHICULO';
+      const model =
+        this.calculation?.input?.model?.trim() ||
+        this.calculation?.input?.brand?.trim() ||
+        'VEHICULO';
       const term = this.calculation?.input?.termMonths || 48;
       const fileName = `COT GO ${model.toUpperCase()} ${term}M`.replace(/[^A-Z0-9 _-]/g, '');
       await this.pdfExport.exportToPdf('official-pdf-sheet', fileName);

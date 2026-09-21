@@ -49,16 +49,7 @@
         />
       </div>
 
-      <div>
-        <label for="selectedStatePlateId">Alta de Placas</label>
-        <select id="selectedStatePlateId" formControlName="selectedStatePlateId">
-          <option *ngFor="let p of statePlates" [value]="p.id">
-            {{ p.name }} ({{ p.costNet | currency: 'MXN' : 'symbol' : '1.0-0' }})
-          </option>
-        </select>
-      </div>
-
-      <div class="full-width price-group">
+      <div class="price-group">
         <label for="priceNet">Precio Neto</label>
         <div class="currency-input-wrapper">
           <span class="currency-symbol">$</span>
@@ -143,6 +134,15 @@
             {{ pct * 100 }}%
           </button>
         </div>
+      </div>
+
+      <div class="full-width">
+        <label for="selectedStatePlateId">Alta de Placas</label>
+        <select id="selectedStatePlateId" formControlName="selectedStatePlateId">
+          <option *ngFor="let p of statePlates" [value]="p.id">
+            {{ p.name }} ({{ p.costNet | currency: 'MXN' : 'symbol' : '1.0-0' }})
+          </option>
+        </select>
       </div>
 
       <div class="full-width">

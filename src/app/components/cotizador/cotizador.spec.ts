@@ -83,6 +83,20 @@ describe('CotizadorComponent flujo de captura', () => {
     expect(fixture.nativeElement.textContent).toContain('Costo Anual de Seguro');
   });
 
+  it('should keep the mockup order of the form fields', () => {
+    // El acomodo visual depende del orden del DOM dentro de la grilla (.form-grid)
+    const ids = Array.from(fixture.nativeElement.querySelectorAll('[id]') as Element[]).map(
+      (el) => el.id,
+    );
+
+    // Fila 2: Año Modelo (izq) y Precio Neto (der, donde antes estaba Alta de Placas)
+    expect(ids.indexOf('year')).toBeLessThan(ids.indexOf('priceNet'));
+    // Fila 6: Alta de Placas después de la Renta Extraordinaria y antes de Seguro
+    expect(ids.indexOf('priceNet')).toBeLessThan(ids.indexOf('selectedStatePlateId'));
+    // Fila 7: Seguro de Unidad al final
+    expect(ids.indexOf('selectedStatePlateId')).toBeLessThan(ids.indexOf('selectSeguro'));
+  });
+
   it('should accept any year typed in the open year field', () => {
     setInput('#brand', 'VOLKSWAGEN');
     setInput('#model', 'TIGUAN R LINE');

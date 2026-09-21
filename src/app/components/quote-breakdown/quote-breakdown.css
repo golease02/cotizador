@@ -93,7 +93,8 @@
 .sheet-top-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
+  gap: 0.5rem;
   padding-bottom: 0.3rem;
 }
 
@@ -110,6 +111,12 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: #000000;
+}
+
+.sheet-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .thick-header-line {
@@ -247,12 +254,12 @@
 
 .brand-plazo-block {
   display: flex;
-  align-items: flex-end;
-  gap: 1.25rem;
+  justify-content: center;
+  align-items: center;
 }
 
 .sheet-logo-img {
-  height: 65px;
+  height: 90px;
   width: auto;
   object-fit: contain;
 }
@@ -379,12 +386,15 @@
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
   border-top: 2px solid #000000;
-  border-bottom: 2px solid #000000;
 }
 
 .row-vr-section td {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+}
+
+.row-monthly-section-first td {
+  padding-top: 0.5rem;
 }
 
 .spacer-row td {
@@ -490,7 +500,7 @@
   }
 
   .sheet-logo-img {
-    height: 50px;
+    height: 80px;
   }
 
   .plazo-box {
