@@ -69,6 +69,8 @@ describe('AdminQuotesComponent seller drill-down', () => {
 
   beforeEach(async () => {
     localStorage.removeItem('golease_admin_scope');
+    // El aviso de retención se muestra una vez por sesión: cada test parte limpio.
+    sessionStorage.clear();
     resetSessionReady();
     // El drill-down del semáforo de vendedores llega como /admin/quotes?seller=<id>.
     queryParams = { seller: 'seller-a' };
@@ -134,6 +136,7 @@ describe('AdminQuotesComponent seller drill-down', () => {
     TestBed.resetTestingModule();
     resetSessionReady();
     localStorage.removeItem('golease_admin_scope');
+    sessionStorage.clear();
     vi.restoreAllMocks();
   });
 

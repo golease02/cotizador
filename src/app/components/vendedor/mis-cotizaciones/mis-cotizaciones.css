@@ -253,31 +253,10 @@
 }
 
 /* ============================================
-   Avisos de retención automática (purga a los 15 días)
-   Usan los tokens semánticos globales y los mismos radios/métricas
-   que .quote-card, .date-badge y .vigencia-badge.
+   Chip de retención automática (purga a los 15 días)
+   Usa los tokens semánticos globales y las mismas métricas
+   que .date-badge y .vigencia-badge.
    ============================================ */
-.retention-banner {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.8rem 1.25rem;
-    margin-bottom: 1.5rem;
-    border-radius: 20px;
-    border: 1px solid var(--info-border);
-    background: var(--info-bg);
-    color: var(--info);
-    font-size: 0.82rem;
-    font-weight: 600;
-    line-height: 1.45;
-    box-shadow: 0 2px 8px var(--shadow-soft);
-}
-
-.retention-banner svg {
-    flex-shrink: 0;
-    opacity: 0.9;
-}
-
 /* Chip "Se elimina el dd/mm/aaaa" junto al badge de vigencia
    (mismo chip que el panel de Cotizaciones). */
 .purge-chip {
@@ -294,6 +273,18 @@
     background: var(--danger-bg);
     color: var(--danger);
     border: 1px solid var(--danger-border);
+}
+
+/* Icono de papelera del chip (mismo trazo que los botones de acción) */
+.purge-chip svg {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .card-header {

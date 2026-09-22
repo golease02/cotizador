@@ -75,7 +75,16 @@
   border-radius: 8px;
 }
 
+/* Cuando la hoja no cabe (movil/tablet) el componente la escala para mostrar el
+   documento completo; el zoom ya deja todo visible, asi que se desactiva el
+   scroll lateral para que el documento no parezca recortado. */
+.sheet-scroll-container.is-fitted {
+  overflow-x: hidden;
+}
+
 .official-sheet {
+  /* Ancho canonico: el mismo con el que PdfExportService genera el PDF */
+  --sheet-canonical-width: 1000px;
   background: #ffffff;
   color: #000000;
   font-family: Arial, Helvetica, sans-serif;
@@ -85,9 +94,18 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   width: 100%;
   min-width: 720px;
-  max-width: 1000px;
+  max-width: var(--sheet-canonical-width);
   margin: 0 auto;
   box-sizing: border-box;
+}
+
+/* Hoja a escala real (1000 px) reducida con zoom por el componente: movil, tablet
+   y escritorio muestran el mismo documento (y el mismo que exporta el PDF), sin
+   compactar tipografias ni recortar columnas. */
+.sheet-scroll-container.is-fitted .official-sheet {
+  width: var(--sheet-canonical-width);
+  min-width: 0;
+  max-width: none;
 }
 
 .sheet-top-header {
@@ -443,18 +461,12 @@
 }
 
 /* ============================================
-   Responsive: tablets y móviles
+   Responsive: chrome de la vista (barra de acciones)
+   --------------------------------------------
+   La hoja oficial NO se re-estiliza en pantallas angostas: se renderiza siempre
+   con el layout de escritorio y el componente la reduce con zoom (clase
+   is-fitted) para que la cotización se vea igual que en PC y como el PDF.
    ============================================ */
-@media (max-width: 1024px) {
-  .official-sheet {
-    padding: 2rem 1.75rem;
-  }
-
-  .brand-plazo-block {
-    gap: 0.9rem;
-  }
-}
-
 @media (max-width: 768px) {
   .document-action-bar {
     flex-direction: column;
@@ -486,53 +498,5 @@
     min-height: 40px;
     justify-content: center;
     width: 100%;
-  }
-
-  .official-sheet {
-    padding: 1.5rem 1.25rem;
-  }
-
-  .sheet-main-title {
-    font-size: 1.2rem;
-  }
-
-  .sheet-date {
-    font-size: 0.95rem;
-  }
-
-  .sheet-logo-img {
-    height: 80px;
-  }
-
-  .plazo-box {
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .sheet-top-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.4rem;
-  }
-
-  .sheet-scroll-container {
-    border-radius: 8px;
-  }
-
-  .official-sheet {
-    padding: 1.25rem 1rem;
-  }
-
-  .financial-table {
-    font-size: 0.8rem;
-  }
-
-  .opt-header-th {
-    font-size: 0.9rem;
-  }
-
-  .meta-label-cell {
-    font-size: 0.78rem;
   }
 }

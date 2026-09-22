@@ -23,6 +23,10 @@ import {
   nivelAging,
 } from '../../../services/seguimiento.service';
 import { AdminScopeService } from '../../../services/admin-scope.service';
+import {
+  markRetentionNoticeShown,
+  shouldShowRetentionNotice,
+} from '../../../utils/quote-retention';
 
 type VistaSeguimiento = 'kanban' | 'lista';
 
@@ -92,8 +96,23 @@ export class AdminSeguimientoComponent implements OnInit {
   guardando = false;
 
   async ngOnInit(): Promise<void> {
+    this.mostrarAvisoRetencion();
     await this.seguimiento.load();
     this.applyFilters();
+  }
+
+  /**
+   * Aviso transitorio de la purga automática (15 días).
+   * Se muestra como notificación y desaparece solo; una vez por sesión.
+   */
+  private mostrarAvisoRetencion(): void {
+    if (!shouldShowRetentionNotice('admin-seguimiento')) return;
+    markRetentionNoticeShown('admin-seguimiento');
+    this.toastService.info(
+      'Avanzar un negocio a cualquier etapa (o fijar su cotización) lo protege de la ' +
+        'purga automática de cotizaciones a los 15 días.',
+      7000
+    );
   }
 
   // ===================== VISTA =====================

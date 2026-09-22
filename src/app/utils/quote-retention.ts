@@ -60,6 +60,34 @@ export function willAutoDelete(
   return true;
 }
 
+/**
+ * Prefijo de las marcas de sesión de los avisos de retención.
+ * Cada vista usa su propia clave (`mis-cotizaciones`, `admin-quotes`, …).
+ */
+export const RETENTION_NOTICE_PREFIX = 'golease-retention-notice-';
+
+/**
+ * Indica si el aviso de retención debe mostrarse.
+ * Se muestra una sola vez por sesión de pestaña; si el almacenamiento de
+ * sesión no está disponible (modo privado), se muestra siempre.
+ */
+export function shouldShowRetentionNotice(key: string): boolean {
+  try {
+    return sessionStorage.getItem(RETENTION_NOTICE_PREFIX + key) !== '1';
+  } catch {
+    return true;
+  }
+}
+
+/** Marca el aviso de retención como ya mostrado en la sesión actual. */
+export function markRetentionNoticeShown(key: string): void {
+  try {
+    sessionStorage.setItem(RETENTION_NOTICE_PREFIX + key, '1');
+  } catch {
+    // Sin almacenamiento de sesión: el aviso se repite en cada entrada.
+  }
+}
+
 /** Fecha legible dd/mm/aaaa para los avisos de la interfaz. */
 export function formatPurgeDate(from: Date | string | number): string {
   return computePurgeDate(from).toLocaleDateString('es-MX', {

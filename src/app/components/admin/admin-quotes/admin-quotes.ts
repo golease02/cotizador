@@ -21,7 +21,13 @@ import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { CatalogService } from '../../../services/catalog.service';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
-import { hasRealSeguimiento, willAutoDelete, formatPurgeDate } from '../../../utils/quote-retention';
+import {
+  formatPurgeDate,
+  hasRealSeguimiento,
+  markRetentionNoticeShown,
+  shouldShowRetentionNotice,
+  willAutoDelete,
+} from '../../../utils/quote-retention';
 
 @Component({
   selector: 'app-admin-quotes',
@@ -103,6 +109,7 @@ export class AdminQuotesComponent implements OnInit {
   purgeDates = new Map<string, string>();
 
   async ngOnInit() {
+    this.mostrarAvisoRetencion();
     // Drill-down desde el rendimiento del equipo / detalle del vendedor:
     // /admin/quotes?seller=<id> deja el filtro de vendedor pre-aplicado.
     this.filtroVendedor = this.sellerFromRoute();
@@ -113,6 +120,20 @@ export class AdminQuotesComponent implements OnInit {
       this.catalog.loadStatePlates(),
       this.catalog.loadCalculatorConfig(),
     ]);
+  }
+
+  /**
+   * Aviso transitorio de la purga automática (15 días).
+   * Se muestra como notificación y desaparece solo; una vez por sesión.
+   */
+  private mostrarAvisoRetencion(): void {
+    if (!shouldShowRetentionNotice('admin-quotes')) return;
+    markRetentionNoticeShown('admin-quotes');
+    this.toastService.info(
+      'Las cotizaciones se eliminan automáticamente 15 días después de su creación. ' +
+        'Las fijadas o con seguimiento en el proceso de cierre no se eliminan.',
+      7000
+    );
   }
 
   @HostListener('document:keydown.escape')

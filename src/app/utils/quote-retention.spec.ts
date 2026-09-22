@@ -2,7 +2,10 @@ import {
   computePurgeDate,
   formatPurgeDate,
   hasRealSeguimiento,
+  markRetentionNoticeShown,
   QUOTE_RETENTION_DAYS,
+  RETENTION_NOTICE_PREFIX,
+  shouldShowRetentionNotice,
   willAutoDelete,
 } from './quote-retention';
 
@@ -56,5 +59,19 @@ describe('quote-retention', () => {
 
   it('should format the purge date in Spanish', () => {
     expect(formatPurgeDate(old)).toBe('16/09/2026');
+  });
+
+  it('should show the retention notice once per session', () => {
+    const key = 'spec-view';
+    sessionStorage.removeItem(RETENTION_NOTICE_PREFIX + key);
+
+    expect(shouldShowRetentionNotice(key)).toBe(true);
+    markRetentionNoticeShown(key);
+    expect(shouldShowRetentionNotice(key)).toBe(false);
+
+    // Otra vista conserva su propio aviso.
+    expect(shouldShowRetentionNotice('otra-vista')).toBe(true);
+
+    sessionStorage.removeItem(RETENTION_NOTICE_PREFIX + key);
   });
 });

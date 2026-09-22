@@ -48,16 +48,6 @@
 
     <!-- Contenido principal -->
     <div class="content-area" *ngIf="!showDetail()">
-        <!-- Aviso de retención automática (purga a los 15 días) -->
-        <div class="retention-banner" role="note">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>Las cotizaciones se eliminan automáticamente 15 días después de su creación.</span>
-        </div>
         <!-- Cargando -->
         <div *ngIf="loading()" class="loading-state">
             <div class="spinner"></div>
@@ -91,7 +81,8 @@
                     </span>
                     <span class="purge-chip" *ngIf="getPurgeChip(item)"
                         [title]="getPurgeChip(item)">
-                        🗑 {{ getPurgeChip(item) }}
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
+                        {{ getPurgeChip(item) }}
                     </span>
                 </div>
 

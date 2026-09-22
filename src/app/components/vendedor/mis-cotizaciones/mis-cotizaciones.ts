@@ -12,6 +12,8 @@ import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasi
 import { computeValidUntil, getValidityLabel, getValidityStatus, ValidityStatus } from '../../../utils/quote-validity';
 import {
   formatPurgeDate,
+  markRetentionNoticeShown,
+  shouldShowRetentionNotice,
   willAutoDelete,
 } from '../../../utils/quote-retention';
 import { FormsModule } from '@angular/forms';
@@ -45,11 +47,25 @@ export class MisCotizacionesComponent implements OnInit {
   filtroPeriodo = 'todos'; // 'todos', '7dias', '30dias'
 
   async ngOnInit() {
+    this.mostrarAvisoRetencion();
     await Promise.all([
       this.catalog.loadStatePlates(),
       this.catalog.loadCalculatorConfig(),
     ]);
     await this.cargarCotizaciones();
+  }
+
+  /**
+   * Aviso transitorio de la purga automática (15 días).
+   * Se muestra como notificación y desaparece solo; una vez por sesión.
+   */
+  private mostrarAvisoRetencion(): void {
+    if (!shouldShowRetentionNotice('mis-cotizaciones')) return;
+    markRetentionNoticeShown('mis-cotizaciones');
+    this.toast.info(
+      'Las cotizaciones se eliminan automáticamente 15 días después de su creación.',
+      6000
+    );
   }
 
   async cargarCotizaciones() {

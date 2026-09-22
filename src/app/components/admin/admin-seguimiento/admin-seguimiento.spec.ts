@@ -89,6 +89,8 @@ describe('AdminSeguimientoComponent', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    // El aviso de retención se muestra una vez por sesión: cada test parte limpio.
+    sessionStorage.clear();
     itemsSignal.set([]);
     loadingSignal.set(false);
     tablaSignal.set(true);
@@ -345,7 +347,7 @@ describe('AdminSeguimientoComponent', () => {
     const cerrado = component.filtrados().find((i) => i.quoteId === 3)!;
     await component.reabrirNegocio(cerrado);
     expect(mockSeguimiento.reabrir).toHaveBeenCalledWith(cerrado);
-    expect(mockToast.info).toHaveBeenCalled();
+    expect(mockToast.info).toHaveBeenCalledWith(expect.stringContaining('reabierto'));
   });
 
   it('should warn when a deal cannot be closed', async () => {
@@ -376,5 +378,19 @@ describe('AdminSeguimientoComponent', () => {
     expect(component.formatFechaEtapa(enBlanco, 'exp')).toBe('Pendiente');
     expect(component.formatFechaEtapa(enBlanco, 'analisis')).toBe('Pendiente');
     expect(component.trackByQuote(0, enBlanco)).toBe(enBlanco.quoteId);
+  });
+
+  it('should show the retention notice as a toast only once per session', async () => {
+    sessionStorage.clear();
+    await crearComponente();
+    expect(mockToast.info).toHaveBeenCalledWith(
+      expect.stringContaining('purga automática de cotizaciones'),
+      7000
+    );
+
+    // Volver a entrar a la vista dentro de la misma sesión no repite el aviso.
+    mockToast.info.mockReset();
+    await component.ngOnInit();
+    expect(mockToast.info).not.toHaveBeenCalled();
   });
 });

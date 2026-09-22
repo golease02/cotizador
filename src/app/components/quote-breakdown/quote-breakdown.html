@@ -46,8 +46,8 @@
   </div>
 
   <!-- Printable Official Sheet Container -->
-  <div class="sheet-scroll-container">
-    <div class="official-sheet" id="official-pdf-sheet">
+  <div class="sheet-scroll-container" #sheetContainer [class.is-fitted]="isFitted()">
+    <div class="official-sheet" id="official-pdf-sheet" [style.zoom]="sheetZoom()">
       <!-- Top Header -->
       <div class="sheet-top-header">
         <div class="sheet-header-left">

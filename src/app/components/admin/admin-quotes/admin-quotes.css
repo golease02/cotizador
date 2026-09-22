@@ -554,16 +554,6 @@
   margin-top: 0.2rem;
 }
 
-/* Nota de retención bajo el resumen (purga automática a los 15 días).
-   Vive sobre la cabecera oscura: mismo tono claro que .badge-urgent. */
-.quotes-panel .page-heading .retention-note {
-  max-width: 640px;
-  margin: 0.55rem 0 0;
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: #fecaca;
-}
-
 /* Chip "Se elimina el dd/mm/aaaa" por tarjeta
    (mismo chip que Mis Cotizaciones). */
 .purge-chip {
@@ -580,6 +570,18 @@
   background: var(--danger-bg);
   color: var(--danger);
   border: 1px solid var(--danger-border);
+}
+
+/* Icono de papelera del chip (mismo trazo que los botones de acción) */
+.purge-chip svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* Menú de acciones por tarjeta (mismo estilo que admin-sellers / admin-admins) */
