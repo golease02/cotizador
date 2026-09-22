@@ -425,7 +425,7 @@
                 <select id="reg-brand" [(ngModel)]="agencyBrand" name="agencyBrand" required>
                   <option value="">Selecciona una marca</option>
                   <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-                  <option value="Otro">Otro</option>
+                  <option value="Otro">OTRO</option>
                 </select>
                 <span class="select-arrow">
                   <svg
@@ -488,7 +488,6 @@
                   class="location-input"
                 />
               </div>
-              <p class="field-hint">Escribe la dirección o colonia de tu sucursal</p>
             </div>
           </div>
           <!-- Seccion 4 - Contacto GoLease -->
@@ -526,6 +525,7 @@
                 >
                   <option value="">Selecciona tu contacto</option>
                   <option *ngFor="let s of socios()" [value]="s.id">{{ s.full_name }}</option>
+                   <option value="otro">OTRO</option>
                 </select>
                 <span class="select-arrow">
                   <svg
@@ -542,6 +542,14 @@
                   </svg>
                 </span>
               </div>
+              <input
+                *ngIf="contactoGoLease === 'otro'"
+                class="brand-other"
+                type="text"
+                [(ngModel)]="contactoOtro"
+                placeholder="¿Quién es tu contacto?"
+                name="contactoOtro"
+              />
             </div>
           </div>
 

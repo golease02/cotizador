@@ -75,7 +75,7 @@ export const routes: Routes = [
                 loadComponent: () => import('./components/admin/admin-quotes/admin-quotes').then(m => m.AdminQuotesComponent)
             },
             {
-                // Seguimiento (pipeline de cierre): solo super_admin y socios con permiso.
+                // Seguimiento (proceso de cierre): solo super_admin y socios con permiso.
                 path: 'seguimiento',
                 canActivate: [moduleGuard('seguimiento')],
                 loadComponent: () => import('./components/admin/admin-seguimiento/admin-seguimiento').then(m => m.AdminSeguimientoComponent)

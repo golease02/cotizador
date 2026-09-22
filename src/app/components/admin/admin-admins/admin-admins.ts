@@ -11,7 +11,7 @@ import { ToastService } from '../../../services/toast.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './admin-admins.html',
-  styleUrls: ['./admin-admins.css']
+  styleUrls: ['./admin-admins.css'],
 })
 export class AdminAdminsComponent implements OnInit {
   private admin = inject(AdminService);
@@ -38,7 +38,7 @@ export class AdminAdminsComponent implements OnInit {
   get stats() {
     const list = this.admins();
     const total = list.length;
-    const activos = list.filter(a => (a.active ?? true)).length;
+    const activos = list.filter((a) => a.active ?? true).length;
     return { total, activos, inactivos: total - activos };
   }
 
@@ -46,6 +46,9 @@ export class AdminAdminsComponent implements OnInit {
   showConfirmModal = false;
   selectedAdminId: string | null = null;
   selectedAdminCardId: string | null = null;
+  sellersToReassignCount = 0;
+  sellersToReassignLoading = false;
+  readonly defaultReassignContact = 'César González (Super Admin, 4421086183)';
 
   // ------------------- FORMULARIO (DRAWER) -------------------
   showFormDrawer = false;
@@ -63,7 +66,7 @@ export class AdminAdminsComponent implements OnInit {
     password: '',
     role: 'socio' as 'super_admin' | 'socio',
     active: true,
-    permisos: {} as Record<string, boolean>
+    permisos: {} as Record<string, boolean>,
   };
 
   // Catálogos CONSTANTES (readonly). NO convertir a getters: en zoneless, un
@@ -75,16 +78,43 @@ export class AdminAdminsComponent implements OnInit {
   // secure_profiles_row del lado de la base de datos.
   readonly availableRoles: { value: string; label: string }[] = [
     { value: 'socio', label: 'Socio' },
-    { value: 'super_admin', label: 'Super Admin' }
+    { value: 'super_admin', label: 'Super Admin' },
   ];
 
   readonly permissionCatalog: { key: string; label: string; description: string }[] = [
-    { key: 'sellers', label: 'Vendedores', description: 'Ver y administrar los vendedores del socio: crear, editar, activar/desactivar y reasignar.' },
-    { key: 'quotes', label: 'Cotizaciones', description: 'Ver y gestionar todas las cotizaciones: detalle, estado de revisión y por caducar.' },
-    { key: 'seguimiento', label: 'Seguimiento', description: 'Tablero Kanban/lista del pipeline de cierre: etapas, fechas y datos operativos.' },
-    { key: 'plates', label: 'Placas de Estado', description: 'Administrar el catálogo de placas por estado.' },
-    { key: 'parameters', label: 'Parámetros del cotizador', description: 'Configurar IVA, comisión, seguros y valores residuales.' },
-    { key: 'notas', label: 'Notas de seguimiento', description: 'Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones.' }
+    {
+      key: 'sellers',
+      label: 'Vendedores',
+      description:
+        'Ver y administrar los vendedores del socio: crear, editar, activar/desactivar y reasignar.',
+    },
+    {
+      key: 'quotes',
+      label: 'Cotizaciones',
+      description:
+        'Ver y gestionar todas las cotizaciones: detalle, estado de revisión y por caducar.',
+    },
+    {
+      key: 'seguimiento',
+      label: 'Seguimiento',
+      description:
+        'Tablero Kanban/lista del proceso de cierre: etapas, fechas y datos operativos.',
+    },
+    {
+      key: 'plates',
+      label: 'Placas de Estado',
+      description: 'Administrar el catálogo de placas por estado.',
+    },
+    {
+      key: 'parameters',
+      label: 'Parámetros del cotizador',
+      description: 'Configurar IVA, comisión, seguros y valores residuales.',
+    },
+    {
+      key: 'notas',
+      label: 'Notas de seguimiento',
+      description: 'Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones.',
+    },
   ];
 
   // ------------------- DRAWER DE DETALLE -------------------
@@ -171,22 +201,25 @@ export class AdminAdminsComponent implements OnInit {
   }
 
   applyFilters() {
-    let filtered = this.admins().filter(a =>
-      this.roleFilter() === 'todos' || a.role === this.roleFilter()
+    let filtered = this.admins().filter(
+      (a) => this.roleFilter() === 'todos' || a.role === this.roleFilter(),
     );
     const term = this.searchTerm.trim().toLowerCase();
     if (term) {
-      filtered = filtered.filter(a =>
-        (a.full_name || '').toLowerCase().includes(term) ||
-        (a.seller_number || '').toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (a) =>
+          (a.full_name || '').toLowerCase().includes(term) ||
+          (a.seller_number || '').toLowerCase().includes(term),
       );
     }
-    if (this.statusFilter === 'activos') filtered = filtered.filter(a => (a.active ?? true));
-    if (this.statusFilter === 'inactivos') filtered = filtered.filter(a => !(a.active ?? true));
+    if (this.statusFilter === 'activos') filtered = filtered.filter((a) => a.active ?? true);
+    if (this.statusFilter === 'inactivos') filtered = filtered.filter((a) => !(a.active ?? true));
 
     switch (this.sortBy) {
       case 'nombre':
-        filtered = [...filtered].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+        filtered = [...filtered].sort((a, b) =>
+          (a.full_name || '').localeCompare(b.full_name || ''),
+        );
         break;
       case 'antiguos':
         filtered = [...filtered].reverse();
@@ -251,28 +284,36 @@ export class AdminAdminsComponent implements OnInit {
       () => {
         this.patchAdmin(admin.id, { active: previous });
         this.auth.updateProfile(admin.id, { active: previous });
-      }
+      },
     );
   }
 
   private patchAdmin(id: string, patch: any) {
-    this.admins.update(list => list.map(a => (a.id === id ? { ...a, ...patch } : a)));
+    this.admins.update((list) => list.map((a) => (a.id === id ? { ...a, ...patch } : a)));
     this.applyFilters();
   }
 
-
-
-
   // ===================== ELIMINAR (CON CONFIRMACIÓN) =====================
 
-  deleteAdmin(adminId: string) {
+  async deleteAdmin(adminId: string) {
     this.selectedAdminId = adminId;
     this.showConfirmModal = true;
+    this.sellersToReassignCount = 0;
+    this.sellersToReassignLoading = true;
     this.cdr.detectChanges();
+    try {
+      const { data, error } = await this.auth.getSellersBySocio(adminId);
+      if (!error) this.sellersToReassignCount = (data || []).length;
+    } catch {
+      this.sellersToReassignCount = 0;
+    } finally {
+      this.sellersToReassignLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   getAdminName(): string {
-    const admin = this.admins().find(a => a.id === this.selectedAdminId);
+    const admin = this.admins().find((a) => a.id === this.selectedAdminId);
     return admin?.full_name || 'este socio';
   }
 
@@ -297,6 +338,8 @@ export class AdminAdminsComponent implements OnInit {
   cancelModal() {
     this.showConfirmModal = false;
     this.selectedAdminId = null;
+    this.sellersToReassignCount = 0;
+    this.sellersToReassignLoading = false;
     this.cdr.detectChanges();
   }
 
@@ -332,7 +375,7 @@ export class AdminAdminsComponent implements OnInit {
         password: '',
         role: data.role === 'super_admin' ? 'super_admin' : 'socio',
         active: data.active !== false,
-        permisos: { ...(data.permisos || {}) }
+        permisos: { ...(data.permisos || {}) },
       };
 
       this.formLoading = false;
@@ -346,9 +389,13 @@ export class AdminAdminsComponent implements OnInit {
 
   private resetForm() {
     this.adminForm = {
-      id: '', seller_number: '', full_name: '', password: '',
-      role: 'socio', active: true,
-      permisos: {} as Record<string, boolean>
+      id: '',
+      seller_number: '',
+      full_name: '',
+      password: '',
+      role: 'socio',
+      active: true,
+      permisos: {} as Record<string, boolean>,
     };
     this.formError = '';
     this.fieldErrors = {};
@@ -438,7 +485,7 @@ export class AdminAdminsComponent implements OnInit {
           role: this.adminForm.role,
           permisos: this.adminForm.permisos,
           agency_name: 'GoLease',
-          agency_location: 'Querétaro'
+          agency_location: 'Querétaro',
         });
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
@@ -449,7 +496,7 @@ export class AdminAdminsComponent implements OnInit {
         if (this.adminForm.password) {
           const { error: pwdError } = await this.auth.updateUserPassword(
             this.adminForm.id,
-            this.adminForm.password
+            this.adminForm.password,
           );
           if (pwdError) {
             this.formError = 'Error al cambiar la contraseña: ' + pwdError.message;
@@ -472,7 +519,7 @@ export class AdminAdminsComponent implements OnInit {
         email,
         password: this.adminForm.password,
         full_name: this.adminForm.full_name.trim(),
-        role: this.adminForm.role
+        role: this.adminForm.role,
       });
 
       if (!created.error && created.data?.id) {
@@ -484,7 +531,7 @@ export class AdminAdminsComponent implements OnInit {
           role: this.adminForm.role,
           permisos: this.adminForm.permisos,
           agency_name: 'GoLease',
-          agency_location: 'Querétaro'
+          agency_location: 'Querétaro',
         });
         if (profileError) {
           this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
@@ -494,7 +541,9 @@ export class AdminAdminsComponent implements OnInit {
           if (roleOk) {
             this.toastService.success('Socio creado correctamente');
           } else {
-            this.toastService.error('El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.');
+            this.toastService.error(
+              'El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.',
+            );
           }
         }
         this.closeFormDrawer();
@@ -504,11 +553,13 @@ export class AdminAdminsComponent implements OnInit {
       }
 
       // 2) Fallback: signUp + restaurar sesión (base sin migrar la RPC)
-      const { data: { session: adminSession } } = await this.client.auth.getSession();
+      const {
+        data: { session: adminSession },
+      } = await this.client.auth.getSession();
       const { error: authError } = await this.auth.signUp(
         email,
         this.adminForm.password,
-        this.adminForm.full_name
+        this.adminForm.full_name,
       );
       if (authError) {
         this.formError = 'Error al crear usuario: ' + authError.message;
@@ -539,7 +590,7 @@ export class AdminAdminsComponent implements OnInit {
         role: this.adminForm.role,
         permisos: this.adminForm.permisos,
         agency_name: 'GoLease',
-        agency_location: 'Querétaro'
+        agency_location: 'Querétaro',
       });
       if (profileError) {
         this.formError = 'Error al guardar perfil: ' + profileError.message;
@@ -551,7 +602,8 @@ export class AdminAdminsComponent implements OnInit {
       // Verificación: confirmar que el rol quedó como socio.
       const roleOk = await this.ensureRole(newUser.id, this.adminForm.role);
       if (!roleOk) {
-        this.formError = 'El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.';
+        this.formError =
+          'El usuario se creó pero quedó como Vendedor. Elimínalo desde el CRUD e intenta de nuevo.';
         this.toastService.error(this.formError);
         this.formLoading = false;
         this.cdr.detectChanges();
@@ -653,7 +705,10 @@ export class AdminAdminsComponent implements OnInit {
   // ===================== HELPERS =====================
 
   /** Confirma que el perfil quedó con el rol esperado tras la creación. */
-  private async ensureRole(userId: string, expected: 'super_admin' | 'socio' | 'seller'): Promise<boolean> {
+  private async ensureRole(
+    userId: string,
+    expected: 'super_admin' | 'socio' | 'seller',
+  ): Promise<boolean> {
     const { data } = await this.auth.getProfileById(userId);
     return !!data && data.role === expected;
   }
@@ -689,7 +744,7 @@ export class AdminAdminsComponent implements OnInit {
   }
 
   getPermissionLabel(key: string): string {
-    return this.permissionCatalog.find(p => p.key === key)?.label || key;
+    return this.permissionCatalog.find((p) => p.key === key)?.label || key;
   }
 
   getPermissionState(admin: any, key: string): boolean {

@@ -49,7 +49,7 @@ describe('seguimiento.service (lógica pura)', () => {
   });
 
   describe('etapasCompletadas', () => {
-    it('should list completed stages in pipeline order', () => {
+    it('should list completed stages in process order', () => {
       expect(etapasCompletadas({ oc: NOW, exp: NOW })).toEqual(['exp', 'oc']);
       expect(etapasCompletadas({})).toEqual([]);
     });

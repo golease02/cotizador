@@ -165,7 +165,7 @@ describe('AdminSellerPerformanceComponent', () => {
     expect(component.weeklyHeight(0)).toBe(0);
   });
 
-  it('should sort by pipeline and by quotes', () => {
+  it('should sort by quoted amount and by quotes', () => {
     component.setSort('pipeline');
     expect(component.sortedSellers().map((s) => s.id)).toEqual(['s2', 's1', 's3']);
 

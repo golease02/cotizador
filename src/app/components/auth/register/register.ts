@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { getSupabaseClient } from '../../../services/supabase-client';
 
 @Component({
   selector: 'app-register',
@@ -14,6 +15,7 @@ import { AuthService } from '../../../services/auth.service';
 export class RegisterComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private client = getSupabaseClient();
 
   phoneNumber = '';
   fullName = '';
@@ -40,6 +42,11 @@ export class RegisterComponent implements OnInit {
   confirmPassword = '';
   confirmError = '';
   showConfirmPassword = false;
+  contactoOtro = '';
+
+  // Asesor GoLease por defecto cuando el vendedor elige OTRO:
+  // cuenta del super administrador (4421086183).
+  private readonly defaultContactSellerNumber = '4421086183';
 
   private readonly phoneRegex = /^\d{10}$/;
 
@@ -201,12 +208,24 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
+    const esOtro = this.contactoGoLease === 'otro';
+    const textoOtro = this.contactoOtro.trim();
+    if (esOtro && !textoOtro) {
+      this.errorMessage.set('Escribe el nombre de tu contacto en GoLease');
+      return;
+    }
+
     // Marca final
     const finalBrand = this.agencyBrand === 'Otro' ? this.otherBrand : this.agencyBrand;
     if (!finalBrand) {
       this.errorMessage.set('Debes escribir el nombre de la marca');
       return;
     }
+
+    // Asesor por defecto para OTRO: cuenta del super administrador.
+    const asesorPorDefecto = esOtro
+      ? this.socios().find((s: any) => s.seller_number === this.defaultContactSellerNumber)
+      : null;
 
     // Crear email
     const email = `vendedor_${this.phoneNumber}@golease.com`;
@@ -236,7 +255,7 @@ export class RegisterComponent implements OnInit {
         full_name: this.fullName.trim(),
         agency_brand: finalBrand,
         agency_location: finalLocation,
-        socio_id: this.contactoGoLease,
+        socio_id: esOtro ? (asesorPorDefecto?.id ?? null) : this.contactoGoLease,
       };
 
       const { error: profileError } = await this.auth.updateProfile(user.id, profileData);
@@ -244,6 +263,35 @@ export class RegisterComponent implements OnInit {
       if (profileError) {
         this.errorMessage.set(`Error al guardar datos: ${profileError.message || 'desconocido'}`);
         return;
+      }
+
+      if (esOtro) {
+        try {
+          const nombreAsesor = asesorPorDefecto?.full_name ?? 'sin asesor disponible';
+          const leyenda =
+            'Registro con "OTRO" en Asesor GoLease. Contacto indicado: "' +
+            textoOtro +
+            '". Asesor asignado por defecto: ' +
+            nombreAsesor +
+            '.';
+          const { error: notaError } = await this.client.from('notas').insert([
+            {
+              entidad_tipo: 'seller',
+              entidad_id: user.id,
+              texto: leyenda,
+              creado_por: user.id,
+              created_at: new Date().toISOString(),
+            },
+          ]);
+          if (notaError) {
+            console.error(
+              '[register] No se pudo guardar la nota de contacto OTRO:',
+              notaError.message || notaError,
+            );
+          }
+        } catch (notaEx) {
+          console.error('[register] Error inesperado al guardar la nota de contacto OTRO:', notaEx);
+        }
       }
 
       // Redirigir al inicio

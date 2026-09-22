@@ -252,7 +252,56 @@
     }
 }
 
+/* ============================================
+   Avisos de retención automática (purga a los 15 días)
+   Usan los tokens semánticos globales y los mismos radios/métricas
+   que .quote-card, .date-badge y .vigencia-badge.
+   ============================================ */
+.retention-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.8rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border-radius: 20px;
+    border: 1px solid var(--info-border);
+    background: var(--info-bg);
+    color: var(--info);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.45;
+    box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+.retention-banner svg {
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+/* Chip "Se elimina el dd/mm/aaaa" junto al badge de vigencia
+   (mismo chip que el panel de Cotizaciones). */
+.purge-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    line-height: 1.2;
+    white-space: nowrap;
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
+}
+
 .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+    /* Más espacio */
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -776,6 +825,13 @@
 @media (max-width: 480px) {
     .dashboard-cotizaciones .card-body {
         grid-template-columns: 1fr;
+    }
+
+    /* Badges de fecha/vigencia y chip de purga: se acomodan en varias
+       líneas para no desbordar la tarjeta en pantallas pequeñas. */
+    .dashboard-cotizaciones .card-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
     .dashboard-cotizaciones .quote-card {

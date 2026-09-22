@@ -3,7 +3,7 @@ import { getSupabaseClient, currentUserSignal, sessionReady } from './supabase-c
 import { QuotesService } from './quotes.service';
 
 /**
- * Módulo de Seguimiento (pipeline de cierre).
+ * Módulo de Seguimiento (proceso de cierre).
  *
  * Cada cotización entra automáticamente al tablero en la columna "Cotizada"
  * (la etapa COT del Excel original es implícita: si existe la cotización, está hecha).
@@ -32,7 +32,7 @@ export interface SeguimientoEtapaDef {
   short: string;
 }
 
-/** Etapas ordenadas del pipeline (COST de la captura: EXP → ANÁLISIS → … → PLACAS). */
+/** Etapas ordenadas del proceso (COST de la captura: EXP → ANÁLISIS → … → PLACAS). */
 export const SEGUIMIENTO_ETAPAS: readonly SeguimientoEtapaDef[] = [
   { key: 'exp', label: 'Expediente', short: 'EXP' },
   { key: 'analisis', label: 'Análisis', short: 'ANÁLISIS' },
@@ -100,7 +100,7 @@ export interface SeguimientoItem {
 // Lógica pura (exportada para poder testearse sin Supabase)
 // =====================================================================
 
-/** Claves completadas, en el orden del pipeline. */
+/** Claves completadas, en el orden del proceso. */
 export function etapasCompletadas(etapas: SeguimientoEtapas): SeguimientoEtapaKey[] {
   return SEGUIMIENTO_ETAPAS.filter((e) => !!etapas[e.key]).map((e) => e.key);
 }
@@ -109,7 +109,7 @@ export function etapasCompletadas(etapas: SeguimientoEtapas): SeguimientoEtapaKe
  * Columna del kanban donde se pinta el negocio.
  *
  * Semántica "etapas completadas": la columna equivale al número de etapas del
- * pipeline ya completadas (0 = "Cotizada", 8 = "Placas"), de modo que el drag &
+ * proceso ya completadas (0 = "Cotizada", 8 = "Placas"), de modo que el drag &
  * drop a la columna N marca exactamente las primeras N etapas.
  *   - Con `fecha_cierre` → columna "Cerrado".
  */
@@ -166,7 +166,7 @@ export function nivelAging(dias: number): 'verde' | 'amarillo' | 'rojo' {
 
 /**
  * Aplica el movimiento a una columna del kanban (drag & drop o menú "Mover a…").
- * La columna N marca como completadas las primeras N etapas del pipeline y limpia
+ * La columna N marca como completadas las primeras N etapas del proceso y limpia
  * las posteriores (inverso exacto de `computeColumnaActual`).
  * La columna "Cerrado" completa las 8 etapas y fija la fecha de cierre.
  * Conserva la fecha original de las etapas que ya estaban completadas.

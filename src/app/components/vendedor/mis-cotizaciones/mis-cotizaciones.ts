@@ -10,6 +10,10 @@ import { ToastService } from '../../../services/toast.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
 import { computeValidUntil, getValidityLabel, getValidityStatus, ValidityStatus } from '../../../utils/quote-validity';
+import {
+  formatPurgeDate,
+  willAutoDelete,
+} from '../../../utils/quote-retention';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -154,6 +158,21 @@ export class MisCotizacionesComponent implements OnInit {
     this.draftService.setDraft(this.buildInputFromRow(row), row.id, validUntil);
     this.toast.info('Editando cotización existente. Los cambios se guardarán sobre ella.');
     this.router.navigate(['/cotizador']);
+  }
+
+  // ===================== RETENCIÓN (purga automática) =====================
+  // El vendedor no ve fijada ni tiene acceso a quote_seguimiento, así que el
+  // chip refleja la condición que sí puede conocer (antigüedad); la purga
+  // SQL aplica además las protecciones de fijada y seguimiento real.
+
+  /** Texto del chip informativo de la tarjeta ('' = sin aviso). */
+  getPurgeChip(row: any): string {
+    if (!row?.created_at) return '';
+    const probe = { created_at: row.created_at, fijada: row?.fijada === true };
+    if (!willAutoDelete(probe, null)) return '';
+    const estado = this.getVigenciaEstado(row);
+    if (estado !== 'vencida') return '';
+    return `Se elimina el ${formatPurgeDate(row.created_at)}`;
   }
 
   // ===================== VIGENCIA =====================

@@ -27,7 +27,7 @@ import { AdminScopeService } from '../../../services/admin-scope.service';
 type VistaSeguimiento = 'kanban' | 'lista';
 
 /**
- * Módulo de seguimiento del pipeline de cierre.
+ * Módulo de seguimiento del proceso de cierre.
  *
  * Vista Kanban: columnas por etapa (Cotizada → EXP → … → PLACAS → Cerrado) con
  *   drag & drop nativo y un selector "Mover a…" como respaldo en móvil.

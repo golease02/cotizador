@@ -4,7 +4,9 @@
         <div class="page-heading">
             <span class="page-kicker">Operación y cierre</span>
             <h2>Seguimiento de Negocios</h2>
-            <p>Del expediente al cierre: controla cada etapa del pipeline en un solo tablero.</p>
+            <p>Del expediente al cierre: controla cada etapa del proceso en un solo tablero.</p>
+            <p class="retention-note">Avanzar un negocio a cualquier etapa (o fijar su cotización)
+                lo protege de la purga automática de cotizaciones a los 15 días.</p>
             <div class="quote-summary">
                 <span class="badge badge-total"><strong>{{ resumen().total }}</strong> negocios</span>
                 <span class="badge badge-pending"><strong>{{ resumen().enProceso }}</strong> en proceso</span>
@@ -150,7 +152,7 @@
                         <span class="card-fecha">{{ formatFecha(item.createdAt) }}</span>
                     </div>
                     <div class="card-ref" *ngIf="item.referenciado">Ref: {{ item.referenciado }}</div>
-                    <div class="card-progress" [title]="progreso(item) + '% del pipeline'">
+                    <div class="card-progress" [title]="progreso(item) + '% del proceso'">
                         <span [style.width.%]="progreso(item)"></span>
                     </div>
                     <div class="card-pie">
@@ -285,7 +287,7 @@
 
         <!-- Timeline de etapas -->
         <section class="drawer-section">
-            <h4>Etapas del pipeline</h4>
+            <h4>Etapas del proceso</h4>
             <ul class="timeline">
                 <li class="timeline-item" *ngFor="let e of etapas; let i = index"
                     [class.is-done]="etapaCompletada(detalle()!, e.key)">

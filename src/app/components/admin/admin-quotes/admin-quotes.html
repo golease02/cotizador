@@ -12,6 +12,8 @@
                 <span class="badge badge-pending"><strong>{{ countQuotesByColor('amarillo') }}</strong> pendientes</span>
                  <span class="badge badge-urgent"><strong>{{ countQuotesByColor('rojo') }}</strong> por caducar</span>
             </div>
+            <p class="retention-note">🗑 Las cotizaciones se eliminan automáticamente 15 días después de
+                su creación. Las fijadas o con seguimiento en el proceso de cierre no se eliminan.</p>
         </div>
     </div>
 
@@ -152,6 +154,10 @@
                 </div>
 
                 <div class="card-footer">
+                    <span class="purge-chip" *ngIf="getPurgeDate(q)"
+                        [title]="'Se eliminará automáticamente el ' + getPurgeDate(q)">
+                        🗑 Se elimina el {{ getPurgeDate(q) }}
+                    </span>
                     <div class="action-buttons">
                         <button type="button" class="btn-icon btn-fijar" [class.is-pinned]="q.fijada"
                             (click)="toggleFijar(q)"

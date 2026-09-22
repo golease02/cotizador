@@ -89,6 +89,16 @@
     color: var(--text-silver);
 }
 
+/* Nota de protección contra la purga automática (retención 15 días).
+   Misma métrica y tono que el aviso del panel de Cotizaciones. */
+.retention-note {
+    margin: 0 0 0.85rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-silver);
+    max-width: 70ch;
+}
+
 /* ===================== TOGGLE KANBAN / LISTA ===================== */
 .vista-toggle {
     display: inline-flex;

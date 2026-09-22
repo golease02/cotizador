@@ -21,6 +21,7 @@ import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { CatalogService } from '../../../services/catalog.service';
 import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasing.model';
+import { hasRealSeguimiento, willAutoDelete, formatPurgeDate } from '../../../utils/quote-retention';
 
 @Component({
   selector: 'app-admin-quotes',
@@ -96,6 +97,11 @@ export class AdminQuotesComponent implements OnInit {
   showNotaConfirmModal = false;
   notaToDelete: any = null;
 
+  // Retención: ids con seguimiento REAL (etapa completada o cierre) y
+  // fechas de purga precalculadas por cotización (misma regla que el SQL).
+  seguimientoRealIds = new Set<string>();
+  purgeDates = new Map<string, string>();
+
   async ngOnInit() {
     // Drill-down desde el rendimiento del equipo / detalle del vendedor:
     // /admin/quotes?seller=<id> deja el filtro de vendedor pre-aplicado.
@@ -158,6 +164,33 @@ export class AdminQuotesComponent implements OnInit {
       }
       for (const q of data || []) {
         q.notas_count = conteoNotas.get(String(q.id)) || 0;
+      }
+      // Seguimiento REAL por cotización (una consulta; la fila perezosa
+      // vacía no protege, igual que en purge_expired_quotes) + fecha de
+      // purga precalculada para el chip "Se elimina el dd/mm".
+      this.seguimientoRealIds = new Set<string>();
+      this.purgeDates = new Map<string, string>();
+      try {
+        const { data: segRows, error: segError } = await this.client
+          .from('quote_seguimiento')
+          .select('quote_id, etapas, fecha_cierre');
+        if (!segError && Array.isArray(segRows)) {
+          for (const s of segRows) {
+            if (hasRealSeguimiento(s as any)) this.seguimientoRealIds.add(String(s.quote_id));
+          }
+        }
+      } catch (err) {
+        console.warn('No se pudo cargar el seguimiento para retención:', err);
+      }
+      for (const q of data || []) {
+        const probe = { created_at: q.created_at, fijada: q.fijada === true };
+        const seg = this.seguimientoRealIds.has(String(q.id))
+          ? { etapas: { protegida: '1' } }
+          : null;
+        this.purgeDates.set(
+          String(q.id),
+          willAutoDelete(probe, seg) ? formatPurgeDate(q.created_at) : ''
+        );
       }
       // Agrupar ids por el color calculado para hacer un solo UPDATE por color (evita N+1)
       const idsPorColor = new Map<string, string[]>();
@@ -486,6 +519,16 @@ export class AdminQuotesComponent implements OnInit {
       rojo: 'Por caducar',
     };
     return labels[quote.color] || 'Reciente';
+  }
+
+  // ===================== RETENCIÓN (purga automática) =====================
+  // El socio sin permiso de seguimiento no ve quote_seguimiento: ante un
+  // error de lectura se asume "sin seguimiento" y el chip puede mostrarse
+  // de más; ante la duda se fija la cotización para protegerla.
+
+  /** Fecha de purga programada de la cotización ('' = protegida o joven). */
+  getPurgeDate(q: any): string {
+    return this.purgeDates.get(String(q?.id)) || '';
   }
 
   // ===================== FIJAR COTIZACIÓN =====================

@@ -157,7 +157,7 @@ describe('AdminSeguimientoComponent', () => {
     ]);
   });
 
-  it('should sum the pipeline value per column and the stage progress', async () => {
+  it('should sum the quoted value per column and the stage progress', async () => {
     await crearComponente();
     expect(component.valorColumna(1)).toBe(900_000);
     // Cliente Dos tiene 2 de 8 etapas completadas

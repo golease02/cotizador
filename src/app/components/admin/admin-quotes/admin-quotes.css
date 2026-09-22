@@ -546,12 +546,40 @@
 
 .card-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   gap: 0.35rem;
   border-top: 1px solid var(--border-color);
   padding-top: 0.8rem;
   margin-top: 0.2rem;
+}
+
+/* Nota de retención bajo el resumen (purga automática a los 15 días).
+   Vive sobre la cabecera oscura: mismo tono claro que .badge-urgent. */
+.quotes-panel .page-heading .retention-note {
+  max-width: 640px;
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #fecaca;
+}
+
+/* Chip "Se elimina el dd/mm/aaaa" por tarjeta
+   (mismo chip que Mis Cotizaciones). */
+.purge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  white-space: nowrap;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
 /* Menú de acciones por tarjeta (mismo estilo que admin-sellers / admin-admins) */

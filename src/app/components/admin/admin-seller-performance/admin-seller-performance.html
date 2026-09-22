@@ -97,7 +97,7 @@
           </svg>
         </div>
         <div class="metric-info">
-          <span class="metric-label">Valor del pipeline</span>
+          <span class="metric-label">Monto cotizado</span>
           <span class="metric-value">{{ team()?.pipelineValue || 0 | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
           <span class="metric-sub">cotizaciones generadas en el periodo</span>
         </div>
@@ -171,7 +171,7 @@
           <button type="button" class="sort-btn" [class.active]="sortKey() === 'cotizaciones'"
             [attr.aria-pressed]="sortKey() === 'cotizaciones'" (click)="setSort('cotizaciones')">Más cotizaciones</button>
           <button type="button" class="sort-btn" [class.active]="sortKey() === 'pipeline'"
-            [attr.aria-pressed]="sortKey() === 'pipeline'" (click)="setSort('pipeline')">Mayor pipeline</button>
+            [attr.aria-pressed]="sortKey() === 'pipeline'" (click)="setSort('pipeline')">Mayor monto cotizado</button>
         </div>
       </div>
 
@@ -181,7 +181,7 @@
           <span>Cotizaciones</span>
           <span>Última actividad</span>
           <span>Estado de cotizaciones</span>
-          <span>Pipeline</span>
+          <span>Monto cotizado</span>
           <span>Notas</span>
           <span>Acciones</span>
         </div>

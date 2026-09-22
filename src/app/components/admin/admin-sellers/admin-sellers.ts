@@ -21,8 +21,8 @@ import { ToastService } from '../../../services/toast.service';
   selector: 'app-admin-sellers',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-    templateUrl: './admin-sellers.html',
-  styleUrls: ['./admin-sellers.css']
+  templateUrl: './admin-sellers.html',
+  styleUrls: ['./admin-sellers.css'],
 })
 export class AdminSellersComponent implements OnInit {
   private admin = inject(AdminService);
@@ -56,14 +56,16 @@ export class AdminSellersComponent implements OnInit {
   get stats() {
     const list = this.sellers();
     const total = list.length;
-    const activos = list.filter(s => (s.active ?? true)).length;
+    const activos = list.filter((s) => s.active ?? true).length;
     const cotizaciones = list.reduce((acc, s) => acc + (Number(s.quote_count) || 0), 0);
     return { total, activos, inactivos: total - activos, cotizaciones };
   }
 
   get brandsList(): string[] {
     const set = new Set<string>();
-    this.sellers().forEach(s => { if (s.agency_brand) set.add(s.agency_brand); });
+    this.sellers().forEach((s) => {
+      if (s.agency_brand) set.add(s.agency_brand);
+    });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
@@ -92,7 +94,7 @@ export class AdminSellersComponent implements OnInit {
     other_brand: '',
     agency_location: '',
     socio_id: '',
-    active: true
+    active: true,
   };
 
   // ------------------- SOCIO (solo super admin) -------------------
@@ -103,7 +105,7 @@ export class AdminSellersComponent implements OnInit {
   showDetailDrawer = false;
   detailSeller: any = null;
 
-    // ------------------- NOTAS -------------------
+  // ------------------- NOTAS -------------------
   showNotasModal = false;
   notasVendedor: any[] = [];
   showSellerTooltip = false;
@@ -118,7 +120,9 @@ export class AdminSellersComponent implements OnInit {
 
   // ------------------- SEMAFORO COTIZACIONES -------------------
   /** Mapa de colores por vendedor: { revisadas, porCaducar, pendientes, recientes } */
-  sellersQuoteColors = signal<Record<string, { revisadas: number; porCaducar: number; pendientes: number; recientes: number }>>({});
+  sellersQuoteColors = signal<
+    Record<string, { revisadas: number; porCaducar: number; pendientes: number; recientes: number }>
+  >({});
 
   /** Calcula los colores de cotizaciones por vendedor para el semaforo. */
   async loadSellersQuoteColors(): Promise<void> {
@@ -137,7 +141,10 @@ export class AdminSellersComponent implements OnInit {
       if (error || !quotes) return;
 
       const now = Date.now();
-      const map: Record<string, { revisadas: number; porCaducar: number; pendientes: number; recientes: number }> = {};
+      const map: Record<
+        string,
+        { revisadas: number; porCaducar: number; pendientes: number; recientes: number }
+      > = {};
 
       for (const q of quotes) {
         const sid = q.seller_id;
@@ -159,18 +166,57 @@ export class AdminSellersComponent implements OnInit {
     }
   }
 
-  getQuoteColors(sellerId: string): { revisadas: number; porCaducar: number; pendientes: number; recientes: number } {
-    return this.sellersQuoteColors()[sellerId] || { revisadas: 0, porCaducar: 0, pendientes: 0, recientes: 0 };
+  getQuoteColors(sellerId: string): {
+    revisadas: number;
+    porCaducar: number;
+    pendientes: number;
+    recientes: number;
+  } {
+    return (
+      this.sellersQuoteColors()[sellerId] || {
+        revisadas: 0,
+        porCaducar: 0,
+        pendientes: 0,
+        recientes: 0,
+      }
+    );
   }
 
   // ------------------- MARCAS -------------------
   brands = [
-    'HINO', 'TOYOTA', 'NISSAN', 'BYD', 'FORD', 'AUDI',
-    'VOLKSWAGEN', 'CHEVROLET', 'HONDA', 'MAZDA', 'HYUNDAI', 'KIA',
-    'MITSUBISHI', 'SUZUKI', 'RENAULT', 'PEUGEOT', 'BMW', 'MERCEDES-BENZ',
-    'JEEP', 'DODGE', 'RAM', 'SUBARU', 'JAGUAR', 'LAND ROVER',
-    'VOLVO', 'PORSCHE', 'MINI', 'FIAT', 'ALFA ROMEO', 'MASERATI',
-    'LEXUS', 'INFINITI', 'ACURA'
+    'HINO',
+    'TOYOTA',
+    'NISSAN',
+    'BYD',
+    'FORD',
+    'AUDI',
+    'VOLKSWAGEN',
+    'CHEVROLET',
+    'HONDA',
+    'MAZDA',
+    'HYUNDAI',
+    'KIA',
+    'MITSUBISHI',
+    'SUZUKI',
+    'RENAULT',
+    'PEUGEOT',
+    'BMW',
+    'MERCEDES-BENZ',
+    'JEEP',
+    'DODGE',
+    'RAM',
+    'SUBARU',
+    'JAGUAR',
+    'LAND ROVER',
+    'VOLVO',
+    'PORSCHE',
+    'MINI',
+    'FIAT',
+    'ALFA ROMEO',
+    'MASERATI',
+    'LEXUS',
+    'INFINITI',
+    'ACURA',
   ];
 
   constructor() {
@@ -196,7 +242,7 @@ export class AdminSellersComponent implements OnInit {
     await Promise.all([
       this.loadSellers(false),
       this.loadSellersQuoteColors(),
-      this.loadSociosIfNeeded()
+      this.loadSociosIfNeeded(),
     ]);
   }
 
@@ -210,7 +256,7 @@ export class AdminSellersComponent implements OnInit {
     this.isLoadingSocios = false;
   }
 
-    @HostListener('document:keydown.escape')
+  @HostListener('document:keydown.escape')
   onEscapeKey() {
     if (this.showNotaConfirmModal) this.cancelarEliminarNota();
     if (this.showConfirmModal) this.cancelModal();
@@ -230,7 +276,7 @@ export class AdminSellersComponent implements OnInit {
     if (!error) {
       // La RPC permite al super admin ver todo; el toggle acota solo este listado.
       const ids = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
-      this.sellers.set(ids ? (data || []).filter(s => ids.has(s.id)) : (data || []));
+      this.sellers.set(ids ? (data || []).filter((s) => ids.has(s.id)) : data || []);
       this.applyFilters();
       // En el ngOnInit los colores se piden en paralelo (refreshColors=false).
       // En los refrescos tras crear/editar/eliminar vendedor sí se recalculan.
@@ -247,23 +293,29 @@ export class AdminSellersComponent implements OnInit {
     let filtered = this.sellers();
     const term = this.searchTerm.trim().toLowerCase();
     if (term) {
-      filtered = filtered.filter(s =>
-        (s.full_name || '').toLowerCase().includes(term) ||
-        (s.seller_number || '').toLowerCase().includes(term) ||
-        (s.agency_brand || '').toLowerCase().includes(term) ||
-        (s.agency_location || '').toLowerCase().includes(term)
+      filtered = filtered.filter(
+        (s) =>
+          (s.full_name || '').toLowerCase().includes(term) ||
+          (s.seller_number || '').toLowerCase().includes(term) ||
+          (s.agency_brand || '').toLowerCase().includes(term) ||
+          (s.agency_location || '').toLowerCase().includes(term),
       );
     }
-    if (this.statusFilter === 'activos') filtered = filtered.filter(s => (s.active ?? true));
-    if (this.statusFilter === 'inactivos') filtered = filtered.filter(s => !(s.active ?? true));
-    if (this.brandFilter !== 'todas') filtered = filtered.filter(s => s.agency_brand === this.brandFilter);
+    if (this.statusFilter === 'activos') filtered = filtered.filter((s) => s.active ?? true);
+    if (this.statusFilter === 'inactivos') filtered = filtered.filter((s) => !(s.active ?? true));
+    if (this.brandFilter !== 'todas')
+      filtered = filtered.filter((s) => s.agency_brand === this.brandFilter);
 
     switch (this.sortBy) {
       case 'nombre':
-        filtered = [...filtered].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+        filtered = [...filtered].sort((a, b) =>
+          (a.full_name || '').localeCompare(b.full_name || ''),
+        );
         break;
       case 'cotizaciones':
-        filtered = [...filtered].sort((a, b) => (Number(b.quote_count) || 0) - (Number(a.quote_count) || 0));
+        filtered = [...filtered].sort(
+          (a, b) => (Number(b.quote_count) || 0) - (Number(a.quote_count) || 0),
+        );
         break;
       case 'antiguos':
         filtered = [...filtered].reverse();
@@ -333,12 +385,12 @@ export class AdminSellersComponent implements OnInit {
       () => {
         this.patchSeller(seller.id, { active: previous });
         this.auth.updateProfile(seller.id, { active: previous });
-      }
+      },
     );
   }
 
   private patchSeller(id: string, patch: any) {
-    this.sellers.update(list => list.map(s => (s.id === id ? { ...s, ...patch } : s)));
+    this.sellers.update((list) => list.map((s) => (s.id === id ? { ...s, ...patch } : s)));
     if (this.detailSeller?.id === id) {
       this.detailSeller = { ...this.detailSeller, ...patch };
     }
@@ -347,20 +399,54 @@ export class AdminSellersComponent implements OnInit {
 
   // ===================== ELIMINAR (CON CONFIRMACIÓN) =====================
 
+  // Resumen previo a eliminar: cotizaciones + notas del vendedor.
+  deleteSummaryQuotes: any[] = [];
+  deleteSummaryNotas: any[] = [];
+  deleteSummaryLoading = false;
+  deleteSummaryError = '';
+
   async deleteSeller(sellerId: string) {
     this.selectedSellerId = sellerId;
     this.confirmAction = 'delete';
     this.showConfirmModal = true;
+    this.deleteSummaryQuotes = [];
+    this.deleteSummaryNotas = [];
+    this.deleteSummaryError = '';
+    this.deleteSummaryLoading = true;
     this.cdr.detectChanges();
+    try {
+      const [quotesRes, notasRes] = await Promise.all([
+        this.client
+          .from('quotes')
+          .select('id, client_name, brand, model, year, pricenet, created_at')
+          .eq('seller_id', sellerId)
+          .order('created_at', { ascending: false }),
+        this.client
+          .from('notas')
+          .select('id, texto, creado_por, created_at')
+          .eq('entidad_tipo', 'seller')
+          .eq('entidad_id', sellerId)
+          .order('created_at', { ascending: false }),
+      ]);
+      if (quotesRes.error) throw quotesRes.error;
+      if (notasRes.error) throw notasRes.error;
+      this.deleteSummaryQuotes = quotesRes.data || [];
+      this.deleteSummaryNotas = notasRes.data || [];
+    } catch (err: any) {
+      this.deleteSummaryError = 'No se pudo cargar el resumen: ' + (err?.message || 'desconocido');
+    } finally {
+      this.deleteSummaryLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   getSellerName(): string {
-    const seller = this.sellers().find(s => s.id === this.selectedSellerId);
+    const seller = this.sellers().find((s) => s.id === this.selectedSellerId);
     return seller?.full_name || 'este vendedor';
   }
 
   getSellerQuoteCount(): number {
-    const seller = this.sellers().find(s => s.id === this.selectedSellerId);
+    const seller = this.sellers().find((s) => s.id === this.selectedSellerId);
     return seller?.quote_count || 0;
   }
 
@@ -445,7 +531,7 @@ export class AdminSellersComponent implements OnInit {
         other_brand: '',
         agency_location: data.agency_location || '',
         socio_id: data.socio_id || '',
-        active: data.active !== false
+        active: data.active !== false,
       };
 
       this.formLoading = false;
@@ -467,7 +553,7 @@ export class AdminSellersComponent implements OnInit {
       other_brand: '',
       agency_location: '',
       socio_id: '',
-      active: true
+      active: true,
     };
     this.formError = '';
     this.fieldErrors = {};
@@ -543,11 +629,17 @@ export class AdminSellersComponent implements OnInit {
 
   validateStep2(): boolean {
     this.formValidated = true;
-    this.fieldErrors = { ...this.fieldErrors, agency_brand: '', other_brand: '', agency_location: '' };
+    this.fieldErrors = {
+      ...this.fieldErrors,
+      agency_brand: '',
+      other_brand: '',
+      agency_location: '',
+    };
     let valid = true;
-    const finalBrand = this.sellerForm.agency_brand === 'Otro'
-      ? this.sellerForm.other_brand
-      : this.sellerForm.agency_brand;
+    const finalBrand =
+      this.sellerForm.agency_brand === 'Otro'
+        ? this.sellerForm.other_brand
+        : this.sellerForm.agency_brand;
 
     if (!finalBrand) {
       this.fieldErrors[this.sellerForm.agency_brand === 'Otro' ? 'other_brand' : 'agency_brand'] =
@@ -591,9 +683,10 @@ export class AdminSellersComponent implements OnInit {
       }
     }
 
-    const finalBrand = this.sellerForm.agency_brand === 'Otro'
-      ? this.sellerForm.other_brand
-      : this.sellerForm.agency_brand;
+    const finalBrand =
+      this.sellerForm.agency_brand === 'Otro'
+        ? this.sellerForm.other_brand
+        : this.sellerForm.agency_brand;
 
     const finalLocation = this.sellerForm.agency_location.trim();
 
@@ -609,7 +702,7 @@ export class AdminSellersComponent implements OnInit {
           agency_location: finalLocation,
           seller_number: this.sellerForm.seller_number.trim(),
           socio_id: this.sellerForm.socio_id || null,
-          active: this.sellerForm.active
+          active: this.sellerForm.active,
         });
         if (error) {
           this.formError = 'Error al actualizar: ' + error.message;
@@ -620,7 +713,7 @@ export class AdminSellersComponent implements OnInit {
         if (this.sellerForm.password) {
           const { error: pwdError } = await this.auth.updateUserPassword(
             this.sellerForm.id,
-            this.sellerForm.password
+            this.sellerForm.password,
           );
           if (pwdError) {
             this.formError = 'Cambio de contraseña falló: ' + pwdError.message;
@@ -643,7 +736,7 @@ export class AdminSellersComponent implements OnInit {
         email,
         password: this.sellerForm.password,
         full_name: this.sellerForm.full_name.trim(),
-        role: 'seller'
+        role: 'seller',
       });
 
       if (!created.error && created.data?.id) {
@@ -655,7 +748,7 @@ export class AdminSellersComponent implements OnInit {
           agency_location: finalLocation,
           socio_id: this.sellerForm.socio_id || null,
           active: true,
-          role: 'seller'
+          role: 'seller',
         });
         if (profileError) {
           this.toastService.error('Usuario creado, pero falló su perfil: ' + profileError.message);
@@ -669,11 +762,13 @@ export class AdminSellersComponent implements OnInit {
       }
 
       // 2) Fallback: signUp + restaurar sesión (base sin migrar la RPC)
-      const { data: { session: adminSession } } = await this.client.auth.getSession();
+      const {
+        data: { session: adminSession },
+      } = await this.client.auth.getSession();
       const { error: authError } = await this.auth.signUp(
         email,
         this.sellerForm.password || '12345678',
-        this.sellerForm.full_name
+        this.sellerForm.full_name,
       );
       if (authError) {
         this.formError = 'Error al crear usuario: ' + authError.message;
@@ -703,7 +798,7 @@ export class AdminSellersComponent implements OnInit {
         agency_brand: finalBrand,
         agency_location: finalLocation,
         active: true,
-        role: 'seller'
+        role: 'seller',
       });
       if (profileError) {
         this.formError = 'Error al guardar perfil: ' + profileError.message;
@@ -769,7 +864,7 @@ export class AdminSellersComponent implements OnInit {
       entidad_id: this.selectedSellerId,
       texto: this.notaText.trim(),
       creado_por: user?.id || null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     let error = null;
@@ -780,9 +875,7 @@ export class AdminSellersComponent implements OnInit {
         .eq('id', this.notaEditando.id);
       error = updateError;
     } else {
-      const { error: insertError } = await this.client
-        .from('notas')
-        .insert([payload]);
+      const { error: insertError } = await this.client.from('notas').insert([payload]);
       error = insertError;
     }
 
@@ -815,10 +908,7 @@ export class AdminSellersComponent implements OnInit {
     if (!this.notaToDelete) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
-    const { error } = await this.client
-      .from('notas')
-      .delete()
-      .eq('id', this.notaToDelete.id);
+    const { error } = await this.client.from('notas').delete().eq('id', this.notaToDelete.id);
     if (error) {
       this.notaError = 'Error al eliminar nota';
     } else {
@@ -857,7 +947,7 @@ export class AdminSellersComponent implements OnInit {
       .eq('entidad_id', seller.id)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
-        const notes = !error && data ? data.map(note => `• ${note.texto}`).join('\n') : '';
+        const notes = !error && data ? data.map((note) => `• ${note.texto}`).join('\n') : '';
         this.sellerTooltipContent = notes || 'Sin notas';
         this.showSellerTooltip = true;
         let x = event.clientX + 14;
