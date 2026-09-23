@@ -4,39 +4,9 @@
         <div class="page-heading">
             <span class="page-kicker">Operación y cierre</span>
             <h2>Seguimiento de Negocios</h2>
-            <p>Del expediente al cierre: controla cada etapa del proceso en un solo tablero.</p>
-            <div class="quote-summary">
-                <span class="badge badge-total"><strong>{{ resumen().total }}</strong> negocios</span>
-                <span class="badge badge-pending"><strong>{{ resumen().enProceso }}</strong> en proceso</span>
-                <span class="badge badge-reviewed"><strong>{{ resumen().cerrados }}</strong> cerrados</span>
-                <span class="badge badge-recent"><strong>{{ resumen().diasPromedio }}</strong> días prom. en etapa</span>
-            </div>
-        </div>
+                        </div>
 
-        <div class="vista-toggle" role="group" aria-label="Cambiar vista del tablero">
-            <button type="button" class="toggle-btn" [class.is-active]="vista() === 'kanban'"
-                (click)="setVista('kanban')" title="Vista Kanban">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="3" width="6" height="18"></rect>
-                    <rect x="10" y="3" width="6" height="12"></rect>
-                    <rect x="17" y="3" width="4" height="15"></rect>
-                </svg>
-                Kanban
-            </button>
-            <button type="button" class="toggle-btn" [class.is-active]="vista() === 'lista'"
-                (click)="setVista('lista')" title="Vista de lista">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <line x1="8" y1="6" x2="21" y2="6"></line>
-                    <line x1="8" y1="12" x2="21" y2="12"></line>
-                    <line x1="8" y1="18" x2="21" y2="18"></line>
-                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-                Lista
-            </button>
         </div>
-    </div>
 
     <!-- Aviso cuando la migración aún no se aplicó en la BD -->
     <div class="aviso-migracion" *ngIf="!loading() && !tablaDisponible()">
@@ -73,24 +43,6 @@
             </select>
         </label>
 
-        <label class="toolbar-select">
-            <select [(ngModel)]="filtroEtapa" (change)="applyFilters()">
-                <option value="todas">Todas las etapas</option>
-                <option value="proceso">En proceso</option>
-                <option value="cerrados">Cerrados</option>
-                <option *ngFor="let c of columnas" [value]="c.index">{{ c.label }}</option>
-            </select>
-        </label>
-
-        <label class="toolbar-select">
-            <select [(ngModel)]="filtroPeriodo" (change)="applyFilters()">
-                <option value="todos">Todo el tiempo</option>
-                <option value="7dias">Últimos 7 días</option>
-                <option value="30dias">Últimos 30 días</option>
-                <option value="90dias">Últimos 90 días</option>
-            </select>
-        </label>
-
         <button type="button" class="btn-secondary" *ngIf="hayFiltros" (click)="clearFilters()">
             Limpiar filtros
         </button>
@@ -116,61 +68,8 @@
         <p *ngIf="!hayFiltros">Aún no hay cotizaciones para dar seguimiento.</p>
     </div>
 
-    <!-- ===================== VISTA KANBAN ===================== -->
-    <div class="kanban" *ngIf="!loading() && vista() === 'kanban' && filtrados().length > 0">
-        <section class="kanban-columna" *ngFor="let col of columnas"
-            [class.is-over]="columnaOver === col.index"
-            [class.is-cierre]="col.index === columnas.length - 1"
-            (dragover)="onDragOver($event, col.index)"
-            (dragleave)="onDragLeave(col.index)"
-            (drop)="onDrop($event, col.index)">
-            <header class="col-header">
-                <div class="col-titulo">
-                    <span class="col-short">{{ col.short }}</span>
-                    <span class="col-label">{{ col.label }}</span>
-                </div>
-                <span class="col-contador">{{ itemsDeColumna(col.index).length }}</span>
-            </header>
-            <span class="col-valor">{{ formatMoneda(valorColumna(col.index)) }}</span>
-
-            <div class="col-cuerpo">
-                <article class="negocio-card" *ngFor="let item of itemsDeColumna(col.index); trackBy: trackByQuote"
-                    draggable="true" [class.is-dragging]="draggingId === item.quoteId"
-                    [ngClass]="'aging-' + nivelItem(item)"
-                    (dragstart)="onDragStart($event, item)" (dragend)="onDragEnd()"
-                    (click)="abrirDetalle(item)">
-                    <div class="card-top">
-                        <span class="card-cliente">{{ item.clientName }}</span>
-                        <span class="aging-pill" [ngClass]="'aging-' + nivelItem(item)"
-                            [title]="'Días en la etapa actual'">{{ diasEnEtapa(item) }}d</span>
-                    </div>
-                    <div class="card-activo">{{ item.activo }}</div>
-                    <div class="card-meta">
-                        <span class="card-asesor">{{ item.sellerName }}</span>
-                        <span class="card-fecha">{{ formatFecha(item.createdAt) }}</span>
-                    </div>
-                    <div class="card-ref" *ngIf="item.referenciado">Ref: {{ item.referenciado }}</div>
-                    <div class="card-progress" [title]="progreso(item) + '% del proceso'">
-                        <span [style.width.%]="progreso(item)"></span>
-                    </div>
-                    <div class="card-pie">
-                        <span class="card-financiera">{{ item.financiera }}</span>
-                        <label class="mover-select" (click)="$event.stopPropagation()">
-                            <select (change)="onSelectorMover(item, $event)" title="Mover a otra etapa"
-                                aria-label="Mover negocio a otra etapa">
-                                <option value="">Mover a…</option>
-                                <option *ngFor="let c of columnas" [value]="c.index">{{ c.label }}</option>
-                            </select>
-                        </label>
-                    </div>
-                </article>
-                <p class="col-vacio" *ngIf="itemsDeColumna(col.index).length === 0">Sin negocios</p>
-            </div>
-        </section>
-    </div>
-
     <!-- ===================== VISTA LISTA (estilo Excel) ===================== -->
-    <div class="lista-wrapper" *ngIf="!loading() && vista() === 'lista' && filtrados().length > 0">
+    <div class="lista-wrapper" *ngIf="!loading() && filtrados().length > 0">
         <table class="seguimiento-tabla">
             <thead>
                 <tr>
@@ -314,8 +213,8 @@
             <h4>Cotización</h4>
             <p class="drawer-meta">Asesor: {{ detalle()!.sellerName }}</p>
             <p class="drawer-meta">Precio neto: {{ formatMoneda(detalle()!.priceNet) }}</p>
-            <a class="drawer-link" [routerLink]="['/admin/quotes']" [queryParams]="{ seller: detalle()!.sellerId }"
-                (click)="cerrarDetalle()">Ver cotizaciones del asesor →</a>
+            <a class="drawer-link" [routerLink]="['/admin/seguimiento']" [queryParams]="{ seller: detalle()!.sellerId }"
+                (click)="cerrarDetalle()">Ver seguimiento del asesor →</a>
         </section>
     </div>
 </aside>

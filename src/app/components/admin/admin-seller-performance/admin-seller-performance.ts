@@ -274,9 +274,9 @@ export class AdminSellerPerformanceComponent implements OnInit {
     return new Date(weekStart).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' });
   }
 
-  /** Navega a /admin/quotes con el filtro de color rojo pre-aplicado. */
+  /** Navega a /admin/seguimiento con el filtro de color rojo pre-aplicado. */
   verPorCaducar(): void {
-    this.router.navigate(['/admin/quotes'], { queryParams: { color: 'rojo' } });
+    this.router.navigate(['/admin/seguimiento'], { queryParams: { color: 'rojo' } });
   }
 
   /** Total de cotizaciones "por caducar" (color rojo) en el equipo. */

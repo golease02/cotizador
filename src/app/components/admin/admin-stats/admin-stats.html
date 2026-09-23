@@ -131,7 +131,7 @@
             <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
             <span class="status-badge">{{ getEtiqueta(q) }}</span>
           </div>
-          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
+          <a routerLink="/admin/seguimiento" class="view-link">Ver detalle →</a>
         </div>
         <div *ngIf="recentQuotes().length === 0" class="empty-state">Sin cotizaciones recientes</div>
       </div>
@@ -152,7 +152,7 @@
             <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
             <span class="status-badge">{{ getEtiqueta(q) }}</span>
           </div>
-          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
+          <a routerLink="/admin/seguimiento" class="view-link">Ver detalle →</a>
         </div>
         <div *ngIf="fijadasQuotes().length === 0" class="empty-state">Sin cotizaciones fijadas</div>
       </div>
@@ -173,7 +173,7 @@
             <span class="seller-name">Vendedor: {{ q.seller_name }}</span>
             <span class="status-badge">{{ getEtiqueta(q) }}</span>
           </div>
-          <a routerLink="/admin/quotes" class="view-link">Ver detalle →</a>
+          <a routerLink="/admin/seguimiento" class="view-link">Ver detalle →</a>
         </div>
         <div *ngIf="urgentesQuotes().length === 0" class="empty-state">Sin cotizaciones por caducar</div>
       </div>

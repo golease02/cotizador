@@ -89,7 +89,7 @@ export class AdminStatsComponent implements OnInit {
                 type: 'urgent',
                 title: 'Cotizaciones por caducar',
                 detail: `${urgentesCount} cotización${urgentesCount === 1 ? '' : 'es'} sin seguimiento reciente.`,
-                link: '/admin/quotes',
+                link: '/admin/seguimiento',
                 action: 'Revisar por caducar',
               },
             ]
@@ -100,7 +100,7 @@ export class AdminStatsComponent implements OnInit {
                 type: 'pending',
                 title: 'Cotizaciones pendientes',
                 detail: `${pendientesCount} cotización${pendientesCount === 1 ? '' : 'es'} requiere${pendientesCount === 1 ? '' : 'n'} atención.`,
-                link: '/admin/quotes',
+                link: '/admin/seguimiento',
                 action: 'Ver pendientes',
               },
             ]

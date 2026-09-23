@@ -394,11 +394,11 @@
       </div>
 
       <div class="detail-section">
-        <h4>Cotizaciones del vendedor</h4>
+        <h4>Seguimiento del vendedor</h4>
         <a
           *ngIf="canViewQuotes"
           class="btn-secondary btn-block detail-quotes-link"
-          [routerLink]="['/admin/quotes']"
+          [routerLink]="['/admin/seguimiento']"
           [queryParams]="{ seller: detailSeller.id }"
           (click)="closeDetail()"
           aria-label="Ver las cotizaciones de este vendedor"
@@ -406,7 +406,7 @@
           Ver cotizaciones del vendedor →
         </a>
         <p *ngIf="!canViewQuotes" class="detail-address">
-          Tu perfil no tiene acceso al módulo de Cotizaciones.
+          Tu perfil no tiene acceso al módulo de Seguimiento.
         </p>
       </div>
 

@@ -138,8 +138,7 @@ export class AdminSinAccesoComponent {
     const modules: { label: string; route: string; perm: string }[] = [
       { label: 'Rendimiento', route: '/admin/rendimiento', perm: 'rendimiento' },
       { label: 'Vendedores (gestión)', route: '/admin/sellers', perm: 'sellers' },
-      { label: 'Cotizaciones', route: '/admin/quotes', perm: 'quotes' },
-      { label: 'Seguimiento', route: '/admin/seguimiento', perm: 'seguimiento' },
+            { label: 'Seguimiento', route: '/admin/seguimiento', perm: 'seguimiento' },
       { label: 'Placas de Estado', route: '/admin/plates', perm: 'plates' },
       { label: 'Parámetros', route: '/admin/parameters', perm: 'parameters' },
     ];

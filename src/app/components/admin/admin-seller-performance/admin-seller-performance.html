@@ -1,4 +1,4 @@
-﻿<div class="rendimiento-container">
+<div class="rendimiento-container">
   <!-- Encabezado con selector de periodo -->
   <header class="rendimiento-header">
     <div>
@@ -240,8 +240,8 @@
             </div>
 
             <div class="seller-cell cell-actions">
-              <a class="btn-quotes" [routerLink]="['/admin/quotes']" [queryParams]="{ seller: s.id }">
-                Ver cotizaciones
+              <a class="btn-quotes" [routerLink]="['/admin/seguimiento']" [queryParams]="{ seller: s.id }">
+                Ver seguimiento
               </a>
               <button type="button" class="btn-toggle" (click)="toggleDetalle(s.id)"
                 [attr.aria-expanded]="expandedId() === s.id">

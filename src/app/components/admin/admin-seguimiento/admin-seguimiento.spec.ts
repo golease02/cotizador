@@ -41,7 +41,6 @@ describe('AdminSeguimientoComponent', () => {
     loading: loadingSignal.asReadonly(),
     tablaDisponible: tablaSignal.asReadonly(),
     load: vi.fn(),
-    moverAColumna: vi.fn(),
     alternarEtapa: vi.fn(),
     cerrar: vi.fn(),
     reabrir: vi.fn(),
@@ -53,21 +52,6 @@ describe('AdminSeguimientoComponent', () => {
     error: vi.fn(),
     info: vi.fn(),
     toasts: signal([]).asReadonly(),
-  };
-
-  /** Evento de drag & drop mínimo (HTML5 nativo) para probar el kanban. */
-  const buildDragEvent = (payload = ''): DragEvent => {
-    const store: Record<string, string> = {};
-    if (payload) store['text/plain'] = payload;
-    return {
-      preventDefault: vi.fn(),
-      dataTransfer: {
-        setData: (k: string, v: string) => (store[k] = v),
-        getData: (k: string) => store[k] || '',
-        effectAllowed: '',
-        dropEffect: '',
-      },
-    } as unknown as DragEvent;
   };
 
   const crearComponente = async (): Promise<void> => {
@@ -87,9 +71,8 @@ describe('AdminSeguimientoComponent', () => {
     fixture.detectChanges();
   };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     localStorage.clear();
-    // El aviso de retención se muestra una vez por sesión: cada test parte limpio.
     sessionStorage.clear();
     itemsSignal.set([]);
     loadingSignal.set(false);
@@ -99,7 +82,6 @@ describe('AdminSeguimientoComponent', () => {
     mockToast.error.mockReset();
     mockToast.info.mockReset();
     mockSeguimiento.load.mockResolvedValue(undefined);
-    mockSeguimiento.moverAColumna.mockResolvedValue(true);
     mockSeguimiento.alternarEtapa.mockResolvedValue(true);
     mockSeguimiento.cerrar.mockResolvedValue(true);
     mockSeguimiento.reabrir.mockResolvedValue(true);
@@ -122,67 +104,14 @@ describe('AdminSeguimientoComponent', () => {
     ]);
   });
 
-  it('should create and load the board on init', async () => {
+  it('should create and load the list on init', async () => {
     await crearComponente();
     expect(component).toBeTruthy();
     expect(mockSeguimiento.load).toHaveBeenCalled();
     expect(component.filtrados().length).toBe(3);
-    expect(component.resumen().total).toBe(3);
-    expect(component.resumen().cerrados).toBe(1);
-    expect(component.resumen().enProceso).toBe(2);
   });
 
-  it('should default to the kanban view and persist the preference', async () => {
-    await crearComponente();
-    expect(component.vista()).toBe('kanban');
-
-    component.setVista('lista');
-    fixture.detectChanges();
-    expect(component.vista()).toBe('lista');
-    expect(localStorage.getItem('golease-seguimiento-vista')).toBe('lista');
-
-    // Un componente nuevo en la misma sesión arranca en la vista guardada
-    const otroFixture = TestBed.createComponent(AdminSeguimientoComponent);
-    otroFixture.detectChanges();
-    expect(otroFixture.componentInstance.vista()).toBe('lista');
-  });
-
-  it('should group deals by their current kanban column', async () => {
-    await crearComponente();
-    // Cliente Uno: 1 etapa completada → columna 1 (Expediente)
-    expect(component.itemsDeColumna(0)).toHaveLength(0);
-    expect(component.itemsDeColumna(1).map((i) => i.clientName)).toEqual(['Cliente Uno']);
-    // Cliente Dos: 2 etapas → columna 2 (Análisis); Cliente Tres: 2 etapas + cierre → Cerrado
-    expect(component.itemsDeColumna(2).map((i) => i.clientName)).toEqual(['Cliente Dos']);
-    expect(component.itemsDeColumna(component.columnas.length - 1).map((i) => i.clientName)).toEqual([
-      'Cliente Tres',
-    ]);
-  });
-
-  it('should sum the quoted value per column and the stage progress', async () => {
-    await crearComponente();
-    expect(component.valorColumna(1)).toBe(900_000);
-    // Cliente Dos tiene 2 de 8 etapas completadas
-    const clienteDos = component.itemsDeColumna(2)[0];
-    expect(component.progreso(clienteDos)).toBe(25);
-  });
-
-  it('should compute the aging traffic light from the latest completed stage', async () => {
-    await crearComponente();
-    const clienteUno = component.filtrados().find((i) => i.quoteId === 1)!;
-    const clienteDos = component.filtrados().find((i) => i.quoteId === 2)!;
-    const clienteTres = component.filtrados().find((i) => i.quoteId === 3)!;
-
-    // 20 días desde EXP → rojo; 2 días desde ANÁLISIS → verde
-    expect(component.diasEnEtapa(clienteUno)).toBe(20);
-    expect(component.nivelItem(clienteUno)).toBe('rojo');
-    expect(component.diasEnEtapa(clienteDos)).toBe(2);
-    expect(component.nivelItem(clienteDos)).toBe('verde');
-    // Un negocio cerrado siempre se pinta en verde
-    expect(component.nivelItem(clienteTres)).toBe('verde');
-  });
-
-  it('should filter the board by search term, seller and stage', async () => {
+  it('should filter the deals by search term and seller', async () => {
     await crearComponente();
 
     component.searchTerm = 'cliente dos';
@@ -196,108 +125,41 @@ describe('AdminSeguimientoComponent', () => {
     component.searchTerm = '';
     component.filtroVendedor = 's1';
     component.applyFilters();
-    expect(component.filtrados().length).toBe(3); // todos los items de prueba son de s1
+    expect(component.filtrados().length).toBe(3);
 
     component.filtroVendedor = 'todos';
-    component.filtroEtapa = 'cerrados';
-    component.applyFilters();
-    expect(component.filtrados().map((i) => i.quoteId)).toEqual([3]);
-
-    component.filtroEtapa = 'proceso';
-    component.applyFilters();
-    expect(component.filtrados().map((i) => i.quoteId)).toEqual([1, 2]);
-
-    component.filtroEtapa = '4';
-    component.applyFilters();
-    expect(component.filtrados().length).toBe(0);
-
-    expect(component.hayFiltros).toBe(true);
     component.clearFilters();
     expect(component.filtrados().length).toBe(3);
-    expect(component.hayFiltros).toBe(false);
   });
 
-  it('should render the kanban columns with the deal cards', async () => {
-    await crearComponente();
-    const columnas = fixture.nativeElement.querySelectorAll('.kanban-columna');
-    // Cotizada + 8 etapas + Cerrado
-    expect(columnas.length).toBe(10);
-    expect(fixture.nativeElement.querySelectorAll('.negocio-card').length).toBe(3);
-    expect(columnas[1].querySelector('.col-contador').textContent.trim()).toBe('1');
-    expect(columnas[9].querySelector('.col-contador').textContent.trim()).toBe('1');
-  });
-
-  it('should move a deal when it is dropped on another column', async () => {
+  it('should toggle a stage chip and persist it', async () => {
     await crearComponente();
     const item = component.filtrados().find((i) => i.quoteId === 1)!;
-
-    component.onDragStart(buildDragEvent(), item);
-    expect(component.draggingId).toBe(1);
-
-    await component.onDrop(buildDragEvent('1'), 4);
-    expect(mockSeguimiento.moverAColumna).toHaveBeenCalledWith(item, 4);
-    expect(mockToast.success).toHaveBeenCalled();
-    expect(component.draggingId).toBeNull();
-
-    // Soltar en la misma columna no dispara ninguna escritura
-    mockSeguimiento.moverAColumna.mockClear();
-    await component.onDrop(buildDragEvent('1'), 1);
-    expect(mockSeguimiento.moverAColumna).not.toHaveBeenCalled();
+    await component.toggleEtapa(item, 'exp');
+    expect(mockSeguimiento.alternarEtapa).toHaveBeenCalledWith(item, 'exp');
   });
 
-  it('should ignore drops without a valid deal id', async () => {
-    await crearComponente();
-    await component.onDrop(buildDragEvent('999'), 4);
-    expect(mockSeguimiento.moverAColumna).not.toHaveBeenCalled();
-  });
-
-  it('should move a deal from the mobile "Mover a..." selector', async () => {
-    await crearComponente();
-    const item = component.filtrados().find((i) => i.quoteId === 2)!;
-    component.onSelectorMover(item, { target: { value: '6' } } as unknown as Event);
-    await fixture.whenStable();
-
-    expect(mockSeguimiento.moverAColumna).toHaveBeenCalledWith(item, 6);
-  });
-
-  it('should warn the user when a move fails', async () => {
-    mockSeguimiento.moverAColumna.mockResolvedValue(false);
+  it('should warn when a stage cannot be toggled', async () => {
+    mockSeguimiento.alternarEtapa.mockResolvedValue(false);
     await crearComponente();
     const item = component.filtrados().find((i) => i.quoteId === 1)!;
-
-    await component.moverA(item, 5);
+    await component.toggleEtapa(item, 'exp');
     expect(mockToast.error).toHaveBeenCalled();
-    expect(mockToast.success).not.toHaveBeenCalled();
   });
 
-  it('should render the Excel-like list view and toggle a stage chip', async () => {
+  it('should render the Excel-like list view with stage chips', async () => {
     await crearComponente();
-    component.setVista('lista');
-    fixture.detectChanges();
-
     const filas = fixture.nativeElement.querySelectorAll('.seguimiento-tabla tbody tr');
     expect(filas.length).toBe(3);
 
     const chips = filas[0].querySelectorAll('.etapa-chip');
     expect(chips.length).toBe(8);
-    // Cliente Uno tiene EXP completada y ANÁLISIS pendiente
-    expect(chips[0].classList.contains('is-done')).toBe(true);
-    expect(chips[1].classList.contains('is-done')).toBe(false);
-
-    chips[0].click();
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(mockSeguimiento.alternarEtapa).toHaveBeenCalledWith(
-      expect.objectContaining({ quoteId: 1 }),
-      'exp'
-    );
   });
-
   it('should open the detail drawer, save the operational data and close it', async () => {
     await crearComponente();
     const item = component.filtrados().find((i) => i.quoteId === 1)!;
 
-                        component.abrirDetalle(item);
+    component.abrirDetalle(item);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -358,7 +220,6 @@ describe('AdminSeguimientoComponent', () => {
     await component.cerrarNegocio(item);
     expect(mockToast.error).toHaveBeenCalled();
   });
-
   it('should show the read-only warning only when the table is missing', async () => {
     await crearComponente();
     expect(fixture.nativeElement.querySelector('.aviso-migracion')).toBeFalsy();
@@ -366,6 +227,19 @@ describe('AdminSeguimientoComponent', () => {
     tablaSignal.set(false);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.aviso-migracion')).toBeTruthy();
+  });
+
+  it('should compute the aging traffic light from the latest completed stage', async () => {
+    await crearComponente();
+    const clienteUno = component.filtrados().find((i) => i.quoteId === 1)!;
+    const clienteDos = component.filtrados().find((i) => i.quoteId === 2)!;
+    const clienteTres = component.filtrados().find((i) => i.quoteId === 3)!;
+
+    expect(component.diasEnEtapa(clienteUno)).toBe(20);
+    expect(component.nivelItem(clienteUno)).toBe('rojo');
+    expect(component.diasEnEtapa(clienteDos)).toBe(2);
+    expect(component.nivelItem(clienteDos)).toBe('verde');
+    expect(component.nivelItem(clienteTres)).toBe('verde');
   });
 
   it('should format dates and currency for the UI', async () => {
@@ -378,19 +252,5 @@ describe('AdminSeguimientoComponent', () => {
     expect(component.formatFechaEtapa(enBlanco, 'exp')).toBe('Pendiente');
     expect(component.formatFechaEtapa(enBlanco, 'analisis')).toBe('Pendiente');
     expect(component.trackByQuote(0, enBlanco)).toBe(enBlanco.quoteId);
-  });
-
-  it('should show the retention notice as a toast only once per session', async () => {
-    sessionStorage.clear();
-    await crearComponente();
-    expect(mockToast.info).toHaveBeenCalledWith(
-      expect.stringContaining('purga automática de cotizaciones'),
-      7000
-    );
-
-    // Volver a entrar a la vista dentro de la misma sesión no repite el aviso.
-    mockToast.info.mockReset();
-    await component.ngOnInit();
-    expect(mockToast.info).not.toHaveBeenCalled();
   });
 });

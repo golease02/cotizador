@@ -69,12 +69,7 @@ export const routes: Routes = [
                 canActivate: [superAdminGuard],
                 loadComponent: () => import('./components/admin/admin-admins/admin-admins').then(m => m.AdminAdminsComponent)
             },
-                                                {
-                path: 'quotes',
-                canActivate: [moduleGuard('quotes')],
-                loadComponent: () => import('./components/admin/admin-quotes/admin-quotes').then(m => m.AdminQuotesComponent)
-            },
-            {
+                                                            {
                 // Seguimiento (proceso de cierre): solo super_admin y socios con permiso.
                 path: 'seguimiento',
                 canActivate: [moduleGuard('seguimiento')],

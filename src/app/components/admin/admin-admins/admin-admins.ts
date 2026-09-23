@@ -98,7 +98,7 @@ export class AdminAdminsComponent implements OnInit {
       key: 'seguimiento',
       label: 'Seguimiento',
       description:
-        'Tablero Kanban/lista del proceso de cierre: etapas, fechas y datos operativos.',
+        'Vista Lista del proceso de cierre: etapas, fechas y datos operativos.',
     },
     {
       key: 'plates',

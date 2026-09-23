@@ -356,8 +356,9 @@
   transform: translateY(-1px);
 }
 
-.back-arrow {
-  margin-left: auto;
+/* Boton "$ Cotizador" de la parte superior del sidebar */
+.cotizador-link {
+  margin-bottom: 1rem;
 }
 
 .admin-sidebar nav a:focus-visible,

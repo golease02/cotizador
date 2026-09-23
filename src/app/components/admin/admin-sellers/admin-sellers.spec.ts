@@ -200,7 +200,7 @@ describe('AdminSellersComponent scope', () => {
       '.detail-drawer .detail-quotes-link',
     ) as HTMLAnchorElement | null;
     expect(link).toBeTruthy();
-    expect(link!.getAttribute('href')).toContain('/admin/quotes');
+    expect(link!.getAttribute('href')).toContain('/admin/seguimiento');
     expect(link!.getAttribute('href')).toContain('seller=seller-a');
     expect(link!.textContent).toContain('Ver cotizaciones del vendedor');
   });

@@ -4,8 +4,6 @@ import {
   signal,
   OnInit,
   ChangeDetectorRef,
-  effect,
-  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,28 +13,18 @@ import {
   SeguimientoService,
   SeguimientoItem,
   SeguimientoEtapaKey,
-  SEGUIMIENTO_COLUMNAS,
   SEGUIMIENTO_ETAPAS,
-  computeColumnaActual,
   computeFechaEntradaEtapa,
   diasEntre,
   nivelAging,
 } from '../../../services/seguimiento.service';
-import { AdminScopeService } from '../../../services/admin-scope.service';
-import {
-  markRetentionNoticeShown,
-  shouldShowRetentionNotice,
-} from '../../../utils/quote-retention';
-
-type VistaSeguimiento = 'kanban' | 'lista';
 
 /**
  * Módulo de seguimiento del proceso de cierre.
  *
- * Vista Kanban: columnas por etapa (Cotizada → EXP → … → PLACAS → Cerrado) con
- *   drag & drop nativo y un selector "Mover a…" como respaldo en móvil.
  * Vista Lista: réplica operativa del Excel original (F. Inicio, Asesor,
  *   Referenciado, Cliente, Activo, Financiera, checklist de etapas, F. Cierre).
+ *   El avance de etapas se gestiona vía checklist de chips y el drawer de detalle.
  *
  * Solo accesible para super_admin y socios (permiso granular `seguimiento`).
  */
@@ -51,41 +39,19 @@ export class AdminSeguimientoComponent implements OnInit {
   private seguimiento = inject(SeguimientoService);
   private cdr = inject(ChangeDetectorRef);
   readonly toastService = inject(ToastService);
-  private readonly scope = inject(AdminScopeService);
-  constructor() {
-    effect(() => {
-      if (this.scope.reloadCount() === 0) return;
-      untracked(() => {
-        this.filtroVendedor = 'todos';
-        this.showDetalle = false;
-        this.applyFilters();
-      });
-    });
-  }
 
-  readonly columnas = SEGUIMIENTO_COLUMNAS;
   readonly etapas = SEGUIMIENTO_ETAPAS;
   readonly items = this.seguimiento.items;
   readonly loading = this.seguimiento.loading;
   readonly tablaDisponible = this.seguimiento.tablaDisponible;
 
-  /** Vista activa (persistida en localStorage). */
-  vista = signal<VistaSeguimiento>(this.leerVistaGuardada());
-
-  /** Listado filtrado que alimenta ambas vistas. */
+  /** Listado filtrado que alimenta la vista. */
   filtrados = signal<SeguimientoItem[]>([]);
-  resumen = signal({ total: 0, enProceso: 0, cerrados: 0, diasPromedio: 0 });
   vendedores = signal<{ id: string; nombre: string }[]>([]);
 
   // Filtros (se aplican manualmente con applyFilters, igual que admin-quotes)
   searchTerm = '';
   filtroVendedor = 'todos';
-  filtroEtapa = 'todas';
-  filtroPeriodo = 'todos';
-
-  // Drag & drop
-  draggingId: number | null = null;
-  columnaOver: number | null = null;
 
   // Drawer de detalle
   showDetalle = false;
@@ -96,66 +62,17 @@ export class AdminSeguimientoComponent implements OnInit {
   guardando = false;
 
   async ngOnInit(): Promise<void> {
-    this.mostrarAvisoRetencion();
     await this.seguimiento.load();
     this.applyFilters();
-  }
-
-  /**
-   * Aviso transitorio de la purga automática (15 días).
-   * Se muestra como notificación y desaparece solo; una vez por sesión.
-   */
-  private mostrarAvisoRetencion(): void {
-    if (!shouldShowRetentionNotice('admin-seguimiento')) return;
-    markRetentionNoticeShown('admin-seguimiento');
-    this.toastService.info(
-      'Avanzar un negocio a cualquier etapa (o fijar su cotización) lo protege de la ' +
-        'purga automática de cotizaciones a los 15 días.',
-      7000
-    );
-  }
-
-  // ===================== VISTA =====================
-
-  private leerVistaGuardada(): VistaSeguimiento {
-    try {
-      return localStorage.getItem('golease-seguimiento-vista') === 'lista' ? 'lista' : 'kanban';
-    } catch {
-      return 'kanban';
-    }
-  }
-
-  setVista(v: VistaSeguimiento): void {
-    this.vista.set(v);
-    try {
-      localStorage.setItem('golease-seguimiento-vista', v);
-    } catch {
-      /* localStorage no disponible: la preferencia no se persiste */
-    }
   }
 
   // ===================== FILTROS =====================
 
   applyFilters(): void {
     const term = this.searchTerm.trim().toLowerCase();
-    const desdePeriodo = this.fechaDesdePeriodo();
-    const scopeIds = this.scope.isRedMode() ? this.scope.sellerIds() : null;
 
     const lista = this.items().filter((i) => {
-      if (scopeIds && !scopeIds.has(i.sellerId)) return false;
       if (this.filtroVendedor !== 'todos' && i.sellerId !== this.filtroVendedor) return false;
-
-      if (this.filtroEtapa !== 'todas') {
-        if (this.filtroEtapa === 'cerrados') {
-          if (!i.fechaCierre) return false;
-        } else if (this.filtroEtapa === 'proceso') {
-          if (i.fechaCierre) return false;
-        } else if (computeColumnaActual(i.etapas, i.fechaCierre) !== Number(this.filtroEtapa)) {
-          return false;
-        }
-      }
-
-      if (desdePeriodo && new Date(i.createdAt).getTime() < desdePeriodo) return false;
 
       if (term) {
         const blob = `${i.clientName} ${i.activo} ${i.sellerName} ${i.referenciado}`.toLowerCase();
@@ -165,32 +82,13 @@ export class AdminSeguimientoComponent implements OnInit {
     });
 
     this.filtrados.set(lista);
-    this.actualizarResumen(lista);
     this.actualizarVendedores();
-  }
-
-  private fechaDesdePeriodo(): number | null {
-    if (this.filtroPeriodo === '7dias') return Date.now() - 7 * 86_400_000;
-    if (this.filtroPeriodo === '30dias') return Date.now() - 30 * 86_400_000;
-    if (this.filtroPeriodo === '90dias') return Date.now() - 90 * 86_400_000;
-    return null;
-  }
-
-  private actualizarResumen(lista: SeguimientoItem[]): void {
-    const cerrados = lista.filter((i) => !!i.fechaCierre).length;
-    const enProceso = lista.length - cerrados;
-    const conDias = lista.filter((i) => !i.fechaCierre);
-    const diasPromedio = conDias.length
-      ? Math.round(conDias.reduce((sum, i) => sum + this.diasEnEtapa(i), 0) / conDias.length)
-      : 0;
-    this.resumen.set({ total: lista.length, enProceso, cerrados, diasPromedio });
   }
 
   private actualizarVendedores(): void {
     const mapa = new Map<string, string>();
-    const ids = this.scope.isRedMode() ? this.scope.sellerIds() : null;
     for (const i of this.items()) {
-      if (!ids || ids.has(i.sellerId)) mapa.set(i.sellerId, i.sellerName);
+      mapa.set(i.sellerId, i.sellerName);
     }
     this.vendedores.set(
       [...mapa.entries()]
@@ -202,94 +100,11 @@ export class AdminSeguimientoComponent implements OnInit {
   clearFilters(): void {
     this.searchTerm = '';
     this.filtroVendedor = 'todos';
-    this.filtroEtapa = 'todas';
-    this.filtroPeriodo = 'todos';
     this.applyFilters();
   }
 
   get hayFiltros(): boolean {
-    return (
-      !!this.searchTerm ||
-      this.filtroVendedor !== 'todos' ||
-      this.filtroEtapa !== 'todas' ||
-      this.filtroPeriodo !== 'todos'
-    );
-  }
-
-  // ===================== KANBAN =====================
-
-  itemsDeColumna(index: number): SeguimientoItem[] {
-    return this.filtrados().filter((i) => computeColumnaActual(i.etapas, i.fechaCierre) === index);
-  }
-
-  valorColumna(index: number): number {
-    return this.itemsDeColumna(index).reduce((sum, i) => sum + i.priceNet, 0);
-  }
-
-  progreso(item: SeguimientoItem): number {
-    return Math.round(
-      (Object.values(item.etapas).filter(Boolean).length / SEGUIMIENTO_ETAPAS.length) * 100,
-    );
-  }
-
-  onDragStart(event: DragEvent, item: SeguimientoItem): void {
-    this.draggingId = item.quoteId;
-    event.dataTransfer?.setData('text/plain', String(item.quoteId));
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-  }
-
-  onDragEnd(): void {
-    this.draggingId = null;
-    this.columnaOver = null;
-  }
-
-  onDragOver(event: DragEvent, index: number): void {
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    this.columnaOver = index;
-  }
-
-  onDragLeave(index: number): void {
-    if (this.columnaOver === index) this.columnaOver = null;
-  }
-
-  async onDrop(event: DragEvent, index: number): Promise<void> {
-    event.preventDefault();
-    const id = Number(event.dataTransfer?.getData('text/plain') || this.draggingId);
-    this.columnaOver = null;
-    this.draggingId = null;
-    if (!id) return;
-
-    const item = this.items().find((i) => i.quoteId === id);
-    if (!item) return;
-    await this.moverA(item, index);
-  }
-
-  /** Mueve un negocio a la columna indicada (kanban drag & drop o selector móvil). */
-  async moverA(item: SeguimientoItem, index: number): Promise<void> {
-    const actual = computeColumnaActual(item.etapas, item.fechaCierre);
-    if (actual === index) return;
-
-    const ok = await this.seguimiento.moverAColumna(item, index);
-    if (!ok) {
-      this.toastService.error(
-        'No se pudo mover el negocio. Revisa tu conexión e intenta de nuevo.',
-      );
-      return;
-    }
-    this.applyFilters();
-    this.refrescarDetalle(item.quoteId);
-    this.toastService.success(
-      index >= SEGUIMIENTO_COLUMNAS.length - 1
-        ? `${item.clientName} marcado como cerrado.`
-        : `Movido a "${SEGUIMIENTO_COLUMNAS[index].label}".`,
-    );
-  }
-
-  onSelectorMover(item: SeguimientoItem, event: Event): void {
-    const valor = Number((event.target as HTMLSelectElement).value);
-    if (Number.isNaN(valor)) return;
-    void this.moverA(item, valor);
+    return !!this.searchTerm || this.filtroVendedor !== 'todos';
   }
 
   // ===================== ETAPAS (CHECKLIST) =====================
@@ -392,9 +207,9 @@ export class AdminSeguimientoComponent implements OnInit {
   }
 
   formatFecha(iso: string | null): string {
-    if (!iso) return '—';
+    if (!iso) return '\u2014';
     const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '—';
+    if (Number.isNaN(d.getTime())) return '\u2014';
     return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
