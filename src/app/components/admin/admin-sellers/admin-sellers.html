@@ -636,7 +636,7 @@
             <select [(ngModel)]="sellerForm.agency_brand" name="agency_brand">
               <option value="">Selecciona una marca</option>
               <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
-              <option value="Otro">Otro</option>
+              <option value="Otro">OTRO</option>
             </select>
             <input
               *ngIf="sellerForm.agency_brand === 'Otro'"

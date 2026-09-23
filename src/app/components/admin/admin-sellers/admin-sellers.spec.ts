@@ -215,4 +215,11 @@ describe('AdminSellersComponent scope', () => {
     expect(fixture.nativeElement.querySelector('.detail-quotes-link')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('no tiene acceso al módulo de Cotizaciones');
   });
+
+  it('should mantener el catalogo de marcas en orden alfabetico y sin duplicados', () => {
+    const marcas = component.brands;
+
+    expect(marcas).toEqual([...marcas].sort());
+    expect(new Set(marcas).size).toBe(marcas.length);
+  });
 });

@@ -113,4 +113,18 @@ describe('RegisterComponent - contacto OTRO', () => {
     );
     expect(insertNota).not.toHaveBeenCalled();
   });
+
+  it('should mostrar las marcas en orden alfabetico when se renderiza el selector', () => {
+    const marcas = component.brands;
+
+    expect(marcas).toEqual([...marcas].sort());
+    expect(new Set(marcas).size).toBe(marcas.length);
+
+    const opciones = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('#reg-brand option'),
+    ).map((opcion) => (opcion as HTMLOptionElement).textContent?.trim());
+
+    expect(opciones[0]).toBe('Selecciona una marca');
+    expect(opciones[opciones.length - 1]).toBe('OTRO');
+  });
 });

@@ -45,6 +45,7 @@
           <select [(ngModel)]="agencyBrand" name="agencyBrand">
             <option value="">Selecciona una marca</option>
             <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+            <option value="Otro">OTRO</option>
           </select>
         </div>
 
