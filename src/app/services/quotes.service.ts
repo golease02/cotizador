@@ -155,11 +155,29 @@ export class QuotesService {
     return { data, error };
   }
 
-  /** Paridad con producción: el estado se persiste en status_color/last_reviewed_at. */
-  public async updateQuoteStatus(quoteId: string, color: string | null): Promise<{ error: any }> {
+  /**
+   * Marca o desmarca la cotización como **revisada** (acción "Revisada" del
+   * módulo de Seguimiento).
+   *
+   * `last_reviewed_at` se sella al revisar: es una de las fuentes de la
+   * "última actividad" (`utils/quote-activity.ts`), así que revisar REINICIA
+   * el contador de días sin actividad y la cotización deja de estar "por caducar".
+   * Requiere super_admin o socio dueño del vendedor (trigger `secure_quotes_row`).
+   */
+  public async setQuoteReviewed(
+    quoteId: number | string,
+    revisada: boolean
+  ): Promise<{ error: any }> {
+    const ahora = new Date().toISOString();
     const { error } = await this.client
       .from('quotes')
-      .update({ status_color: color, last_reviewed_at: new Date().toISOString() })
+      .update({
+        revisada,
+        last_reviewed_at: revisada ? ahora : null,
+        // Paridad con producción: el estado también se persiste en color/status_color.
+        color: revisada ? 'verde' : 'reciente',
+        status_color: revisada ? 'verde' : null,
+      })
       .eq('id', quoteId);
     return { error };
   }
@@ -167,9 +185,9 @@ export class QuotesService {
   public async getAllQuotesWithSeller(): Promise<{ data: any; error: any }> {
     const { data, error } = await this.client
       .from('quotes')
-       .select(`id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, color, fijada, revisada, created_at,
+       .select(`id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, color, fijada, revisada, last_reviewed_at, created_at,
         created_at,
-        profiles!seller_id (full_name, agency_brand)`)
+        profiles!seller_id (full_name, agency_brand, socio_id)`)
        .order('created_at', { ascending: false })
        .limit(200);
     if (error) return { data: null, error };
@@ -177,7 +195,26 @@ export class QuotesService {
       ...q,
       seller_name: q.profiles?.full_name || 'N/A',
       seller_agency_brand: q.profiles?.agency_brand || '',
+      seller_socio_id: q.profiles?.socio_id || null,
     }));
     return { data: mapped, error: null };
+  }
+
+  /**
+   * Elimina definitivamente una cotización (AJUSTES 12, punto 6).
+   * - `quote_seguimiento` cae por ON DELETE CASCADE.
+   * - Las `notas` (entidad_tipo='quote', sin FK) se borran a mano primero.
+   * Requiere que la política DELETE de `quotes` cubra al usuario
+   * (super_admin + socio dueño; ver migración `..._quotes_delete_scope.sql`).
+   */
+  public async deleteQuote(quoteId: number | string): Promise<{ error: any }> {
+    await this.client
+      .from('notas')
+      .delete()
+      .eq('entidad_tipo', 'quote')
+      .eq('entidad_id', String(quoteId));
+
+    const { error } = await this.client.from('quotes').delete().eq('id', quoteId);
+    return { error };
   }
 }

@@ -34,7 +34,7 @@ export interface SeguimientoEtapaDef {
 
 /** Etapas ordenadas del proceso (COST de la captura: EXP → ANÁLISIS → … → PLACAS). */
 export const SEGUIMIENTO_ETAPAS: readonly SeguimientoEtapaDef[] = [
-  { key: 'exp', label: 'Expediente', short: 'EXP' },
+  { key: 'exp', label: 'Expediente', short: 'EXPEDIENTE' },
   { key: 'analisis', label: 'Análisis', short: 'ANÁLISIS' },
   { key: 'pago_ini', label: 'Pago inicial', short: 'PAGO INI' },
   { key: 'oc', label: 'Orden de compra', short: 'OC' },
@@ -78,7 +78,12 @@ export const SEGUIMIENTO_COLUMNAS: readonly SeguimientoColumnaDef[] = [
 export interface SeguimientoItem {
   quoteId: number;
   sellerId: string;
+  /** Vendedor (creador de la cotización). */
   sellerName: string;
+  /** Id del asesor GoLease (socio) del vendedor; '' si no tiene socio asignado. */
+  asesorId: string;
+  /** Asesor GoLease (socio) del vendedor; '—' si no tiene socio asignado. */
+  asesorName: string;
   clientName: string;
   /** Texto del activo: `activo_texto` si el admin lo editó, si no "Marca Modelo Año". */
   activo: string;
@@ -86,12 +91,18 @@ export interface SeguimientoItem {
   model: string;
   year: number;
   priceNet: number;
+  /** Plazo de la cotización en meses (12/24/36/48). */
+  termMonths: number;
   createdAt: string;
   referenciado: string;
   financiera: string;
   etapas: SeguimientoEtapas;
   fechaCierre: string | null;
   updatedAt: string | null;
+  /** true si el admin/socio marcó la cotización como revisada (`quotes.revisada`). */
+  revisada: boolean;
+  /** `quotes.last_reviewed_at`: sello de la última revisión (reinicia los días). */
+  lastReviewedAt: string | null;
   /** true si ya existe fila en `quote_seguimiento` (se crea al primer cambio). */
   tieneRegistro: boolean;
 }
@@ -249,12 +260,74 @@ export class SeguimientoService {
       const porQuote = new Map<string, any>();
       for (const r of registros) porQuote.set(String(r.quote_id), r);
 
+      const { mapa, porDefecto } = await this.resolverAsesores(quotes as any[]);
+
       this.itemsSignal.set(
-        (quotes as any[]).map((q) => this.buildItem(q, porQuote.get(String(q.id))))
+        (quotes as any[]).map((q) =>
+          this.buildItem(q, porQuote.get(String(q.id)), mapa, porDefecto)
+        ),
       );
     } finally {
       this.loadingSignal.set(false);
     }
+  }
+
+  /**
+   * Versión pública de TEST de la resolución asesorName/termMonths por item.
+   * Replica la lógica de `load()` sin tocar Supabase.
+   */
+  public buildTestItems(
+    quotes: any[],
+    registros: any[],
+    asesoresPorId: Map<string, string>,
+    asesorPorDefecto = '',
+  ): SeguimientoItem[] {
+    const porQuote = new Map<string, any>();
+    for (const r of registros) porQuote.set(String(r.quote_id), r);
+    return quotes.map((q) =>
+      this.buildItem(q, porQuote.get(String(q.id)), asesoresPorId, asesorPorDefecto)
+    );
+  }
+
+  /**
+   * Resuelve `socio_id → nombre del asesor` para las cotizaciones cargadas.
+   * La RLS de `profiles` puede ocultar perfiles al socio (solo ve su red):
+   * en ese caso los items sin nombre reciben el nombre del usuario actual.
+   */
+  private async resolverAsesores(
+    quotes: any[],
+  ): Promise<{ mapa: Map<string, string>; porDefecto: string }> {
+    const ids = new Set<string>();
+    for (const q of quotes) {
+      if (q.seller_socio_id) ids.add(String(q.seller_socio_id));
+    }
+
+    const mapa = new Map<string, string>();
+    if (ids.size > 0) {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', [...ids]);
+      if (!error) {
+        for (const p of data || []) {
+          if (p?.id && p?.full_name) mapa.set(String(p.id), String(p.full_name));
+        }
+      }
+    }
+
+    // Fallback para items cuyo asesor quedó oculto por RLS: el socio solo ve
+    // cotizaciones de su red, así que el asesor es su propio perfil en sesión.
+    const yo = currentUserSignal();
+    let porDefecto = '';
+    if (yo?.id && !mapa.has(yo.id)) {
+      const { data } = await this.client
+        .from('profiles')
+        .select('full_name')
+        .eq('id', yo.id)
+        .maybeSingle();
+      porDefecto = data?.full_name || '';
+    }
+    return { mapa, porDefecto };
   }
 
   /** Filas de `quote_seguimiento` (el RLS ya las limita al alcance del socio). */
@@ -280,24 +353,35 @@ export class SeguimientoService {
     return data || [];
   }
 
-  private buildItem(quote: any, registro?: any): SeguimientoItem {
+  private buildItem(
+    quote: any,
+    registro?: any,
+    asesoresPorId: Map<string, string> = new Map(),
+    asesorPorDefecto = '',
+  ): SeguimientoItem {
     const activoBase = [quote.brand, quote.model, quote.year].filter(Boolean).join(' ').trim();
+    const socioId: string | null = quote.seller_socio_id || null;
     return {
       quoteId: Number(quote.id),
       sellerId: quote.seller_id,
       sellerName: quote.seller_name || 'N/A',
+      asesorId: socioId || '',
+      asesorName: (socioId && asesoresPorId.get(socioId)) || asesorPorDefecto || '—',
       clientName: quote.client_name || 'Sin cliente',
       activo: registro?.activo_texto?.trim() ? registro.activo_texto.trim() : activoBase,
       brand: quote.brand || '',
       model: quote.model || '',
       year: quote.year,
       priceNet: Number(quote.pricenet) || 0,
+      termMonths: Number(quote.termmonths) || 0,
       createdAt: quote.created_at,
       referenciado: registro?.referenciado || '',
       financiera: registro?.financiera || 'SIMPLE LEASE',
       etapas: (registro?.etapas || {}) as SeguimientoEtapas,
       fechaCierre: registro?.fecha_cierre || null,
       updatedAt: registro?.updated_at || null,
+      revisada: quote.revisada === true,
+      lastReviewedAt: quote.last_reviewed_at || null,
       tieneRegistro: !!registro,
     };
   }
@@ -383,6 +467,32 @@ export class SeguimientoService {
   /** Reabre un negocio cerrado: conserva las etapas pero limpia la fecha de cierre. */
   public async reabrir(item: SeguimientoItem): Promise<boolean> {
     return this.guardar(item, { fechaCierre: null });
+  }
+
+  /**
+   * Marca o desmarca la cotización como **revisada**.
+   *
+   * `quotes.last_reviewed_at` queda sellado al revisar y es una de las fuentes
+   * de la "última actividad" (junto con las etapas, las notas y `created_at`),
+   * así que revisar REINICIA el contador de días sin actividad: la cotización
+   * deja de contar como "por caducar". Es la acción que faltaba cuando se
+   * eliminó la vista `admin-quotes` (Ajuste 11).
+   */
+  public async marcarRevisada(item: SeguimientoItem, revisada: boolean): Promise<boolean> {
+    await sessionReady();
+    const { error } = await this.quotesService.setQuoteReviewed(item.quoteId, revisada);
+    if (error) {
+      console.error('No se pudo marcar la cotización como revisada:', error);
+      return false;
+    }
+
+    const sello = revisada ? new Date().toISOString() : null;
+    this.itemsSignal.update((list) =>
+      list.map((i) =>
+        i.quoteId === item.quoteId ? { ...i, revisada, lastReviewedAt: sello } : i
+      )
+    );
+    return true;
   }
 
   /** Actualiza los datos operativos editables del negocio. */

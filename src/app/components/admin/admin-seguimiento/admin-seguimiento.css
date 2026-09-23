@@ -186,6 +186,20 @@
   border: 1px solid var(--aging-color, var(--border-color));
 }
 
+/* Punto del semáforo de ETAPA (el chip del drawer usa el de ACTIVIDAD). */
+.aging-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: var(--aging-color, var(--text-muted));
+}
+
+.dot-verde { --aging-color: var(--accent-green); }
+.dot-amarillo { --aging-color: var(--warning); }
+.dot-rojo { --aging-color: var(--danger); }
+
 /* ===================== SKELETON / VACÍO ===================== */
 .skeleton-grid {
   display: grid;
@@ -463,6 +477,12 @@
   color: var(--text-muted);
 }
 
+/* Línea destacada de "última actividad" en el drawer. */
+.drawer-meta-actividad {
+  font-weight: 700;
+  color: var(--aging-color, var(--text-muted));
+}
+
 .drawer-acciones {
   display: flex;
   gap: 0.5rem;
@@ -637,23 +657,59 @@
 }
 
 .th-fecha { min-width: 110px; }
+.th-dias { min-width: 62px; text-align: center; }
 .th-asesor { min-width: 120px; }
 .th-ref { min-width: 120px; }
 .th-cliente { min-width: 160px; }
 .th-activo { min-width: 160px; }
-.th-financiera { min-width: 110px; }
+.th-plazo { min-width: 96px; white-space: nowrap; }
+.th-financiera { min-width: 90px; }
 .th-cierre { min-width: 110px; }
 .th-acciones { width: 80px; text-align: center; }
 
 .td-fecha { white-space: nowrap; }
+.td-dias { text-align: center; }
 .td-asesor { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .td-ref { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .td-cliente { font-weight: 600; color: var(--text-main); }
 .td-activo { color: var(--text-main); }
+.td-plazo { white-space: nowrap; font-weight: 700; color: var(--text-main); }
 .td-financiera { white-space: nowrap; }
 .td-etapa { text-align: center; }
 .td-cierre { white-space: nowrap; text-align: center; }
 .td-acciones { text-align: center; }
+
+/* Contador de días sin actividad (clic = marcar/desmarcar revisada). */
+.dias-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 44px;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--aging-color, var(--border-color));
+  background: var(--aging-bg, var(--surface-muted));
+  color: var(--aging-color, var(--text-muted));
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.dias-badge:hover {
+  background: var(--surface-hover);
+}
+
+.dias-check {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 .celda-fecha {
   display: block;
@@ -661,16 +717,94 @@
   color: var(--text-main);
 }
 
-.aging-pill {
-  display: inline-block;
-  margin-top: 0.15rem;
-  font-size: 0.66rem;
-  font-weight: 800;
-  padding: 0.12rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  background: var(--surface-muted);
+/* ===================== PUNTO 1: NOTAS + VISUALIZAR (ojo grande verde) ===================== */
+.inicio-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.notas-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.notas-counter svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notas-counter .notas-counter-num {
+  font-weight: 800;
+}
+
+.notas-counter .notas-counter-label {
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+.notas-counter:hover {
+  background: rgba(32, 176, 56, 0.18);
+  color: var(--accent-green-dark);
+}
+
+.notas-counter:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 2px;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.btn-view {
+  width: 36px;
+  height: 36px;
+  color: var(--accent-green);
+}
+
+.btn-view svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn-view:hover {
+  background: var(--accent-green-light);
+  color: var(--accent-green-dark);
+  border-color: var(--accent-green);
+}
+
+.btn-view:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 2px;
 }
 
 .financiera-chip {
@@ -749,7 +883,680 @@
   color: var(--text-on-accent);
 }
 
-/* ===================== RESPONSIVE ===================== */
+/* ===================== PUNTO 6: ELIMINAR (rojo) ===================== */
+.btn-eliminar {
+  padding: 0.35rem 0.6rem;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+.btn-eliminar:hover {
+  background: var(--danger);
+  color: #ffffff;
+  border-color: var(--danger);
+}
+
+.btn-eliminar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===================== MODALES (confirmación + notas + cotización) ===================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 470px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 18px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  padding: 1.6rem 1.7rem 1.4rem;
+  box-shadow: 0 30px 70px -20px rgba(15, 23, 42, 0.4);
+  animation: riseIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.modal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
+.modal-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.modal-heading-warning .modal-icon {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.modal-eyebrow {
+  display: block;
+  color: var(--accent-silver);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.modal-content h3 {
+  margin: 0;
+  color: var(--btn-primary-text);
+  font-size: 1.15rem;
+}
+
+.modal-content p {
+  color: var(--text-silver);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.warning-copy {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  color: var(--warning);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.warning-copy svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.3rem;
+}
+
+.btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--input-border);
+  border-radius: 9px;
+  background: var(--surface-card);
+  color: var(--text-silver);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.btn-confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.55rem 1.3rem;
+  border: 0;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--danger), #b91c1c);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-confirm:hover {
+  filter: brightness(1.08);
+}
+
+.btn-confirm:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+/* ===================== MODAL DE NOTAS (punto 1) ===================== */
+.notas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgba(34, 197, 94, 0.1), transparent 70%),
+    rgba(9, 14, 25, 0.58);
+  backdrop-filter: blur(10px) saturate(140%);
+  animation: notasFadeIn 0.24s ease;
+}
+
+@keyframes notasFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.notas-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(88vh, 780px);
+  overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  animation: notasRiseIn 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes notasRiseIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.notas-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-green-dark), var(--accent-green-bright) 55%, transparent);
+}
+
+.notas-header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.15rem 1.3rem 1.05rem;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(180deg, var(--accent-green-light), transparent 75%);
+}
+
+.notas-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-dark) 100%);
+  color: var(--text-on-accent);
+}
+
+.notas-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notas-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.notas-eyebrow {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--accent-silver);
+}
+
+.notas-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.notas-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.notas-close:hover {
+  background: var(--surface-hover);
+  color: var(--text-main);
+}
+
+.notas-close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.notas-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.3rem;
+}
+
+.notas-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.notas-alert svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.notas-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem 0;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
+.notas-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid var(--border-color);
+  border-top-color: var(--accent-green);
+  animation: notasSpin 0.7s linear infinite;
+}
+
+@keyframes notasSpin {
+  to { transform: rotate(360deg); }
+}
+
+.notas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.nota-item {
+  position: relative;
+  padding: 0.8rem 2.9rem 0.8rem 0.95rem;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--surface-subtle);
+}
+
+.nota-item:hover {
+  background: var(--surface-card);
+  border-color: rgba(32, 176, 56, 0.35);
+}
+
+.nota-item.nota-editing {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.12);
+}
+
+.nota-texto {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.nota-fecha {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  margin-top: 0.55rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  color: var(--accent-silver);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.nota-fecha svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nota-acciones {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.nota-acciones .btn-icon {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: var(--surface-card);
+  color: var(--text-muted);
+}
+
+.nota-acciones .btn-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nota-acciones .btn-icon.btn-edit:hover {
+  background: var(--accent-green-light);
+  border-color: rgba(32, 176, 56, 0.35);
+  color: var(--accent-green-dark);
+}
+
+.nota-acciones .btn-icon.btn-delete:hover {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.notas-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 1.6rem 1rem;
+  text-align: center;
+}
+
+.notas-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.notas-empty-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notas-empty-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.notas-empty-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.notas-editor {
+  flex-shrink: 0;
+  padding: 0.9rem 1.3rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.notas-editor-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.nota-textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-main);
+  font-size: 0.86rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.nota-textarea:focus {
+  outline: none;
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px rgba(32, 176, 56, 0.1);
+}
+
+.notas-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+}
+
+.notas-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.5rem 1.05rem;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent-green-dark), var(--accent-green));
+  color: var(--text-on-accent);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notas-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.notas-btn-primary svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notas-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  background: var(--surface-card);
+  color: var(--text-silver);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notas-btn-ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text-main);
+}
+
+.notas-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1.3rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.notas-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.notas-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--accent-green-light);
+  border: 1px solid rgba(32, 176, 56, 0.3);
+  color: var(--accent-green-dark);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+/* ===================== MODAL DE COTIZACIÓN (hoja del PDF) ===================== */
+.quote-overlay {
+  z-index: 3600;
+}
+
+.quote-modal {
+  max-width: 1060px;
+  max-height: 94vh;
+  padding: 1.2rem 1.2rem 1rem;
+}
+
+.quote-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.quote-modal-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.quote-modal-body {
+  max-height: 78vh;
+  overflow-y: auto;
+}
+
+.quote-modal-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+
 @media (max-width: 900px) {
   .page-header {
     flex-direction: column;

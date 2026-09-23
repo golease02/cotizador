@@ -107,89 +107,14 @@ describe('AdminSellersComponent scope', () => {
     fixture.detectChanges();
   }
 
-  async function selectScope(value: 'red' | 'todos') {
-    await scope.setScope(value);
-    fixture.detectChanges();
-    await fixture.whenStable();
-    await vi.waitFor(() => expect(component.loading).toBe(false));
-    fixture.detectChanges();
-  }
-
-  it('should update the rendered list when switching from all sellers to own sellers and back', async () => {
+  // NOTA (Ajuste 11): el toggle "Solo mi red" fue eliminado. El super admin ve
+  // siempre la red completa y el alcance de socio/seller lo impone RLS + RPCs
+  // server-side, así que ya no existe filtrado local que probar.
+  it('should render the full network list without local scope filtering', async () => {
     await render();
     expect(component.filteredSellers()).toHaveLength(2);
-    await selectScope('red');
-    expect(component.filteredSellers().map((s) => s.id)).toEqual(['seller-a']);
     expect(fixture.nativeElement.textContent).toContain('Ana');
-    expect(fixture.nativeElement.textContent).not.toContain('Beto');
-    await selectScope('todos');
-    expect(component.filteredSellers()).toHaveLength(2);
-  });
-
-  it('should scope metrics and brands when own sellers are selected', async () => {
-    await scope.setScope('red');
-    await render();
-    expect(component.stats).toEqual({ total: 1, activos: 1, inactivos: 0, cotizaciones: 2 });
-    expect(component.brandsList).toEqual(['TOYOTA']);
-  });
-
-  it('should scope quote colors when own sellers are selected', async () => {
-    await scope.setScope('red');
-    await render();
-    expect(quoteIn).toHaveBeenCalledWith('seller_id', ['seller-a', 'admin-a']);
-    expect(Object.keys(component.sellersQuoteColors())).toEqual(['seller-a']);
-  });
-
-  it('should show an empty list when no sellers belong to the administrator', async () => {
-    network = [];
-    await scope.setScope('red');
-    await render();
-    expect(component.filteredSellers()).toEqual([]);
-    expect(component.stats.total).toBe(0);
-  });
-
-  it('should preserve search and status filters when switching scope', async () => {
-    await render();
-    component.searchTerm = 'Beto';
-    component.setStatusFilter('inactivos');
-    await selectScope('red');
-    expect(component.filteredSellers()).toEqual([]);
-    await selectScope('todos');
-    expect(component.filteredSellers().map((s) => s.id)).toEqual(['seller-b']);
-  });
-
-  it('should ignore an older list response when a newer scope request has completed', async () => {
-    await render();
-    let resolve!: (value: ReturnType<typeof payload>) => void;
-    rpc.mockImplementationOnce(
-      (): any =>
-        new Promise((r) => {
-          resolve = r;
-        }),
-    );
-    const pending = component.loadSellers(false);
-    await selectScope('red');
-    resolve({ data: [{ seller: { ...sellers[0], full_name: 'Obsoleto' } }], error: null });
-    await pending;
-    expect(component.sellers()[0].full_name).toBe('Ana');
-    expect(component.loading).toBe(false);
-  });
-
-  it('should retain server scoped results when the current user is a socio', async () => {
-    profile = { ...profile, role: 'socio' };
-    await auth.loadProfile(profile.id);
-    await render();
-    await selectScope('red');
-    expect(scope.isRedMode()).toBe(false);
-    expect(component.filteredSellers()).toHaveLength(2);
-  });
-
-  it('should avoid displaying all sellers when loading the network fails', async () => {
-    networkError = { message: 'offline' };
-    await scope.setScope('red');
-    await render();
-    expect(component.filteredSellers()).toEqual([]);
-    expect(scope.error()).toContain('Mis vendedores');
+    expect(fixture.nativeElement.textContent).toContain('Beto');
   });
 
   it('should link to the seller quotes with the seller filter when the detail drawer opens', async () => {
@@ -213,7 +138,8 @@ describe('AdminSellersComponent scope', () => {
     fixture.detectChanges();
     expect(component.canViewQuotes).toBe(false);
     expect(fixture.nativeElement.querySelector('.detail-quotes-link')).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('no tiene acceso al módulo de Cotizaciones');
+    // El enlace apunta a Seguimiento (Ajuste 11): el mensaje del drawer lo refleja.
+    expect(fixture.nativeElement.textContent).toContain('no tiene acceso al módulo de Seguimiento');
   });
 
   it('should mantener el catalogo de marcas en orden alfabetico y sin duplicados', () => {

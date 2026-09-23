@@ -3,7 +3,6 @@ import { provideRouter } from '@angular/router';
 import type { User } from '@supabase/supabase-js';
 import { AdminStatsComponent } from './admin-stats';
 import { AuthService } from '../../../services/auth.service';
-import { AdminScopeService } from '../../../services/admin-scope.service';
 import {
   getSupabaseClient,
   resetSessionReady,
@@ -56,22 +55,18 @@ describe('AdminStatsComponent scope reload', () => {
     const auth = TestBed.inject(AuthService);
     setSessionUser({ id: profile.id } as User);
     await auth.loadProfile(profile.id);
-    const scope = TestBed.inject(AdminScopeService);
     TestBed.tick();
     const fixture = TestBed.createComponent(AdminStatsComponent);
     fixture.detectChanges();
     expect(client.rpc).toHaveBeenCalledWith('get_admin_stats');
 
-    await scope.setScope('red');
-    TestBed.tick();
-    await fixture.whenStable();
-    await vi.waitFor(() => expect(fixture.componentInstance.totalSellers()).toBe(1));
-    expect(fixture.componentInstance.totalQuotes()).toBe(0);
-
+    // El toggle "Solo mi red" fue eliminado (Ajuste 11): el super admin recibe
+    // siempre las métricas globales de la RPC, sin filtrado local.
     resolveGlobal({ data: { totalSellers: 50, totalQuotes: 100 }, error: null });
     await globalResponse;
-    await fixture.whenStable();
-    expect(fixture.componentInstance.totalQuotes()).toBe(0);
-    expect(fixture.componentInstance.totalSellers()).toBe(1);
+    TestBed.tick();
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.totalSellers()).toBe(50));
+    expect(fixture.componentInstance.totalQuotes()).toBe(100);
   });
 });

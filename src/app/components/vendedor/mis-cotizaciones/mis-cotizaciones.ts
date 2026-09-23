@@ -158,18 +158,23 @@ export class MisCotizacionesComponent implements OnInit {
   }
 
   // ===================== RETENCIÓN (purga automática) =====================
-  // El vendedor no ve fijada ni tiene acceso a quote_seguimiento, así que el
-  // chip refleja la condición que sí puede conocer (antigüedad); la purga
-  // SQL aplica además las protecciones de fijada y seguimiento real.
+  // El vendedor no ve `last_reviewed_at` ni tiene acceso a quote_seguimiento,
+  // así que el chip refleja solo lo que sí puede conocer (`created_at`); la
+  // purga SQL corre la ventana con la última actividad real (revisión, etapas,
+  // entrega o nota).
 
   /** Texto del chip informativo de la tarjeta ('' = sin aviso). */
   getPurgeChip(row: any): string {
     if (!row?.created_at) return '';
-    const probe = { created_at: row.created_at, fijada: row?.fijada === true };
+    const probe = {
+      created_at: row.created_at,
+      fijada: row?.fijada === true,
+      last_reviewed_at: row?.last_reviewed_at ?? null,
+    };
     if (!willAutoDelete(probe, null)) return '';
     const estado = this.getVigenciaEstado(row);
     if (estado !== 'vencida') return '';
-    return `Se elimina el ${formatPurgeDate(row.created_at)}`;
+    return `Se elimina el ${formatPurgeDate(probe)}`;
   }
 
   // ===================== VIGENCIA =====================

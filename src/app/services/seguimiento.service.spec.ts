@@ -10,7 +10,9 @@ import {
   SEGUIMIENTO_COLUMNA_COTIZADA,
   SEGUIMIENTO_ETAPAS,
   SeguimientoEtapas,
+  SeguimientoService,
 } from './seguimiento.service';
+import { TestBed } from '@angular/core/testing';
 
 describe('seguimiento.service (lógica pura)', () => {
   const NOW = '2026-09-17T10:00:00.000Z';
@@ -160,6 +162,99 @@ describe('seguimiento.service (lógica pura)', () => {
       const original: SeguimientoEtapas = { exp: NOW };
       toggleEtapa(original, 'analisis', NOW);
       expect(original.analisis).toBeUndefined();
+    });
+  });
+
+  describe('SeguimientoService.buildTestItems (asesor y plazo)', () => {
+    let servicio: SeguimientoService;
+
+    /** Fila de `quotes` con los campos que consume el mapeo del tablero. */
+    const cotizacion = (over: Record<string, unknown> = {}) => ({
+      id: 7,
+      seller_id: 's1',
+      seller_name: 'Ana Vendedora',
+      seller_socio_id: 'socio-1',
+      client_name: 'Cliente Uno',
+      brand: 'VW',
+      model: 'Crafter',
+      year: 2026,
+      pricenet: 900000,
+      termmonths: 48,
+      created_at: '2026-09-01T10:00:00.000Z',
+      ...over,
+    });
+
+    beforeEach(() => {
+      servicio = TestBed.inject(SeguimientoService);
+    });
+
+    afterEach(() => {
+      TestBed.resetTestingModule();
+    });
+
+    it('should resolve the asesor name and the quote term', () => {
+      const [item] = servicio.buildTestItems(
+        [cotizacion()],
+        [],
+        new Map([['socio-1', 'Socio Uno']]),
+      );
+
+      expect(item.asesorId).toBe('socio-1');
+      expect(item.asesorName).toBe('Socio Uno');
+      expect(item.termMonths).toBe(48);
+      expect(item.sellerName).toBe('Ana Vendedora');
+    });
+
+    it('should fall back to the current asesor when RLS hides the profile', () => {
+      const [item] = servicio.buildTestItems([cotizacion()], [], new Map(), 'Socio en sesión');
+
+      expect(item.asesorName).toBe('Socio en sesión');
+    });
+
+    it('should show a dash when the seller has no asesor assigned', () => {
+      const [item] = servicio.buildTestItems(
+        [cotizacion({ seller_socio_id: null })],
+        [],
+        new Map(),
+        '',
+      );
+
+      expect(item.asesorId).toBe('');
+      expect(item.asesorName).toBe('—');
+    });
+
+    it('should merge the seguimiento row with the quote', () => {
+      const [item] = servicio.buildTestItems(
+        [cotizacion()],
+        [
+          {
+            quote_id: 7,
+            activo_texto: '  Audi Q5 2025  ',
+            referenciado: 'César',
+            financiera: 'MONTERREY',
+            etapas: { exp: '2026-09-10T00:00:00.000Z' },
+            fecha_cierre: null,
+            updated_at: '2026-09-10T00:00:00.000Z',
+          },
+        ],
+        new Map([['socio-1', 'Socio Uno']]),
+      );
+
+      expect(item.tieneRegistro).toBe(true);
+      expect(item.activo).toBe('Audi Q5 2025');
+      expect(item.referenciado).toBe('César');
+      expect(item.financiera).toBe('MONTERREY');
+      expect(item.etapas.exp).toBe('2026-09-10T00:00:00.000Z');
+      expect(item.asesorName).toBe('Socio Uno');
+    });
+
+    it('should build the asset text from the quote when there is no seguimiento row', () => {
+      const [item] = servicio.buildTestItems([cotizacion()], [], new Map());
+
+      expect(item.tieneRegistro).toBe(false);
+      expect(item.activo).toBe('VW Crafter 2026');
+      expect(item.financiera).toBe('SIMPLE LEASE');
+      expect(item.termMonths).toBe(48);
     });
   });
 });

@@ -14,9 +14,26 @@ describe('quote-retention', () => {
   const old = '2026-09-01T12:00:00Z';
   const recent = '2026-09-15T12:00:00Z';
 
-  it('should purge 15 days after creation', () => {
+  it('should purge 15 days after the last activity', () => {
     expect(QUOTE_RETENTION_DAYS).toBe(15);
-    expect(computePurgeDate(old)).toEqual(new Date('2026-09-16T12:00:00Z'));
+    expect(computePurgeDate({ created_at: old })).toEqual(new Date('2026-09-16T12:00:00Z'));
+  });
+
+  it('should move the purge window when the quote is reviewed or edited', () => {
+    // Revisada el 20/09: la ventana corre 15 días desde esa actividad.
+    const revisada = { created_at: old, last_reviewed_at: '2026-09-20T12:00:00Z' };
+    expect(computePurgeDate(revisada)).toEqual(new Date('2026-10-05T12:00:00Z'));
+    expect(willAutoDelete(revisada, null, now)).toBe(false);
+
+    // Edición del seguimiento (aunque no haya etapas completadas).
+    expect(
+      willAutoDelete({ created_at: old }, { etapas: {}, updated_at: '2026-09-21T00:00:00Z' }, now)
+    ).toBe(false);
+
+    // Etapa completada (seguimiento REAL): protege sin importar la fecha.
+    expect(
+      willAutoDelete({ created_at: old }, { etapas: { exp: '2026-09-10T00:00:00Z' } }, now)
+    ).toBe(false);
   });
 
   it('should not delete young quotes', () => {
@@ -58,7 +75,7 @@ describe('quote-retention', () => {
   });
 
   it('should format the purge date in Spanish', () => {
-    expect(formatPurgeDate(old)).toBe('16/09/2026');
+    expect(formatPurgeDate({ created_at: old })).toBe('16/09/2026');
   });
 
   it('should show the retention notice once per session', () => {

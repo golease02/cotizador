@@ -19,8 +19,8 @@ describe('AdminScopeService', () => {
     expect(createScope().isRedMode()).toBe(false);
   });
 
-  it('should keep an empty seller set', () => {
-    expect(createScope().sellerIds().size).toBe(0);
+  it('should not filter locally: sellerIds is undefined (toggle eliminado)', () => {
+    expect(createScope().sellerIds()).toBeUndefined();
   });
 
   it('should expose a stable reloadCount (no-op)', () => {

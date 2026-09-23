@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { getSupabaseClient } from './supabase-client';
+import { QuoteColor, computeActivityColor } from '../utils/quote-activity';
 
 export interface SellerWithQuoteCount {
   id: string;
@@ -68,6 +69,32 @@ export interface SellerPerformancePayload {
   sellers: SellerPerformance[];
 }
 
+/** Fila de la RPC `get_quotes_activity()` (actividad real por cotización). */
+export interface QuoteActivityRow {
+  quote_id: number;
+  seller_id: string;
+  seller_name: string;
+  client_name: string;
+  brand: string;
+  model: string;
+  pricenet: number;
+  revisada: boolean;
+  fijada: boolean;
+  created_at: string;
+  last_activity: string | null;
+  fecha_cierre: string | null;
+}
+
+/** Datos mínimos para colorear una cotización (RPC de actividad o fila de `quotes`). */
+interface QuoteColorInput {
+  revisada?: boolean | null;
+  created_at: string;
+  /** Última actividad ya resuelta en SQL (`get_quotes_activity`). */
+  last_activity?: string | null;
+  last_reviewed_at?: string | null;
+  fecha_cierre?: string | null;
+}
+
 /** True cuando el error indica que la función RPC aún no existe (migración sin aplicar). */
 function isMissingRpcError(error: any): boolean {
   if (!error) return false;
@@ -75,13 +102,20 @@ function isMissingRpcError(error: any): boolean {
   return /could not find the function/i.test(error.message ?? '');
 }
 
-/** Misma fórmula del RPC get_admin_stats: revisada→verde, >7d→rojo, >2d→amarillo. */
-function computeQuoteColor(quote: { revisada?: boolean; created_at: string }): string {
-  if (quote.revisada === true) return 'verde';
-  const dias = Math.floor((Date.now() - new Date(quote.created_at).getTime()) / 86_400_000);
-  if (dias > 7) return 'rojo';
-  if (dias > 2) return 'amarillo';
-  return 'reciente';
+/**
+ * Color de la cotización con la REGLA ÚNICA de actividad
+ * (`utils/quote-activity.ts`): la antigüedad se cuenta desde la última
+ * actividad (revisión, etapa, entrega o nota), no desde `created_at`.
+ * Umbrales: < 8 días reciente/verde, 8–15 amarillo, >= 16 rojo; entregado = verde.
+ */
+function computeQuoteColor(quote: QuoteColorInput): QuoteColor {
+  const referencia = quote.last_activity || quote.created_at;
+  return computeActivityColor({
+    createdAt: referencia,
+    lastReviewedAt: quote.last_reviewed_at ?? null,
+    fechaCierre: quote.fecha_cierre ?? null,
+    revisada: quote.revisada === true,
+  });
 }
 
 @Injectable({
@@ -121,7 +155,8 @@ export class AdminService {
     }
     const { data, error } = await this.client.rpc('get_admin_stats');
     if (!error && data) {
-      return { data, error: null };
+      // La RPC colorea desde `created_at`; aquí se recolorea con la actividad real.
+      return { data: await this.aplicarActividadStats(data), error: null };
     }
     if (error && !isMissingRpcError(error)) {
       console.error('getStats error:', error);
@@ -149,7 +184,8 @@ export class AdminService {
     }
     const { data, error } = await this.client.rpc('get_seller_performance', { p_days: safeDays });
     if (!error && data) {
-      return { data: data as SellerPerformancePayload, error: null };
+      const payload = data as SellerPerformancePayload;
+      return { data: await this.aplicarActividadPerformance(payload), error: null };
     }
     if (error && !isMissingRpcError(error)) {
       console.error('getSellerPerformance error:', error);
@@ -160,6 +196,111 @@ export class AdminService {
       'get_seller_performance() no existe aún; usando agregación local. Aplica la migración supabase/migrations/20260911000000_seller_performance_rpcs.sql.',
     );
     return this.getSellerPerformanceLegacy(safeDays);
+  }
+
+  // ==================== ACTIVIDAD (días sin actividad) ====================
+
+  /**
+   * Actividad por cotización del alcance del usuario
+   * (RPC `get_quotes_activity`, migración `20260924010000_quote_activity.sql`).
+   * Devuelve `[]` si la migración aún no se aplicó: el dashboard y el
+   * rendimiento siguen funcionando con los colores que ya traen sus RPCs.
+   */
+  public async getQuotesActivity(): Promise<{ data: QuoteActivityRow[]; error: any }> {
+    const { data, error } = await this.client.rpc('get_quotes_activity');
+    if (error) {
+      if (!isMissingRpcError(error)) console.error('getQuotesActivity error:', error);
+      return { data: [], error };
+    }
+    return { data: (data ?? []) as QuoteActivityRow[], error: null };
+  }
+
+  /** Tarjeta de las listas destacadas del dashboard. */
+  private toStatsCard(row: QuoteActivityRow): any {
+    return {
+      id: row.quote_id,
+      client_name: row.client_name,
+      brand: row.brand,
+      model: row.model,
+      pricenet: row.pricenet,
+      created_at: row.created_at,
+      color: computeQuoteColor(row),
+      seller_name: row.seller_name || 'N/A',
+    };
+  }
+
+  /**
+   * Recolorea las métricas del dashboard con la ÚLTIMA ACTIVIDAD.
+   *
+   * `get_admin_stats` calcula los colores desde `created_at` (su cuerpo vive en
+   * la BD, ver migraciones 1-13), así que aquí se sobreescriben los cuatro
+   * contadores de color y las listas destacadas usando la regla única de
+   * `utils/quote-activity.ts`. Todo lo demás (totales, top vehículos/vendedores)
+   * se conserva tal cual lo devolvió la RPC.
+   */
+  private async aplicarActividadStats(stats: any): Promise<any> {
+    const { data: filas, error } = await this.getQuotesActivity();
+    if (error || !Array.isArray(filas) || filas.length === 0) return stats;
+
+    const byColor = { reciente: 0, amarillo: 0, rojo: 0, verde: 0 };
+    const fijadas: any[] = [];
+    const urgentes: any[] = [];
+    const recientes: any[] = [];
+
+    for (const fila of filas) {
+      const color = computeQuoteColor(fila);
+      byColor[color]++;
+      if (fila.fijada && fijadas.length < 5) fijadas.push(this.toStatsCard(fila));
+      if (color === 'rojo' && urgentes.length < 5) urgentes.push(this.toStatsCard(fila));
+      if (recientes.length < 5) recientes.push(this.toStatsCard(fila));
+    }
+
+    return {
+      ...stats,
+      totalUrgentes: byColor.rojo,
+      totalRecientes: byColor.reciente,
+      totalRevisadas: byColor.verde,
+      totalPendientes: byColor.amarillo,
+      fijadas,
+      urgentes,
+      recientes,
+    };
+  }
+
+  /**
+   * Recolorea el rendimiento por vendedor con la ÚLTIMA ACTIVIDAD:
+   * `byColor` (todas las cotizaciones del vendedor, igual que el respaldo local)
+   * y el color de las cotizaciones recientes.
+   */
+  private async aplicarActividadPerformance(
+    payload: SellerPerformancePayload,
+  ): Promise<SellerPerformancePayload> {
+    const { data: filas, error } = await this.getQuotesActivity();
+    if (error || !Array.isArray(filas) || filas.length === 0) return payload;
+
+    const colorPorQuote = new Map<string, QuoteColor>();
+    const porVendedor = new Map<string, { reciente: number; amarillo: number; rojo: number; verde: number }>();
+
+    for (const fila of filas) {
+      const color = computeQuoteColor(fila);
+      colorPorQuote.set(String(fila.quote_id), color);
+      const acc =
+        porVendedor.get(fila.seller_id) ?? { reciente: 0, amarillo: 0, rojo: 0, verde: 0 };
+      acc[color]++;
+      porVendedor.set(fila.seller_id, acc);
+    }
+
+    return {
+      ...payload,
+      sellers: (payload.sellers ?? []).map((s) => ({
+        ...s,
+        byColor: porVendedor.get(s.id) ?? s.byColor,
+        recentQuotes: (s.recentQuotes ?? []).map((q) => ({
+          ...q,
+          color: colorPorQuote.get(String(q.id)) ?? q.color,
+        })),
+      })),
+    };
   }
 
   // ==================== FALLBACKS (mientras la migración no esté aplicada) ====================
@@ -205,7 +346,7 @@ export class AdminService {
       const { data: rows, error: quotesError } = await this.client
         .from('quotes')
         .select(
-          'id, client_name, brand, model, pricenet, created_at, revisada, fijada, color, seller_id, profiles!seller_id (full_name, agency_location)',
+          'id, client_name, brand, model, pricenet, created_at, revisada, fijada, color, last_reviewed_at, seller_id, profiles!seller_id (full_name, agency_location)',
         )
         .order('created_at', { ascending: false });
       if (quotesError) throw quotesError;
@@ -341,7 +482,7 @@ export class AdminService {
 
       const { data: rows, error: quotesError } = await this.client
         .from('quotes')
-        .select('id, seller_id, client_name, brand, model, pricenet, created_at, revisada')
+        .select('id, seller_id, client_name, brand, model, pricenet, created_at, revisada, last_reviewed_at')
         .order('created_at', { ascending: false });
       if (quotesError) throw quotesError;
       const allQuotes: any[] = (rows ?? []) as any[];
