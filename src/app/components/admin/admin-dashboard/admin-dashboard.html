@@ -1,28 +1,5 @@
 <div class="admin-layout">
   <div class="admin-mobile-topbar">
-    <button
-      class="menu-toggle"
-      type="button"
-      (click)="toggleSidebar()"
-      [attr.aria-expanded]="sidebarOpen()"
-      aria-label="Abrir menú de navegación"
-      title="Menú"
-    >
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M3 12h18"></path>
-        <path d="M3 6h18"></path>
-        <path d="M3 18h18"></path>
-      </svg>
-    </button>
     <div class="mobile-topbar-title">
       <span class="mobile-brand">Go Lease</span>
       <span class="mobile-subtitle">Panel Admin</span>
@@ -73,7 +50,7 @@
     </button>
   </div>
 
-  <aside class="admin-sidebar" [class.sidebar-open]="sidebarOpen()">
+  <aside class="admin-sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">
         <img
@@ -87,31 +64,9 @@
           <span class="logo-subtitle">Panel Admin</span>
         </div>
       </div>
-      <button
-        class="drawer-close"
-        type="button"
-        (click)="closeSidebar()"
-        aria-label="Cerrar menú"
-        title="Cerrar"
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M18 6 6 18"></path>
-          <path d="m6 6 12 12"></path>
-        </svg>
-      </button>
     </div>
 
     <a routerLink="/" class="back-link cotizador-link">$ Cotizador</a>
-
 
     <nav>
       <span class="nav-section-label">General</span>
@@ -220,8 +175,7 @@
             Asesores GoLease
           </a>
         </li>
-        
-        
+
         <li *ngIf="auth.canAccessModule('plates')">
           <a routerLink="/admin/plates" routerLinkActive="active">
             <svg
@@ -355,16 +309,265 @@
     </div>
   </aside>
 
-  <button
-    class="sidebar-overlay"
-    *ngIf="sidebarOpen()"
-    (click)="closeSidebar()"
-    aria-label="Cerrar menú"
-  ></button>
-
   <main class="admin-content">
     <router-outlet></router-outlet>
   </main>
+
+  <!-- Navegación inferior móvil del panel administrativo -->
+  <nav class="mobile-bottom-nav admin-mobile-bottom-nav" aria-label="Navegación del panel admin">
+    <a
+      routerLink="/admin"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="nav-item"
+      aria-label="Inicio del panel admin"
+      title="Inicio"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+      </svg>
+      <span>Inicio</span>
+    </a>
+
+    <a
+      *ngIf="auth.canAccessModule('seguimiento')"
+      routerLink="/admin/seguimiento"
+      routerLinkActive="active"
+      class="nav-item"
+      aria-label="Seguimiento"
+      title="Seguimiento"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <rect x="3" y="3" width="6" height="18" rx="1"></rect>
+        <rect x="10" y="3" width="6" height="12" rx="1"></rect>
+        <rect x="17" y="3" width="4" height="15" rx="1"></rect>
+      </svg>
+      <span>Seguimiento</span>
+    </a>
+
+    <a
+      *ngIf="auth.canAccessModule('rendimiento')"
+      routerLink="/admin/rendimiento"
+      routerLinkActive="active"
+      class="nav-item"
+      aria-label="Rendimiento"
+      title="Rendimiento"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+        <polyline points="17 6 23 6 23 12"></polyline>
+      </svg>
+      <span>Rendimiento</span>
+    </a>
+
+    <button
+      type="button"
+      class="nav-item nav-item-more"
+      [class.active]="mobileMoreOpen() || isMoreRouteActive()"
+      [attr.aria-expanded]="mobileMoreOpen()"
+      aria-controls="admin-mobile-more-menu"
+      [attr.aria-label]="mobileMoreOpen() ? 'Cerrar más opciones' : 'Abrir más opciones'"
+      [title]="mobileMoreOpen() ? 'Cerrar más opciones' : 'Más opciones'"
+      (click)="toggleMobileMore()"
+    >
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="5" cy="12" r="1"></circle>
+        <circle cx="12" cy="12" r="1"></circle>
+        <circle cx="19" cy="12" r="1"></circle>
+      </svg>
+      <span>Más</span>
+    </button>
+  </nav>
+
+  <!-- Hoja inferior para módulos y accesos secundarios -->
+  <div class="admin-mobile-more-overlay" *ngIf="mobileMoreOpen()" (click)="closeMobileMore()">
+    <section
+      id="admin-mobile-more-menu"
+      class="admin-mobile-more-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="admin-mobile-more-title"
+      (click)="$event.stopPropagation()"
+    >
+      <span class="more-panel-handle" aria-hidden="true"></span>
+
+      <header class="more-panel-header">
+        <div>
+          <span class="more-panel-eyebrow">Panel Admin</span>
+          <h2 id="admin-mobile-more-title">Más opciones</h2>
+        </div>
+        <button
+          type="button"
+          class="more-panel-close"
+          aria-label="Cerrar más opciones"
+          title="Cerrar"
+          (click)="closeMobileMore()"
+        >
+          <svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </header>
+
+      <div class="more-account-summary">
+        <span class="more-account-avatar">
+          {{ (auth.currentProfile()?.full_name || 'A').charAt(0).toUpperCase() }}
+        </span>
+        <span class="more-account-copy">
+          <strong>{{ auth.currentProfile()?.full_name || 'Administrador' }}</strong>
+          <small>{{ auth.getRoleLabel() }}</small>
+        </span>
+      </div>
+
+      <div class="more-section" *ngIf="mobileMoreModules().length">
+        <span class="more-section-label">Módulos</span>
+        <div class="more-module-grid">
+          @for (module of mobileMoreModules(); track module.route) {
+            <a [routerLink]="module.route" class="more-module-link" (click)="closeMobileMore()">
+              <span class="more-link-icon" aria-hidden="true">
+                @switch (module.icon) {
+                  @case ('sellers') {
+                    <svg viewBox="0 0 24 24">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  }
+                  @case ('advisors') {
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 2 2 7l10 5 10-5-10-5Z"></path>
+                      <path d="m2 17 10 5 10-5"></path>
+                      <path d="m2 12 10 5 10-5"></path>
+                    </svg>
+                  }
+                  @case ('plates') {
+                    <svg viewBox="0 0 24 24">
+                      <rect x="2" y="7" width="20" height="10" rx="2"></rect>
+                      <line x1="6" y1="11" x2="18" y2="11"></line>
+                      <path d="M6 14h.01M9 14h.01M12 14h.01M15 14h.01M18 14h.01"></path>
+                    </svg>
+                  }
+                  @case ('parameters') {
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path
+                        d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.8 1.8-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V22h-2.55v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 0 0 8.1 17a1.7 1.7 0 0 0-1.56-1.03H6.45v-2.55h.1A1.7 1.7 0 0 0 8.1 12a1.7 1.7 0 0 0-.34-1.88L7.7 10.06l1.8-1.8.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V7h2.55v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.8 1.8-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.56 1.03h.1v2.55h-.1A1.7 1.7 0 0 0 19.4 15Z"
+                      ></path>
+                    </svg>
+                  }
+                }
+              </span>
+              <span>{{ module.label }}</span>
+            </a>
+          }
+        </div>
+      </div>
+
+      <div class="more-section">
+        <span class="more-section-label">Aplicación</span>
+        <div class="more-link-list">
+          <a routerLink="/" class="more-list-link" (click)="closeMobileMore()">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M3 9.5 12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Mis Cotizaciones</span>
+          </a>
+          <a routerLink="/cotizador" class="more-list-link" (click)="closeMobileMore()">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Nueva cotización</span>
+          </a>
+          <a routerLink="/perfil" class="more-list-link" (click)="closeMobileMore()">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Mi perfil</span>
+          </a>
+        </div>
+      </div>
+
+      <button type="button" class="more-logout" (click)="logout()">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Cerrar sesión
+      </button>
+    </section>
+  </div>
 
   <!-- Toast host para notificaciones in-app en rutas admin -->
   <div class="toast-host" aria-live="polite" *ngIf="toastService.toasts().length">
