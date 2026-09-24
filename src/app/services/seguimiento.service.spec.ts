@@ -4,6 +4,7 @@ import {
   computeFechaEntradaEtapa,
   diasEntre,
   etapasCompletadas,
+  estadoBarraSeguimiento,
   nivelAging,
   toggleEtapa,
   SEGUIMIENTO_COLUMNA_CERRADO,
@@ -107,6 +108,124 @@ describe('seguimiento.service (lógica pura)', () => {
     });
   });
 
+  describe('estadoBarraSeguimiento', () => {
+    const now = new Date('2026-09-24T12:00:00.000Z');
+    const creada = (dias: number) => new Date(now.getTime() - dias * 86_400_000).toISOString();
+
+    it('should use blue through day 3, yellow on days 4–5 and red from day 6', () => {
+      for (const dias of [0, 1, 2, 3]) {
+        expect(
+          estadoBarraSeguimiento(
+            { createdAt: creada(dias), fechaCierre: null, lastInteractedAt: null },
+            now,
+          ),
+        ).toBe('azul');
+      }
+      for (const dias of [4, 5]) {
+        expect(
+          estadoBarraSeguimiento(
+            { createdAt: creada(dias), fechaCierre: null, lastInteractedAt: null },
+            now,
+          ),
+        ).toBe('amarillo');
+      }
+      for (const dias of [6, 7, 60]) {
+        expect(
+          estadoBarraSeguimiento(
+            { createdAt: creada(dias), fechaCierre: null, lastInteractedAt: null },
+            now,
+          ),
+        ).toBe('rojo');
+      }
+    });
+
+    it('should ignore a review timestamp when revisada is false', () => {
+      expect(
+        estadoBarraSeguimiento(
+          {
+            createdAt: creada(2),
+            fechaCierre: null,
+            lastInteractedAt: null,
+            revisada: false,
+            lastReviewedAt: creada(0),
+          },
+          now,
+        ),
+      ).toBe('azul');
+    });
+
+    it('should reset the cycle after an interaction and return to blue/yellow/red', () => {
+      const base = {
+        createdAt: creada(60),
+        fechaCierre: null,
+      };
+
+      for (const [dias, color] of [
+        [0, 'verde'],
+        [1, 'azul'],
+        [2, 'azul'],
+        [3, 'azul'],
+        [4, 'amarillo'],
+        [5, 'amarillo'],
+        [6, 'rojo'],
+        [30, 'rojo'],
+      ] as const) {
+        expect(
+          estadoBarraSeguimiento(
+            { ...base, lastInteractedAt: creada(dias) },
+            now,
+          ),
+        ).toBe(color);
+      }
+    });
+
+    it('should use review, tracking and stage timestamps as activity anchors', () => {
+      expect(
+        estadoBarraSeguimiento(
+          {
+            createdAt: creada(60),
+            fechaCierre: null,
+            lastInteractedAt: null,
+            revisada: true,
+            lastReviewedAt: creada(0),
+          },
+          now,
+        ),
+      ).toBe('verde');
+      expect(
+        estadoBarraSeguimiento(
+          {
+            createdAt: creada(60),
+            fechaCierre: null,
+            lastInteractedAt: null,
+            updatedAt: creada(4),
+          },
+          now,
+        ),
+      ).toBe('amarillo');
+      expect(
+        estadoBarraSeguimiento(
+          {
+            createdAt: creada(60),
+            fechaCierre: null,
+            lastInteractedAt: null,
+            etapas: { analisis: creada(6) },
+          },
+          now,
+        ),
+      ).toBe('rojo');
+    });
+
+    it('should keep delivered quotes green regardless of age', () => {
+      expect(
+        estadoBarraSeguimiento(
+          { createdAt: creada(60), fechaCierre: creada(30), lastInteractedAt: null },
+          now,
+        ),
+      ).toBe('verde');
+    });
+  });
+
   describe('aplicarColumna', () => {
     it('should clear every stage when moving back to "Cotizada"', () => {
       const res = aplicarColumna({ exp: NOW, analisis: NOW }, SEGUIMIENTO_COLUMNA_COTIZADA, NOW);
@@ -173,6 +292,7 @@ describe('seguimiento.service (lógica pura)', () => {
       id: 7,
       seller_id: 's1',
       seller_name: 'Ana Vendedora',
+      seller_role: 'seller',
       seller_socio_id: 'socio-1',
       client_name: 'Cliente Uno',
       brand: 'VW',
@@ -203,6 +323,8 @@ describe('seguimiento.service (lógica pura)', () => {
       expect(item.asesorName).toBe('Socio Uno');
       expect(item.termMonths).toBe(48);
       expect(item.sellerName).toBe('Ana Vendedora');
+      expect(item.esVentaDirecta).toBe(false);
+      expect(item.lastInteractedAt).toBeNull();
     });
 
     it('should fall back to the current asesor when RLS hides the profile', () => {
@@ -211,21 +333,63 @@ describe('seguimiento.service (lógica pura)', () => {
       expect(item.asesorName).toBe('Socio en sesión');
     });
 
-    it('should show a dash when the seller has no asesor assigned', () => {
+    it('should show "Sin asesor" when the seller has no asesor assigned', () => {
       const [item] = servicio.buildTestItems(
         [cotizacion({ seller_socio_id: null })],
         [],
         new Map(),
-        '',
+        'No debeFallback',
       );
 
       expect(item.asesorId).toBe('');
-      expect(item.asesorName).toBe('—');
+      expect(item.asesorName).toBe('Sin asesor');
+    });
+
+    it('should classify a quote created by a socio as their own direct advisor quote', () => {
+      const [item] = servicio.buildTestItems(
+        [
+          cotizacion({
+            seller_id: 'socio-9',
+            seller_name: 'Socia Directa',
+            seller_role: 'socio',
+            seller_socio_id: null,
+          }),
+        ],
+        [],
+        new Map(),
+        'Fallback que no debe usarse',
+      );
+
+      expect(item.asesorId).toBe('socio-9');
+      expect(item.asesorName).toBe('Socia Directa');
+      expect(item.sellerId).toBe('socio-9');
+      expect(item.sellerName).toBe('Directa');
+      expect(item.esVentaDirecta).toBe(true);
+    });
+
+    it('should classify a quote created by a superadmin as a direct advisor quote', () => {
+      const [item] = servicio.buildTestItems(
+        [
+          cotizacion({
+            seller_id: 'admin-1',
+            seller_name: 'César González',
+            seller_role: 'super_admin',
+            seller_socio_id: null,
+          }),
+        ],
+        [],
+        new Map(),
+      );
+
+      expect(item.asesorId).toBe('admin-1');
+      expect(item.asesorName).toBe('César González');
+      expect(item.sellerName).toBe('Directa');
+      expect(item.esVentaDirecta).toBe(true);
     });
 
     it('should merge the seguimiento row with the quote', () => {
       const [item] = servicio.buildTestItems(
-        [cotizacion()],
+        [cotizacion({ last_interacted_at: '2026-09-11T10:00:00.000Z' })],
         [
           {
             quote_id: 7,
@@ -245,6 +409,7 @@ describe('seguimiento.service (lógica pura)', () => {
       expect(item.referenciado).toBe('César');
       expect(item.financiera).toBe('MONTERREY');
       expect(item.etapas.exp).toBe('2026-09-10T00:00:00.000Z');
+      expect(item.lastInteractedAt).toBe('2026-09-11T10:00:00.000Z');
       expect(item.asesorName).toBe('Socio Uno');
     });
 

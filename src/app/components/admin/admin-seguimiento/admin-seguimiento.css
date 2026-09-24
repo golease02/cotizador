@@ -169,24 +169,25 @@
   color: var(--text-muted);
 }
 
-/* ===================== SEMÁFORO DE ANTIGÜEDAD ===================== */
-.aging-verde { --aging-color: var(--accent-green); --aging-bg: var(--accent-green-light); }
-.aging-amarillo { --aging-color: var(--warning); --aging-bg: var(--warning-bg); }
-.aging-rojo { --aging-color: var(--danger); --aging-bg: var(--danger-bg); }
-
-.aging-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  background: var(--aging-bg, var(--surface-muted));
-  color: var(--aging-color, var(--text-muted));
-  border: 1px solid var(--aging-color, var(--border-color));
+/* ===================== BARRA DE SEGUIMIENTO ===================== */
+.estado-verde {
+  --aging-color: var(--accent-green);
+  --aging-bg: var(--accent-green-light);
+}
+.estado-azul {
+  --aging-color: var(--info);
+  --aging-bg: var(--info-bg);
+}
+.estado-amarillo {
+  --aging-color: var(--warning);
+  --aging-bg: var(--warning-bg);
+}
+.estado-rojo {
+  --aging-color: var(--danger);
+  --aging-bg: var(--danger-bg);
 }
 
-/* Punto del semáforo de ETAPA (el chip del drawer usa el de ACTIVIDAD). */
+/* Punto secundario del aging de la etapa actual en el drawer. */
 .aging-dot {
   display: inline-block;
   width: 8px;
@@ -196,9 +197,15 @@
   background: var(--aging-color, var(--text-muted));
 }
 
-.dot-verde { --aging-color: var(--accent-green); }
-.dot-amarillo { --aging-color: var(--warning); }
-.dot-rojo { --aging-color: var(--danger); }
+.dot-verde {
+  --aging-color: var(--accent-green);
+}
+.dot-amarillo {
+  --aging-color: var(--warning);
+}
+.dot-rojo {
+  --aging-color: var(--danger);
+}
 
 /* ===================== SKELETON / VACÍO ===================== */
 .skeleton-grid {
@@ -211,14 +218,23 @@
   height: 150px;
   border-radius: 14px;
   border: 1px solid var(--border-color);
-  background: linear-gradient(90deg, var(--surface-muted) 25%, var(--surface-subtle) 50%, var(--surface-muted) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 25%,
+    var(--surface-subtle) 50%,
+    var(--surface-muted) 75%
+  );
   background-size: 200% 100%;
   animation: seg-shimmer 1.4s infinite;
 }
 
 @keyframes seg-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .empty-state {
@@ -256,102 +272,14 @@
   color: var(--text-muted);
 }
 
-
 /* ===================== LISTA ESTILO EXCEL ===================== */
 .lista-wrapper {
   overflow-x: auto;
   border-radius: 14px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--input-border);
   background: var(--surface-card);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
 }
-
-.seg-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.84rem;
-}
-
-.seg-table th {
-  text-align: left;
-  padding: 0.6rem 0.75rem;
-  background: var(--surface-subtle);
-  color: var(--text-silver);
-  font-weight: 700;
-  font-size: 0.72rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border-color);
-  white-space: nowrap;
-}
-
-.seg-table td {
-  padding: 0.55rem 0.75rem;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-}
-
-.seg-table tbody tr:hover {
-  background: var(--surface-hover);
-}
-
-.client-name {
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.seller-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.chip-etapa {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.chip-etapa.done {
-  background: var(--accent-green-light);
-  color: var(--accent-green-dark);
-  border: 1px solid var(--accent-green);
-}
-
-.chip-etapa.pendiente {
-  background: var(--surface-subtle);
-  color: var(--text-silver);
-  border: 1px solid var(--border-color);
-}
-
-.chip-etapa:hover {
-  filter: brightness(1.05);
-}
-
-.etapa-fecha {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.fecha-cierre {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--accent-green-dark);
-  white-space: nowrap;
-}
-
-
-
 
 /* ===================== DRAWER DE DETALLE ===================== */
 .drawer-overlay {
@@ -377,8 +305,14 @@
 }
 
 @keyframes drawer-in {
-  from { transform: translateX(18px); opacity: 0.6; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(18px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .drawer-header {
@@ -475,12 +409,6 @@
   margin: 0;
   font-size: 0.78rem;
   color: var(--text-muted);
-}
-
-/* Línea destacada de "última actividad" en el drawer. */
-.drawer-meta-actividad {
-  font-weight: 700;
-  color: var(--aging-color, var(--text-muted));
 }
 
 .drawer-acciones {
@@ -618,97 +546,145 @@
   text-decoration: underline;
 }
 
-/* ===================== LISTA ESTILO EXCEL (tabla) ===================== */
+/* ===================== LISTA ESTILO EXCEL (tabla) =====================
+   Métricas alineadas con `.users-table` (admin-sellers), el patrón del panel. */
 .seguimiento-tabla {
   width: 100%;
+  min-width: 1380px;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
 }
 
 .seguimiento-tabla th {
   text-align: left;
-  padding: 0.6rem 0.75rem;
+  padding: 0.85rem 1rem;
   background: var(--surface-subtle);
-  color: var(--text-silver);
+  color: var(--text-muted);
   font-weight: 700;
-  font-size: 0.72rem;
-  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
 }
 
 .seguimiento-tabla td {
-  padding: 0.55rem 0.75rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--border-color);
   vertical-align: middle;
+  transition: background-color 0.2s ease;
 }
 
 .seguimiento-tabla tbody tr {
   cursor: pointer;
 }
 
-.seguimiento-tabla tbody tr:hover {
+.seguimiento-tabla tbody tr:hover td {
   background: var(--surface-hover);
+}
+
+.seguimiento-tabla tbody tr:focus-visible {
+  outline: 3px solid rgba(32, 176, 56, 0.35);
+  outline-offset: -3px;
 }
 
 .seguimiento-tabla tbody tr.is-cerrado {
   opacity: 0.75;
 }
 
-.th-fecha { min-width: 110px; }
-.th-dias { min-width: 62px; text-align: center; }
-.th-asesor { min-width: 120px; }
-.th-ref { min-width: 120px; }
-.th-cliente { min-width: 160px; }
-.th-activo { min-width: 160px; }
-.th-plazo { min-width: 96px; white-space: nowrap; }
-.th-financiera { min-width: 90px; }
-.th-cierre { min-width: 110px; }
-.th-acciones { width: 80px; text-align: center; }
-
-.td-fecha { white-space: nowrap; }
-.td-dias { text-align: center; }
-.td-asesor { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.td-ref { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.td-cliente { font-weight: 600; color: var(--text-main); }
-.td-activo { color: var(--text-main); }
-.td-plazo { white-space: nowrap; font-weight: 700; color: var(--text-main); }
-.td-financiera { white-space: nowrap; }
-.td-etapa { text-align: center; }
-.td-cierre { white-space: nowrap; text-align: center; }
-.td-acciones { text-align: center; }
-
-/* Contador de días sin actividad (clic = marcar/desmarcar revisada). */
-.dias-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  min-width: 44px;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  border: 1px solid var(--aging-color, var(--border-color));
-  background: var(--aging-bg, var(--surface-muted));
-  color: var(--aging-color, var(--text-muted));
-  font-size: 0.72rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
+/* Encabezados centrados: casan con el contenido centrado de su celda
+   (etapas, Entrega y Acciones). Sin este alcance ganaría el
+   `text-align: left` de `.seguimiento-tabla th`. */
+.seguimiento-tabla .th-etapas,
+.seguimiento-tabla .th-cierre,
+.seguimiento-tabla .th-acciones {
+  text-align: center;
 }
 
-.dias-badge:hover {
-  background: var(--surface-hover);
+/* Barra lateral: azul 0–3 días, amarillo 4–5, rojo 6+. Una interacción
+   reinicia el ciclo y deja la fila verde durante las primeras 24 horas. */
+.seguimiento-tabla tbody tr.estado-verde td:first-child {
+  box-shadow: inset 4px 0 0 var(--accent-green);
 }
 
-.dias-check {
-  width: 12px;
-  height: 12px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.seguimiento-tabla tbody tr.estado-azul td:first-child {
+  box-shadow: inset 4px 0 0 var(--info);
+}
+
+.seguimiento-tabla tbody tr.estado-amarillo td:first-child {
+  box-shadow: inset 4px 0 0 var(--warning);
+}
+
+.seguimiento-tabla tbody tr.estado-rojo td:first-child {
+  box-shadow: inset 4px 0 0 var(--danger);
+}
+
+.th-fecha {
+  min-width: 110px;
+}
+.th-asesor {
+  min-width: 120px;
+}
+.th-vendedor {
+  min-width: 120px;
+}
+.th-cliente {
+  min-width: 160px;
+}
+.th-activo {
+  min-width: 160px;
+}
+.th-plazo {
+  min-width: 96px;
+  white-space: nowrap;
+}
+.th-fin {
+  min-width: 90px;
+}
+.th-cierre {
+  min-width: 110px;
+}
+.th-acciones {
+  width: 80px;
+  text-align: center;
+}
+
+.td-fecha {
+  white-space: nowrap;
+}
+.td-asesor {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.td-vendedor {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.td-cliente {
+  font-weight: 600;
+  color: var(--text-main);
+}
+.td-activo {
+  color: var(--text-main);
+}
+.td-plazo {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.td-fin {
+  white-space: nowrap;
+}
+.td-etapa {
+  text-align: center;
+}
+.td-cierre {
+  white-space: nowrap;
+  text-align: center;
+}
+.td-acciones {
+  text-align: center;
 }
 
 .celda-fecha {
@@ -818,7 +794,8 @@
   border: 1px solid var(--border-color);
 }
 
-.cierre-chip, .cierre-vacio {
+.cierre-chip,
+.cierre-vacio {
   font-size: 0.8rem;
   white-space: nowrap;
 }
@@ -853,7 +830,8 @@
   border-color: var(--accent-green);
 }
 
-.btn-cerrar, .btn-reabrir {
+.btn-cerrar,
+.btn-reabrir {
   padding: 0.35rem 0.6rem;
   border: 0;
   border-radius: 7px;
@@ -921,8 +899,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -939,8 +921,14 @@
 }
 
 @keyframes riseIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-heading {
@@ -1088,8 +1076,12 @@
 }
 
 @keyframes notasFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .notas-modal {
@@ -1106,8 +1098,14 @@
 }
 
 @keyframes notasRiseIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .notas-modal::before {
@@ -1117,7 +1115,12 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--accent-green-dark), var(--accent-green-bright) 55%, transparent);
+  background: linear-gradient(
+    90deg,
+    var(--accent-green-dark),
+    var(--accent-green-bright) 55%,
+    transparent
+  );
 }
 
 .notas-header {
@@ -1249,7 +1252,9 @@
 }
 
 @keyframes notasSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .notas-list {
@@ -1591,7 +1596,7 @@
     font-size: 1.5rem;
   }
 
-  .seg-table {
-    font-size: 0.78rem;
+  .seguimiento-tabla {
+    font-size: 0.8rem;
   }
 }

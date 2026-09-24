@@ -1,433 +1,638 @@
 <div class="seguimiento-panel">
-    <!-- ===================== CABECERA ===================== -->
-    <div class="page-header">
-        <div class="page-heading">
-            <span class="page-kicker">Operación y cierre</span>
-            <h2>Seguimiento de Negocios</h2>
-                        </div>
+  <!-- ===================== CABECERA ===================== -->
+  <div class="page-header">
+    <div class="page-heading">
+      <span class="page-kicker">Operación y cierre</span>
+      <h2>Seguimiento de Negocios</h2>
+    </div>
+  </div>
 
-        </div>
+  <!-- Aviso cuando la migración aún no se aplicó en la BD -->
+  <div class="aviso-migracion" *ngIf="!loading() && !tablaDisponible()">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+      ></path>
+      <line x1="12" y1="9" x2="12" y2="13"></line>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+    <div>
+      <strong>El tablero está en modo lectura.</strong>
+      La tabla <code>quote_seguimiento</code> todavía no existe en la base de datos. Aplica
+      <code>supabase/migrations/20260917000000_quote_seguimiento.sql</code> para poder mover
+      negocios entre etapas.
+    </div>
+  </div>
 
-    <!-- Aviso cuando la migración aún no se aplicó en la BD -->
-    <div class="aviso-migracion" *ngIf="!loading() && !tablaDisponible()">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-        <div>
-            <strong>El tablero está en modo lectura.</strong>
-            La tabla <code>quote_seguimiento</code> todavía no existe en la base de datos. Aplica
-            <code>supabase/migrations/20260917000000_quote_seguimiento.sql</code> para poder mover
-            negocios entre etapas.
-        </div>
+  <!-- ===================== TOOLBAR ===================== -->
+  <div class="toolbar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="applyFilters()"
+        placeholder="Buscar por cliente, activo, asesor o vendedor..."
+        class="search-input"
+      />
+      <button
+        *ngIf="searchTerm"
+        type="button"
+        class="search-clear"
+        (click)="searchTerm = ''; applyFilters()"
+        aria-label="Limpiar búsqueda"
+      >
+        ×
+      </button>
     </div>
 
-    <!-- ===================== TOOLBAR ===================== -->
-    <div class="toolbar">
-        <div class="search-wrapper">
-            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
-                placeholder="Buscar por cliente, activo, asesor o vendedor..." class="search-input" />
-            <button *ngIf="searchTerm" type="button" class="search-clear" (click)="searchTerm = ''; applyFilters()"
-                aria-label="Limpiar búsqueda">×</button>
-        </div>
+    <label class="toolbar-select">
+      <select
+        [(ngModel)]="filtroAsesor"
+        (change)="onAsesorChange()"
+        aria-label="Filtrar por asesor"
+      >
+        <option value="todos">Todos los asesores</option>
+        <option *ngFor="let a of asesores()" [value]="a.id">{{ a.nombre }}</option>
+      </select>
+    </label>
 
-        <label class="toolbar-select">
-            <select [(ngModel)]="filtroAsesor" (change)="onAsesorChange()" aria-label="Filtrar por asesor">
-                <option value="todos">Todos los asesores</option>
-                <option *ngFor="let a of asesores()" [value]="a.id">{{ a.nombre }}</option>
-            </select>
-        </label>
+    <label class="toolbar-select">
+      <select
+        [(ngModel)]="filtroVendedor"
+        (change)="applyFilters()"
+        aria-label="Filtrar por vendedor"
+      >
+        <option value="todos">Todos los vendedores</option>
+        <option *ngFor="let v of vendedores()" [value]="v.id">{{ v.nombre }}</option>
+      </select>
+    </label>
 
-        <label class="toolbar-select">
-            <select [(ngModel)]="filtroVendedor" (change)="applyFilters()" aria-label="Filtrar por vendedor">
-                <option value="todos">Todos los vendedores</option>
-                <option *ngFor="let v of vendedores()" [value]="v.id">{{ v.nombre }}</option>
-            </select>
-        </label>
+    <button type="button" class="btn-secondary" *ngIf="hayFiltros" (click)="clearFilters()">
+      Limpiar filtros
+    </button>
 
-        <button type="button" class="btn-secondary" *ngIf="hayFiltros" (click)="clearFilters()">
-            Limpiar filtros
-        </button>
+    <span class="results-count" *ngIf="!loading()">{{ filtrados().length }} resultado(s)</span>
+  </div>
 
-        <span class="results-count" *ngIf="!loading()">{{ filtrados().length }} resultado(s)</span>
-    </div>
+  <!-- ===================== SKELETON ===================== -->
+  <div *ngIf="loading()" class="skeleton-grid" aria-label="Cargando seguimiento">
+    <div class="skeleton-card" *ngFor="let i of [0, 1, 2, 3]"></div>
+  </div>
 
-    <!-- ===================== SKELETON ===================== -->
-    <div *ngIf="loading()" class="skeleton-grid" aria-label="Cargando seguimiento">
-        <div class="skeleton-card" *ngFor="let i of [0,1,2,3]"></div>
-    </div>
+  <!-- ===================== ESTADO VACÍO ===================== -->
+  <div *ngIf="!loading() && filtrados().length === 0" class="empty-state">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+    </svg>
+    <h3>Sin negocios en seguimiento</h3>
+    <p *ngIf="hayFiltros">Ningún negocio coincide con los filtros aplicados.</p>
+    <p *ngIf="!hayFiltros">Aún no hay cotizaciones para dar seguimiento.</p>
+  </div>
 
-    <!-- ===================== ESTADO VACÍO ===================== -->
-    <div *ngIf="!loading() && filtrados().length === 0" class="empty-state">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-        <h3>Sin negocios en seguimiento</h3>
-        <p *ngIf="hayFiltros">Ningún negocio coincide con los filtros aplicados.</p>
-        <p *ngIf="!hayFiltros">Aún no hay cotizaciones para dar seguimiento.</p>
-    </div>
-
-    <!-- ===================== VISTA LISTA (estilo Excel) ===================== -->
-    <div class="lista-wrapper" *ngIf="!loading() && filtrados().length > 0">
-        <table class="seguimiento-tabla">
-            <thead>
-                <tr>
-                    <th class="th-fecha">F. Inicio</th>
-                    <th class="th-dias" title="Días sin actividad (revisión, etapa, entrega o nota)">Días</th>
-                    <th class="th-asesor">Asesor</th>
-                    <th class="th-ref">Vendedor</th>
-                    <th class="th-cliente">Cliente</th>
-                    <th class="th-activo">Activo</th>
-                    <th class="th-plazo">Plazo</th>
-                    <th class="th-financiera">Fin</th>
-                    <th class="th-etapas" *ngFor="let e of etapas" [title]="e.label">{{ e.short }}</th>
-                    <th class="th-cierre">Entrega</th>
-                    <th class="th-acciones"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr *ngFor="let item of filtrados(); trackBy: trackByQuote"
-                    [class.is-cerrado]="!!item.fechaCierre" (click)="abrirDetalle(item)">
-                    <td class="td-fecha">
-                        <span class="celda-fecha">{{ formatFecha(item.createdAt) }}</span>
-                        <span class="inicio-acciones">
-                            <button type="button" class="notas-counter" *ngIf="canManageNotas"
-                                (click)="$event.stopPropagation(); abrirNotas(item)"
-                                [title]="'Ver notas (' + getNotasCount(item) + ')'"
-                                aria-label="Ver notas de la cotización">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
-                                <span class="notas-counter-num">{{ getNotasCount(item) }}</span>
-                                <span class="notas-counter-label">{{ getNotasCount(item) === 1 ? 'nota' : 'notas' }}</span>
-                            </button>
-                            <button type="button" class="btn-icon btn-view"
-                                (click)="$event.stopPropagation(); visualizarCotizacion(item)"
-                                title="Visualizar cotización (hoja del PDF)"
-                                aria-label="Visualizar cotización de {{ item.clientName }}">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                            </button>
-                        </span>
-                    </td>
-                    <td class="td-dias">
-                        <button type="button" class="dias-badge"
-                            [ngClass]="'aging-' + nivelActividadItem(item)"
-                            [title]="(item.revisada ? 'Revisada. ' : '') + 'Última actividad: ' + ultimaActividadItem(item) + ' (' + etiquetaActividadItem(item) + '). Clic para marcar como revisada.'"
-                            (click)="$event.stopPropagation(); toggleRevisada(item)"
-                            aria-label="Marcar revisada la cotización de {{ item.clientName }}">
-                            <svg *ngIf="item.revisada" viewBox="0 0 24 24" aria-hidden="true" class="dias-check">
-                                <path d="m5 13 4 4L19 7"></path>
-                            </svg>
-                            <span class="dias-num">{{ diasSinActividadItem(item) }}</span>
-                        </button>
-                    </td>
-                    <td class="td-asesor">{{ item.asesorName }}</td>
-                    <td class="td-ref">{{ item.sellerName }}</td>
-                    <td class="td-cliente">{{ item.clientName }}</td>
-                    <td class="td-activo">{{ item.activo }}</td>
-                    <td class="td-plazo">{{ item.termMonths ? item.termMonths + ' meses' : '—' }}</td>
-                    <td class="td-financiera"><span class="financiera-chip">{{ item.financiera }}</span></td>
-                    <td class="td-etapa" *ngFor="let e of etapas">
-                        <button type="button" class="etapa-chip"
-                            [class.is-done]="etapaCompletada(item, e.key)"
-                            [title]="e.label + ': ' + formatFechaEtapa(item, e.key)"
-                            (click)="$event.stopPropagation(); toggleEtapa(item, e.key)">
-                            {{ etapaCompletada(item, e.key) ? '✓' : '' }}
-                        </button>
-                    </td>
-                    <td class="td-cierre">
-                        <button type="button" class="etapa-chip entrega-chip"
-                            [class.is-done]="!!item.fechaCierre"
-                            [title]="item.fechaCierre ? 'Entregado el ' + formatFecha(item.fechaCierre) + '. Clic para reabrir.' : 'Marcar como entregado'"
-                            (click)="$event.stopPropagation(); toggleEntrega(item)"
-                            [attr.aria-pressed]="!!item.fechaCierre"
-                            aria-label="Marcar entrega de {{ item.clientName }}">
-                            {{ item.fechaCierre ? '✓' : '' }}
-                        </button>
-                    </td>
-                    <td class="td-acciones">
-                        <button type="button" class="btn-eliminar"
-                            (click)="$event.stopPropagation(); pedirEliminar(item)"
-                            [title]="'Eliminar cotización de ' + item.clientName">
-                            Eliminar
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+  <!-- ===================== VISTA LISTA (estilo Excel) ===================== -->
+  <div class="lista-wrapper" *ngIf="!loading() && filtrados().length > 0">
+    <table class="seguimiento-tabla">
+      <thead>
+        <tr>
+          <th class="th-fecha">F. Inicio</th>
+          <th class="th-asesor">Asesor</th>
+          <th class="th-vendedor">Vendedor</th>
+          <th class="th-cliente">Cliente</th>
+          <th class="th-activo">Activo</th>
+          <th class="th-plazo">Plazo</th>
+          <th class="th-fin">Fin</th>
+          <th class="th-etapas" *ngFor="let e of etapas" [title]="e.label">{{ e.short }}</th>
+          <th class="th-cierre">Entrega</th>
+          <th class="th-acciones"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let item of filtrados(); trackBy: trackByQuote"
+          [class.is-cerrado]="!!item.fechaCierre"
+          [ngClass]="'estado-' + estadoBarraItem(item)"
+          tabindex="0"
+          (click)="abrirDetalle(item)"
+          (keydown.enter)="abrirDetalle(item)"
+        >
+          <td class="td-fecha">
+            <span class="celda-fecha">{{ formatFecha(item.createdAt) }}</span>
+            <span class="inicio-acciones">
+              <button
+                type="button"
+                class="notas-counter"
+                *ngIf="canManageNotas"
+                (click)="$event.stopPropagation(); abrirNotas(item)"
+                [title]="'Ver notas (' + getNotasCount(item) + ')'"
+                aria-label="Ver notas de la cotización"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 4h16v13H7l-3 3Z"></path>
+                  <path d="M8 8h8"></path>
+                  <path d="M8 12h6"></path>
+                </svg>
+                <span class="notas-counter-num">{{ getNotasCount(item) }}</span>
+                <span class="notas-counter-label">{{
+                  getNotasCount(item) === 1 ? 'nota' : 'notas'
+                }}</span>
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-view"
+                (click)="$event.stopPropagation(); visualizarCotizacion(item)"
+                title="Visualizar cotización (hoja del PDF)"
+                aria-label="Visualizar cotización de {{ item.clientName }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </span>
+          </td>
+          <td class="td-asesor">{{ item.asesorName }}</td>
+          <td class="td-vendedor">{{ item.sellerName }}</td>
+          <td class="td-cliente">{{ item.clientName }}</td>
+          <td class="td-activo">{{ item.activo }}</td>
+          <td class="td-plazo">{{ item.termMonths ? item.termMonths + ' meses' : '—' }}</td>
+          <td class="td-fin">
+            <span class="financiera-chip">{{ item.financiera }}</span>
+          </td>
+          <td class="td-etapa" *ngFor="let e of etapas">
+            <button
+              type="button"
+              class="etapa-chip"
+              [class.is-done]="etapaCompletada(item, e.key)"
+              [title]="e.label + ': ' + formatFechaEtapa(item, e.key)"
+              (click)="$event.stopPropagation(); toggleEtapa(item, e.key)"
+            >
+              {{ etapaCompletada(item, e.key) ? '✓' : '' }}
+            </button>
+          </td>
+          <td class="td-cierre">
+            <button
+              type="button"
+              class="etapa-chip entrega-chip"
+              [class.is-done]="!!item.fechaCierre"
+              [title]="
+                item.fechaCierre
+                  ? 'Entregado el ' + formatFecha(item.fechaCierre) + '. Clic para reabrir.'
+                  : 'Marcar como entregado'
+              "
+              (click)="$event.stopPropagation(); toggleEntrega(item)"
+              [attr.aria-pressed]="!!item.fechaCierre"
+              aria-label="Marcar entrega de {{ item.clientName }}"
+            >
+              {{ item.fechaCierre ? '✓' : '' }}
+            </button>
+          </td>
+          <td class="td-acciones">
+            <button
+              type="button"
+              class="btn-eliminar"
+              (click)="$event.stopPropagation(); pedirEliminar(item)"
+              [title]="'Eliminar cotización de ' + item.clientName"
+            >
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ===================== DRAWER DE DETALLE ===================== -->
 <div class="drawer-overlay" *ngIf="showDetalle && detalle()" (click)="cerrarDetalle()"></div>
-<aside class="drawer" *ngIf="showDetalle && detalle()" role="dialog" aria-modal="true"
-    aria-label="Detalle del negocio">
-    <header class="drawer-header">
-        <div class="drawer-heading">
-            <span class="drawer-kicker">Negocio</span>
-            <h3>{{ detalle()!.clientName }}</h3>
-            <span class="drawer-sub">{{ detalle()!.activo }}</span>
-        </div>
-        <button type="button" class="drawer-close" (click)="cerrarDetalle()" aria-label="Cerrar">×</button>
-    </header>
-
-    <div class="drawer-body">
-        <!-- Estado y acciones -->
-        <section class="drawer-section">
-            <div class="drawer-estado">
-                <span class="estado-chip"
-                    [ngClass]="detalle()!.fechaCierre ? 'estado-cerrado' : 'aging-' + nivelActividadItem(detalle()!)">
-                    {{ detalle()!.fechaCierre ? 'Entregado' : 'En proceso' }}
-                </span>
-                <span class="drawer-meta">F. Inicio: {{ formatFecha(detalle()!.createdAt) }}</span>
-                <span class="drawer-meta drawer-meta-actividad"
-                    [ngClass]="'aging-' + nivelActividadItem(detalle()!)">
-                    Última actividad: {{ ultimaActividadItem(detalle()!) }} — {{ etiquetaActividadItem(detalle()!) }}
-                </span>
-                <span class="drawer-meta" *ngIf="detalle()!.fechaCierre">
-                    F. Entrega: {{ formatFecha(detalle()!.fechaCierre) }}
-                </span>
-                <span class="drawer-meta">Asesor: {{ detalle()!.asesorName }}</span>
-                <span class="drawer-meta">Vendedor: {{ detalle()!.sellerName }}</span>
-                <span class="drawer-meta">Plazo: {{ detalle()!.termMonths ? detalle()!.termMonths + ' meses' : '—' }}</span>
-                <span class="drawer-meta">
-                    <span class="aging-dot" [ngClass]="'dot-' + nivelItem(detalle()!)"></span>
-                    {{ diasEnEtapa(detalle()!) }} días en la etapa actual
-                </span>
-            </div>
-            <div class="drawer-acciones">
-                <button type="button" class="btn-secondary" (click)="toggleRevisada(detalle()!)">
-                    {{ detalle()!.revisada ? 'Quitar revisada' : 'Marcar revisada' }}
-                </button>
-                <button type="button" class="btn-primary" *ngIf="!detalle()!.fechaCierre"
-                    (click)="cerrarNegocio(detalle()!)">Marcar como entregado</button>
-                <button type="button" class="btn-secondary" *ngIf="detalle()!.fechaCierre"
-                    (click)="reabrirNegocio(detalle()!)">Reabrir negocio</button>
-            </div>
-        </section>
-
-        <!-- Datos editables -->
-        <section class="drawer-section">
-            <h4>Datos del negocio</h4>
-            <div class="form-group">
-                <label for="seg-activo">Activo</label>
-                <input id="seg-activo" type="text" [(ngModel)]="formActivo" name="segActivo"
-                    placeholder="Marca, modelo y año (o descripción libre)" />
-            </div>
-            <div class="form-group">
-                <label for="seg-ref">Referenciado</label>
-                <input id="seg-ref" type="text" [(ngModel)]="formReferenciado" name="segReferenciado"
-                    placeholder="¿Quién refirió al cliente?" />
-            </div>
-            <div class="form-group">
-                <label for="seg-fin">Financiera</label>
-                <input id="seg-fin" type="text" [(ngModel)]="formFinanciera" name="segFinanciera"
-                    placeholder="SIMPLE LEASE" />
-            </div>
-            <button type="button" class="btn-primary btn-block" [disabled]="guardando" (click)="guardarDetalle()">
-                {{ guardando ? 'Guardando…' : 'Guardar datos' }}
-            </button>
-        </section>
-
-        <!-- Timeline de etapas -->
-        <section class="drawer-section">
-            <h4>Etapas del proceso</h4>
-            <ul class="timeline">
-                <li class="timeline-item" *ngFor="let e of etapas; let i = index"
-                    [class.is-done]="etapaCompletada(detalle()!, e.key)">
-                    <button type="button" class="timeline-check" (click)="toggleEtapa(detalle()!, e.key)"
-                        [attr.aria-pressed]="etapaCompletada(detalle()!, e.key)"
-                        [title]="etapaCompletada(detalle()!, e.key) ? 'Desmarcar etapa' : 'Marcar etapa como completada'">
-                        {{ etapaCompletada(detalle()!, e.key) ? '✓' : i + 1 }}
-                    </button>
-                    <div class="timeline-info">
-                        <span class="timeline-label">{{ e.label }}</span>
-                        <span class="timeline-fecha">{{ formatFechaEtapa(detalle()!, e.key) }}</span>
-                    </div>
-                </li>
-                <li class="timeline-item is-cierre" [class.is-done]="!!detalle()!.fechaCierre">
-                    <span class="timeline-check">{{ detalle()!.fechaCierre ? '✓' : '★' }}</span>
-                    <div class="timeline-info">
-                        <span class="timeline-label">Cierre</span>
-                        <span class="timeline-fecha">{{ formatFecha(detalle()!.fechaCierre) }}</span>
-                    </div>
-                </li>
-            </ul>
-        </section>
-
-        <!-- Cotización de origen -->
-        <section class="drawer-section">
-            <h4>Cotización</h4>
-            <p class="drawer-meta">Asesor: {{ detalle()!.asesorName }}</p>
-            <p class="drawer-meta">Vendedor: {{ detalle()!.sellerName }}</p>
-            <p class="drawer-meta">Plazo: {{ detalle()!.termMonths ? detalle()!.termMonths + ' meses' : '—' }}</p>
-            <p class="drawer-meta">Precio neto: {{ formatMoneda(detalle()!.priceNet) }}</p>
-            <a class="drawer-link" [routerLink]="['/admin/seguimiento']" [queryParams]="{ seller: detalle()!.sellerId }"
-                (click)="cerrarDetalle()">Ver seguimiento del asesor →</a>
-        </section>
+<aside
+  class="drawer"
+  *ngIf="showDetalle && detalle()"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Detalle del negocio"
+>
+  <header class="drawer-header">
+    <div class="drawer-heading">
+      <span class="drawer-kicker">Negocio</span>
+      <h3>{{ detalle()!.clientName }}</h3>
+      <span class="drawer-sub">{{ detalle()!.activo }}</span>
     </div>
+    <button type="button" class="drawer-close" (click)="cerrarDetalle()" aria-label="Cerrar">
+      ×
+    </button>
+  </header>
+
+  <div class="drawer-body">
+    <!-- Estado y acciones -->
+    <section class="drawer-section">
+      <div class="drawer-estado">
+        <span
+          class="estado-chip"
+          [ngClass]="
+            detalle()!.fechaCierre ? 'estado-cerrado' : 'estado-' + estadoBarraItem(detalle()!)
+          "
+        >
+          {{ detalle()!.fechaCierre ? 'Entregado' : 'En proceso' }}
+        </span>
+        <span class="drawer-meta">F. Inicio: {{ formatFecha(detalle()!.createdAt) }}</span>
+        <span class="drawer-meta" *ngIf="detalle()!.fechaCierre">
+          F. Entrega: {{ formatFecha(detalle()!.fechaCierre) }}
+        </span>
+        <span class="drawer-meta">Asesor: {{ detalle()!.asesorName }}</span>
+        <span class="drawer-meta">Vendedor: {{ detalle()!.sellerName }}</span>
+        <span class="drawer-meta"
+          >Plazo: {{ detalle()!.termMonths ? detalle()!.termMonths + ' meses' : '—' }}</span
+        >
+        <span class="drawer-meta">
+          <span class="aging-dot" [ngClass]="'dot-' + nivelItem(detalle()!)"></span>
+          {{ diasEnEtapa(detalle()!) }} días en la etapa actual
+        </span>
+      </div>
+      <div class="drawer-acciones">
+        <button
+          type="button"
+          class="btn-primary"
+          *ngIf="!detalle()!.fechaCierre"
+          (click)="cerrarNegocio(detalle()!)"
+        >
+          Marcar como entregado
+        </button>
+        <button
+          type="button"
+          class="btn-secondary"
+          *ngIf="detalle()!.fechaCierre"
+          (click)="reabrirNegocio(detalle()!)"
+        >
+          Reabrir negocio
+        </button>
+      </div>
+    </section>
+
+    <!-- Datos editables -->
+    <section class="drawer-section">
+      <h4>Datos del negocio</h4>
+      <div class="form-group">
+        <label for="seg-activo">Activo</label>
+        <input
+          id="seg-activo"
+          type="text"
+          [(ngModel)]="formActivo"
+          name="segActivo"
+          placeholder="Marca, modelo y año (o descripción libre)"
+        />
+      </div>
+      <div class="form-group">
+        <label for="seg-ref">Referenciado</label>
+        <input
+          id="seg-ref"
+          type="text"
+          [(ngModel)]="formReferenciado"
+          name="segReferenciado"
+          placeholder="¿Quién refirió al cliente?"
+        />
+      </div>
+      <div class="form-group">
+        <label for="seg-fin">FIN</label>
+        <input
+          id="seg-fin"
+          type="text"
+          [(ngModel)]="formFinanciera"
+          name="segFinanciera"
+          placeholder="SIMPLE LEASE"
+        />
+      </div>
+      <button
+        type="button"
+        class="btn-primary btn-block"
+        [disabled]="guardando"
+        (click)="guardarDetalle()"
+      >
+        {{ guardando ? 'Guardando…' : 'Guardar datos' }}
+      </button>
+    </section>
+
+    <!-- Timeline de etapas -->
+    <section class="drawer-section">
+      <h4>Etapas del proceso</h4>
+      <ul class="timeline">
+        <li
+          class="timeline-item"
+          *ngFor="let e of etapas; let i = index"
+          [class.is-done]="etapaCompletada(detalle()!, e.key)"
+        >
+          <button
+            type="button"
+            class="timeline-check"
+            (click)="toggleEtapa(detalle()!, e.key)"
+            [attr.aria-pressed]="etapaCompletada(detalle()!, e.key)"
+            [title]="
+              etapaCompletada(detalle()!, e.key)
+                ? 'Desmarcar etapa'
+                : 'Marcar etapa como completada'
+            "
+          >
+            {{ etapaCompletada(detalle()!, e.key) ? '✓' : i + 1 }}
+          </button>
+          <div class="timeline-info">
+            <span class="timeline-label">{{ e.label }}</span>
+            <span class="timeline-fecha">{{ formatFechaEtapa(detalle()!, e.key) }}</span>
+          </div>
+        </li>
+        <li class="timeline-item is-cierre" [class.is-done]="!!detalle()!.fechaCierre">
+          <span class="timeline-check">{{ detalle()!.fechaCierre ? '✓' : '★' }}</span>
+          <div class="timeline-info">
+            <span class="timeline-label">Cierre</span>
+            <span class="timeline-fecha">{{ formatFecha(detalle()!.fechaCierre) }}</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Cotización de origen -->
+    <section class="drawer-section">
+      <h4>Cotización</h4>
+      <p class="drawer-meta">Asesor: {{ detalle()!.asesorName }}</p>
+      <p class="drawer-meta">Vendedor: {{ detalle()!.sellerName }}</p>
+      <p class="drawer-meta">
+        Plazo: {{ detalle()!.termMonths ? detalle()!.termMonths + ' meses' : '—' }}
+      </p>
+      <p class="drawer-meta">Precio neto: {{ formatMoneda(detalle()!.priceNet) }}</p>
+      <a
+        class="drawer-link"
+        [routerLink]="['/admin/seguimiento']"
+        [queryParams]="{ seller: detalle()!.sellerId }"
+        (click)="cerrarDetalle()"
+        >Ver seguimiento del asesor →</a
+      >
+    </section>
+  </div>
 </aside>
 
 <!-- ===================== MODAL DE COTIZACIÓN (hoja del PDF, punto 1) ===================== -->
 <div class="modal-overlay quote-overlay" *ngIf="showQuoteModal" (click)="cerrarQuoteModal()">
-    <div class="modal-content quote-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
-        aria-label="Cotización en hoja oficial">
-        <div class="quote-modal-header">
-            <span class="quote-modal-title">Cotización — hoja oficial</span>
-            <button type="button" class="drawer-close" (click)="cerrarQuoteModal()" aria-label="Cerrar">
-                ×
-            </button>
-        </div>
-        <div class="quote-modal-body">
-            <div *ngIf="quoteCargando" class="quote-modal-loading">
-                <span class="notas-spinner"></span>
-                <span>Cargando cotización...</span>
-            </div>
-            <app-quote-breakdown *ngIf="!quoteCargando && selectedQuote()" [calculation]="selectedQuote()"
-                [mostrarGuardar]="false" />
-        </div>
+  <div
+    class="modal-content quote-modal"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Cotización en hoja oficial"
+  >
+    <div class="quote-modal-header">
+      <span class="quote-modal-title">Cotización — hoja oficial</span>
+      <button type="button" class="drawer-close" (click)="cerrarQuoteModal()" aria-label="Cerrar">
+        ×
+      </button>
     </div>
+    <div class="quote-modal-body">
+      <div *ngIf="quoteCargando" class="quote-modal-loading">
+        <span class="notas-spinner"></span>
+        <span>Cargando cotización...</span>
+      </div>
+      <app-quote-breakdown
+        *ngIf="!quoteCargando && selectedQuote()"
+        [calculation]="selectedQuote()"
+        [mostrarGuardar]="false"
+      />
+    </div>
+  </div>
 </div>
 
 <!-- ===================== MODAL DE NOTAS (punto 1) ===================== -->
 <div class="modal-overlay notas-overlay" *ngIf="showNotasModal" (click)="cerrarNotasQuote()">
-    <div class="notas-modal" role="dialog" aria-modal="true" aria-label="Notas de cotización"
-        (click)="$event.stopPropagation()">
-        <header class="notas-header">
-            <span class="notas-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H7l-3 3Z"></path><path d="M8 8h8"></path><path d="M8 12h6"></path></svg>
-            </span>
-            <div class="notas-titles">
-                <span class="notas-eyebrow">Seguimiento</span>
-                <h3 class="notas-title">Notas de Cotización</h3>
-            </div>
-            <button type="button" class="notas-close" (click)="cerrarNotasQuote()" title="Cerrar" aria-label="Cerrar">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  <div
+    class="notas-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Notas de cotización"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="notas-header">
+      <span class="notas-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4h16v13H7l-3 3Z"></path>
+          <path d="M8 8h8"></path>
+          <path d="M8 12h6"></path>
+        </svg>
+      </span>
+      <div class="notas-titles">
+        <span class="notas-eyebrow">Seguimiento</span>
+        <h3 class="notas-title">Notas de Cotización</h3>
+      </div>
+      <button
+        type="button"
+        class="notas-close"
+        (click)="cerrarNotasQuote()"
+        title="Cerrar"
+        aria-label="Cerrar"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="notas-body">
+      <div *ngIf="notaError" class="notas-alert">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>{{ notaError }}</span>
+      </div>
+
+      <div *ngIf="notaLoading" class="notas-loading">
+        <span class="notas-spinner"></span>
+        <span>Cargando notas...</span>
+      </div>
+
+      <div class="notas-list" *ngIf="!notaLoading">
+        <article
+          class="nota-item"
+          *ngFor="let n of notasCotizacion"
+          [class.nota-editing]="notaEditando?.id === n.id"
+        >
+          <p class="nota-texto">{{ n.texto }}</p>
+          <span class="nota-fecha">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+            {{ n.created_at | date: 'dd/MM/yyyy HH:mm' }}
+          </span>
+          <div class="nota-acciones">
+            <button
+              type="button"
+              class="btn-icon btn-edit"
+              (click)="editarNotaQuote(n)"
+              title="Editar nota"
+              aria-label="Editar nota"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+              </svg>
             </button>
-        </header>
+            <button
+              type="button"
+              class="btn-icon btn-delete"
+              (click)="eliminarNotaQuote(n)"
+              title="Eliminar nota"
+              aria-label="Eliminar nota"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="M19 6l-1 14H6L5 6"></path>
+                <path d="M10 11v5"></path>
+                <path d="M14 11v5"></path>
+              </svg>
+            </button>
+          </div>
+        </article>
 
-        <div class="notas-body">
-            <div *ngIf="notaError" class="notas-alert">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span>{{ notaError }}</span>
-            </div>
-
-            <div *ngIf="notaLoading" class="notas-loading">
-                <span class="notas-spinner"></span>
-                <span>Cargando notas...</span>
-            </div>
-
-            <div class="notas-list" *ngIf="!notaLoading">
-                <article class="nota-item" *ngFor="let n of notasCotizacion"
-                    [class.nota-editing]="notaEditando?.id === n.id">
-                    <p class="nota-texto">{{ n.texto }}</p>
-                    <span class="nota-fecha">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
-                        {{ n.created_at | date : 'dd/MM/yyyy HH:mm' }}
-                    </span>
-                    <div class="nota-acciones">
-                        <button type="button" class="btn-icon btn-edit" (click)="editarNotaQuote(n)"
-                            title="Editar nota" aria-label="Editar nota">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
-                        </button>
-                        <button type="button" class="btn-icon btn-delete" (click)="eliminarNotaQuote(n)"
-                            title="Eliminar nota" aria-label="Eliminar nota">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path></svg>
-                        </button>
-                    </div>
-                </article>
-
-                <div *ngIf="notasCotizacion.length === 0" class="notas-empty">
-                    <span class="notas-empty-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path><path d="M10 9H8"></path></svg>
-                    </span>
-                    <p class="notas-empty-title">Sin notas todavía</p>
-                    <p class="notas-empty-sub">Documenta el seguimiento de esta cotización agregando la primera nota.</p>
-                </div>
-            </div>
+        <div *ngIf="notasCotizacion.length === 0" class="notas-empty">
+          <span class="notas-empty-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <path d="M14 2v6h6"></path>
+              <path d="M16 13H8"></path>
+              <path d="M16 17H8"></path>
+              <path d="M10 9H8"></path>
+            </svg>
+          </span>
+          <p class="notas-empty-title">Sin notas todavía</p>
+          <p class="notas-empty-sub">
+            Documenta el seguimiento de esta cotización agregando la primera nota.
+          </p>
         </div>
-
-        <div class="notas-editor">
-            <label class="notas-editor-label" for="nota-cotizacion-textarea">{{ notaEditando ? 'Editar nota' : 'Nueva nota' }}</label>
-            <textarea id="nota-cotizacion-textarea" class="nota-textarea" rows="3" [(ngModel)]="notaText"
-                placeholder="Escribe una nota para esta cotización..."></textarea>
-            <div class="notas-editor-actions">
-                <button type="button" class="notas-btn-ghost" (click)="notaEditando = null; notaText = ''">
-                    Cancelar
-                </button>
-                <button type="button" class="notas-btn-primary" (click)="guardarNotaQuote()"
-                    [disabled]="!notaText.trim() || notaLoading">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
-                    {{ notaEditando ? 'Actualizar' : 'Agregar nota' }}
-                </button>
-            </div>
-        </div>
-
-        <div class="notas-footer">
-            <span class="notas-count">
-                <span class="notas-count-badge">{{ notasCotizacion.length }}</span>
-                {{ notasCotizacion.length === 1 ? 'nota registrada' : 'notas registradas' }}
-            </span>
-            <button type="button" class="notas-btn-ghost" (click)="cerrarNotasQuote()">Cerrar</button>
-        </div>
+      </div>
     </div>
+
+    <div class="notas-editor">
+      <label class="notas-editor-label" for="nota-cotizacion-textarea">{{
+        notaEditando ? 'Editar nota' : 'Nueva nota'
+      }}</label>
+      <textarea
+        id="nota-cotizacion-textarea"
+        class="nota-textarea"
+        rows="3"
+        [(ngModel)]="notaText"
+        placeholder="Escribe una nota para esta cotización..."
+      ></textarea>
+      <div class="notas-editor-actions">
+        <button type="button" class="notas-btn-ghost" (click)="notaEditando = null; notaText = ''">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="notas-btn-primary"
+          (click)="guardarNotaQuote()"
+          [disabled]="!notaText.trim() || notaLoading"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
+          {{ notaEditando ? 'Actualizar' : 'Agregar nota' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="notas-footer">
+      <span class="notas-count">
+        <span class="notas-count-badge">{{ notasCotizacion.length }}</span>
+        {{ notasCotizacion.length === 1 ? 'nota registrada' : 'notas registradas' }}
+      </span>
+      <button type="button" class="notas-btn-ghost" (click)="cerrarNotasQuote()">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL DE CONFIRMACIÓN (ELIMINAR NOTA) -->
 <div class="modal-overlay" *ngIf="showNotaConfirmModal" (click)="cancelarEliminarNota()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-heading modal-heading-warning">
-            <span class="modal-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
-            </span>
-            <div><span class="modal-eyebrow">Confirmación</span><h3>Eliminar nota</h3></div>
-        </div>
-        <p>
-            ¿Estás seguro de que deseas eliminar esta nota?
-            <br>
-            <span class="warning-copy">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
-                Esta operación no se puede deshacer.
-            </span>
-        </p>
-        <div class="modal-actions">
-            <button class="btn-cancel" (click)="cancelarEliminarNota()">Cancelar</button>
-            <button class="btn-confirm" (click)="confirmarEliminarNota()" [disabled]="notaLoading">
-                {{ notaLoading ? 'Eliminando…' : 'Eliminar' }}
-            </button>
-        </div>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-heading modal-heading-warning">
+      <span class="modal-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+          ></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
+      </span>
+      <div>
+        <span class="modal-eyebrow">Confirmación</span>
+        <h3>Eliminar nota</h3>
+      </div>
     </div>
+    <p>
+      ¿Estás seguro de que deseas eliminar esta nota?
+      <br />
+      <span class="warning-copy">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+          ></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
+        Esta operación no se puede deshacer.
+      </span>
+    </p>
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="cancelarEliminarNota()">Cancelar</button>
+      <button class="btn-confirm" (click)="confirmarEliminarNota()" [disabled]="notaLoading">
+        {{ notaLoading ? 'Eliminando…' : 'Eliminar' }}
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL DE CONFIRMACIÓN (ELIMINAR COTIZACIÓN, punto 6) -->
 <div class="modal-overlay" *ngIf="showDeleteModal" (click)="cancelarEliminar()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-heading modal-heading-warning">
-            <span class="modal-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
-            </span>
-            <div><span class="modal-eyebrow">Confirmación</span><h3>Eliminar cotización</h3></div>
-        </div>
-        <p>
-            ¿Eliminar definitivamente la cotización de <strong>{{ deleteTarget()?.clientName }}</strong>
-            ({{ deleteTarget()?.activo }})?
-            <br>
-            <span class="warning-copy">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
-                Se borran la cotización, su seguimiento y sus notas. No se puede deshacer.
-            </span>
-        </p>
-        <div class="modal-actions">
-            <button class="btn-cancel" (click)="cancelarEliminar()">Cancelar</button>
-            <button class="btn-confirm" (click)="confirmarEliminar()" [disabled]="deleteLoading">
-                {{ deleteLoading ? 'Eliminando…' : 'Eliminar' }}
-            </button>
-        </div>
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-heading modal-heading-warning">
+      <span class="modal-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+          ></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
+      </span>
+      <div>
+        <span class="modal-eyebrow">Confirmación</span>
+        <h3>Eliminar cotización</h3>
+      </div>
     </div>
+    <p>
+      ¿Eliminar definitivamente la cotización de
+      <strong>{{ deleteTarget()?.clientName }}</strong> ({{ deleteTarget()?.activo }})?
+      <br />
+      <span class="warning-copy">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+          ></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
+        Se borran la cotización, su seguimiento y sus notas. No se puede deshacer.
+      </span>
+    </p>
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="cancelarEliminar()">Cancelar</button>
+      <button class="btn-confirm" (click)="confirmarEliminar()" [disabled]="deleteLoading">
+        {{ deleteLoading ? 'Eliminando…' : 'Eliminar' }}
+      </button>
+    </div>
+  </div>
 </div>

@@ -64,7 +64,7 @@ cotizador/
 │   │   │   ├── auth.service.ts         # Auth, perfiles, roles, saneado de datos
 │   │   │   ├── financial-calculator.service.ts  # Motor de cálculo (PMT 3 opciones)
 │   │   │   ├── quotes.service.ts       # CRUD de cotizaciones
-│   │   │   ├── seguimiento.service.ts  # Proceso de cierre (etapas, aging, upsert de seguimiento)
+│   │   │   ├── seguimiento.service.ts  # Proceso de cierre (etapas y upsert de seguimiento)
 │   │   │   ├── catalog.service.ts      # Catálogo de placas + config del cotizador
 │   │   │   ├── admin.service.ts        # RPCs de dashboard + fallbacks
 │   │   │   ├── pdf-export.service.ts   # Exportación a PDF (lazy load html2canvas/jspdf)
@@ -76,7 +76,9 @@ cotizador/
 │   │   │   ├── admin-guard.ts          # Requiere super_admin | socio activo
 │   │   │   └── super-admin-guard.ts    # Requiere super_admin
 │   │   ├── utils/
-│   │   │   └── quote-validity.ts       # Lógica de vigencia (7 días, "Por vencer")
+│   │   │   ├── quote-activity.ts       # Última actividad, semáforo y color de cotización
+│   │   │   ├── quote-retention.ts      # Retención/purga basada en la última actividad
+│   │   │   └── quote-validity.ts       # Vigencia heredada de cotización (7 días)
 │   │   ├── components/
 │   │   │   ├── auth/                  # Login (por celular), Registro, Recuperar/Reset
 │   │   │   ├── cotizador/             # Pantalla principal del cotizador (form + options + breakdown)
@@ -85,16 +87,15 @@ cotizador/
 │   │   │   ├── quote-breakdown/       # Desglose detallado + PDF (NO MODIFICAR)
 │   │   │   ├── vendedor/
 │   │   │   │   └── mis-cotizaciones/  # Lista de cotizaciones del vendedor
-│   │   │   ├── admin/                 # Panel de administración:
-│   │   │   │   ├── admin-dashboard/   # Layout con sidebar + navegación
-│   │   │   │   ├── admin-stats/       # Métricas del dashboard
-│   │   │   │   ├── admin-sellers/     # CRUD de vendedores
-│   │   │   │   ├── admin-admins/      # CRUD de socios (super-admin only)
-│   │   │   │   ├── admin-quotes/      # Lista y gestión de todas las cotizaciones
-│   │   │   │   ├── admin-seguimiento/  # Proceso de cierre: Kanban + lista de seguimiento
-│   │   │   │   ├── admin-plates/      # CRUD de placas por estado
-│   │   │   │   └── admin-parameters/  # Configuración del cotizador (porcentajes, etc.)
-97 | │   │   │   │   ├── admin-seller-performance/  # Rendimiento por vendedor (panel principal del socio/super admin; inherentes al rol)
+│   │   │   ├── admin/                       # Panel de administración:
+│   │   │   │   ├── admin-dashboard/          # Layout con sidebar + navegación
+│   │   │   │   ├── admin-stats/              # Métricas del dashboard
+│   │   │   │   ├── admin-seller-performance/  # Rendimiento por vendedor
+│   │   │   │   ├── admin-sellers/            # CRUD de vendedores
+│   │   │   │   ├── admin-admins/             # CRUD de socios (super-admin only)
+│   │   │   │   ├── admin-seguimiento/        # Lista operativa del proceso de cierre
+│   │   │   │   ├── admin-plates/             # CRUD de placas por estado
+│   │   │   │   └── admin-parameters/         # Configuración del cotizador
 │   │   │   ├── perfil/                # Perfil de usuario
 │   │   │   └── header/                # Header + navegación móvil
 │   │   └── environments/
@@ -131,7 +132,7 @@ cotizador/
 | Dashboard                             | `components/admin/admin-stats/`, `admin-dashboard/`                             |
 | Registro de vendedor                  | `components/auth/register/register.ts`                                          |
 | Catálogo de placas / config cotizador | `catalog.service.ts`, `admin-plates/`, `admin-parameters/`                      |
-| Estado de cotizaciones                | `utils/quote-validity.ts`                                                       |
+| Estado/actividad de cotizaciones       | `utils/quote-activity.ts`, `quote-validity.ts`, `quote-retention.ts`                      |
 | Seguimiento (proceso de cierre)       | `seguimiento.service.ts`, `admin-seguimiento/`                                  |
 
 ## 3. Roles y permisos
@@ -207,7 +208,7 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
 ### Pendientes de permisos
 
 - **Asignar/cambiar socio de un vendedor (super-admin):** implementado en `admin-sellers` (selector de socio en edición) y en `admin-admins` (drawer de detalle con botón "Reasignar"). El trigger `secure_profiles_row` impide que no-socios cambien `socio_id`.
-- **Permisos granulares en rutas admin:** implementado vía `adminHomeGuard` (panel principal), `moduleGuard` (permisos JSONB en rutas hijas) y `canAccessModule()` actualizado. `Dashboard` y `Rendimiento` son inherentes al socio; `dashboard`/`stats` son claves que no se usan como permisos JSONB. **Verificado:** socio entra y aterriza en Dashboard y, además, el super admin dispone de un toggle global "Todos / Solo mi red" que filtra su alcance a sus vendedores asociados (`socio_id = su id`).
+- **Permisos granulares en rutas admin:** implementado vía `adminHomeGuard` (panel principal), `moduleGuard` (permisos JSONB en rutas hijas) y `canAccessModule()` actualizado. `Dashboard` y `Rendimiento` son inherentes al socio; `dashboard`/`stats` son claves que no se usan como permisos JSONB. El toggle global "Todos / Solo mi red" fue eliminado en el Ajuste 11: el alcance se aplica por rol mediante RLS y las RPCs.
 
 ## 4. Reglas de negocio del cotizador
 
@@ -237,8 +238,9 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
 6. **Híbrido** — toggle Sí/No (implementado en `quote-form.component.html`). La renta básica cambia de $6,000 a $8,550.
 7. **Seguro** — menú desplegable `<select>` en `quote-form.html` con opciones `Pendiente ($0)` / `Estimado (3.5%)`. **Implementado**.
 8. **Porcentajes 10% y 2%** — alineados a la derecha en el PDF vía `.col-pct` (`quote-breakdown.css`: `text-align: right` + `padding-right: 0.4rem`, alineado a `.col-pct-vr`). **Implementado**.
-9. **Nomenclatura del dashboard** — usar **"Por caducar"** en lugar de "Urgentes". **Implementado** en UI (`admin-stats`, `admin-quotes`, `admin-seller-performance`). Las variables internas y campos RPC siguen usando `totalUrgentes`/`urgentes` como nombre técnico.
-10. **PDF** — el PDF (componente `quote-breakdown`) **no se toca** salvo indicación explícita. Los cambios de "opciones de arrendamiento" son solo en la interfaz del cotizador.
+9. **Nomenclatura del dashboard** — usar **"Por caducar"** en lugar de "Urgentes". **Implementado** en la UI de `admin-stats` y `admin-seller-performance`; el módulo `admin-quotes` ya no existe desde el Ajuste 11. Las variables internas y campos RPC conservan `totalUrgentes`/`urgentes` como nombres técnicos.
+10. **Estado por última actividad** — el semáforo se calcula desde la actividad más reciente, no solo desde la creación: revisión, cambio de etapa, entrega o nota. Umbrales: **verde/reciente < 8 días**, **amarillo/por caducar 8–15 días**, **rojo/caducada ≥ 16 días**. Una revisión sella `last_reviewed_at` y reinicia el contador; una cotización entregada permanece verde. La fuente canónica es `src/app/utils/quote-activity.ts`.
+11. **PDF** — el PDF (componente `quote-breakdown`) **no se toca** salvo indicación explícita. Los cambios de "opciones de arrendamiento" son solo en la interfaz del cotizador.
 
 ### Motor de cálculo
 
@@ -257,13 +259,14 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
 ### Módulo de Seguimiento (proceso de cierre)
 
 - **Ruta:** `/admin/seguimiento` (permiso granular `seguimiento`; solo super_admin y socios — los vendedores no acceden).
-- **Archivos:** `services/seguimiento.service.ts` (lógica pura + Supabase) y `components/admin/admin-seguimiento/` (Kanban + lista).
+- **Archivos:** `services/seguimiento.service.ts` (lógica pura + Supabase), `utils/quote-activity.ts` (regla global 8/16 del Dashboard) y `components/admin/admin-seguimiento/` (lista operativa + barra local).
 - **Tabla:** `public.quote_seguimiento` (1:1 con `quotes`, PK `quote_id`). Guarda `referenciado`, `financiera` (default `SIMPLE LEASE`), `activo_texto` (editable; por defecto "Marca Modelo Año"), `etapas` (JSONB) y `fecha_cierre`.
-- **Etapas (JSONB `etapas`):** `exp`, `analisis`, `pago_ini`, `oc`, `factura`, `contrato`, `gps`, `placas`. El valor es el ISO timestamp en que se completó; ausente = pendiente. La etapa **COT** es implícita: toda cotización entra al tablero (columna "Cotizada").
-- **Semántica de columnas del Kanban:** la columna equivale al **número de etapas completadas** (0 = Cotizada … 8 = Placas). `aplicarColumna(etapas, N)` marca las primeras N etapas y limpia las posteriores, por lo que el drag & drop es invertible; la columna `Cerrado` (9) completa las 8 etapas y fija `fecha_cierre`. Las inversas están en el mismo archivo: `computeColumnaActual`, `computeFechaEntradaEtapa`, `toggleEtapa`, `nivelAging`.
-- **Semáforo de antigüedad:** días desde la etapa completada más reciente (o desde `created_at` si no hay ninguna) → verde <8 días, amarillo 8–15, rojo ≥16.
-- **Fila perezosa:** no se crea registro hasta el primer cambio; el tablero se arma cruzando `quotes` (con `seller_name`) y `quote_seguimiento`. Si la tabla no existe, el servicio degrada a modo lectura (`tablaDisponible()` = false) y la vista muestra un aviso.
-- **UI:** vista **Kanban** (drag & drop HTML5 nativo, sin librerías nuevas, + selector "Mover a…" para móvil) y vista **Lista** estilo Excel (chips de etapas clicables, F. Inicio/Asesor/Referenciado/Cliente/Activo/Financiera/F. Cierre). La preferencia de vista se guarda en `localStorage`.
+- **Etapas (JSONB `etapas`):** `exp`, `analisis`, `pago_ini`, `oc`, `factura`, `contrato`, `gps`, `placas`. El valor es el ISO timestamp en que se completó; ausente = pendiente. La etapa **COT** es implícita: toda cotización entra al tablero.
+- **Barra local:** la barra lateral usa `quotes.created_at` mientras no exista actividad: **0–3 días azul, 4–5 amarillo, 6+ rojo**. Abrir o modificar desde Seguimiento sella `last_interacted_at` mediante `mark_quote_interaction()` y reinicia el ciclo: **verde durante las primeras 24 horas**, luego azul/amarillo/rojo. `fecha_cierre` permanece verde. Esta escala es exclusiva de `/admin/seguimiento` y no cambia Dashboard/Rendimiento.
+- **Interacciones:** cuentan abrir la fila/visor/notas, guardar o cambiar etapas, editar/eliminar notas, guardar datos y entregar/reabrir. Búsqueda, filtros y hover no cuentan. Cada interacción renueva la ventana de purga de 15 días.
+- **Protección permanente:** únicamente `etapas.exp` (**EXPEDIENTE**) protege de forma permanente contra la purga automática mientras esté marcado. Otras etapas y `fecha_cierre` solo renuevan la actividad; `fijada=true` conserva su protección manual preexistente. Desmarcar Expediente restablece el conteo normal de 15 días. **ELIMINAR** es manual y nunca se bloquea.
+- **Fila perezosa:** no se crea `quote_seguimiento` hasta el primer cambio operativo; abrir una fila solo actualiza `quotes.last_interacted_at`. El tablero se arma cruzando `quotes` y `quote_seguimiento`. Si la tabla no existe, degrada a modo lectura.
+- **UI:** lista operativa estilo Excel con **F. INICIO + NOTAS/VISUALIZAR, ASESOR, VENDEDOR, CLIENTE, ACTIVO, PLAZO, FIN, etapas, ENTREGA** y acciones. No hay columna DÍAS ni botón Marcar revisada. Un vendedor sin socio muestra **Sin asesor**; una cotización creada por socio/superadmin muestra al autor como asesor y **Directa** en vendedor.
 
 ## 5. Convenciones de código
 
@@ -306,6 +309,14 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
   12. `20260911000000_seller_performance_rpcs.sql` — RPCs de rendimiento por vendedor
   13. `20260911000100_cleanup_permisos_obsoletos.sql` — limpieza idempotente de claves `dashboard`/`stats`/`rendimiento` del JSONB `permisos` de socios (Rendimiento pasa a ser inherente al rol)
   14. `20260917000000_quote_seguimiento.sql` — tabla `quote_seguimiento` (1:1 con `quotes`) + helpers `is_seguimiento_admin()` / `can_access_seguimiento()` + políticas RLS del módulo Seguimiento
+  15. `20260923010000_seguimiento_consolidacion.sql` — consolida el módulo y alinea permisos/índices
+  16. `20260924000000_quotes_delete_scope.sql` — DELETE de `quotes`/`notas` para super_admin y socio dueño
+  17. `20260924010000_quote_activity.sql` — actividad global 8/16 + RPC para Dashboard/Rendimiento
+  18. `20260924020000_quote_interaction_tracking.sql` — `last_interacted_at`, RPC de interacción y purga con protección exclusiva de Expediente
+  19. `20260924030000_direct_advisor_quote_scope.sql` — clasifica cotizaciones directas de socios/superadmins y amplía scopes RLS
+  20. `20260924040000_fix_false_review_timestamp.sql` — elimina el default inválido de `last_reviewed_at` y limpia falsos timestamps de revisión
+  21. `20260924050000_followup_granular_permissions.sql` — exige permisos JSONB de Seguimiento/Notas en helpers y policies RLS
+  22. `20260924060000_seller_followup_readonly.sql` — RPC de solo lectura para que Mis Cotizaciones muestre las etapas propias sin abrir permisos del panel
 - **⚠️ Estado real de `supabase/migrations/`:** el commit `e632a0f` ("Corecciones") **eliminó del repositorio** los archivos de migración 1–13: en disco sólo existen las migraciones añadidas después (a partir de la 14). El historial de las anteriores vive en `supabase_migrations.schema_migrations` de la BD remota. Por eso **toda migración nueva debe ser autocontenida** (no asumir que las anteriores están en disco) y aplicar con `npx supabase db push` (pide el password de la BD) o pegándola en el SQL Editor.
 - **Aplicar cambios:** `npx supabase db push` (o `supabase db reset` para desarrollo)
 - **No hay seeders tradicionales** — los catálogos base se insertan en `000001_bootstrap_super_admin.sql` (placas). El catálogo de **vehículos** (`vehicles`) fue **eliminado** en `20260910000009_drop_vehicles_table.sql`.
@@ -321,7 +332,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 - **Framework:** Vitest globals (`describe`, `it`, `expect`, `vi`)
 - **Setup:** Angular `TestBed` con componentes standalone
 - **Archivos de test:** `*.spec.ts` al lado del código que testean
-- **Test actuales:** `financial-calculator.service.spec.ts`, `quote-validity.spec.ts`, `seguimiento.service.spec.ts`, `login.spec.ts`, `admin-guard.spec.ts`, `admin-seller-performance.spec.ts`, `app.spec.ts`
+- **Test actuales:** `financial-calculator.service.spec.ts`, `quote-validity.spec.ts`, `quote-activity.spec.ts`, `quote-retention.spec.ts`, `seguimiento.service.spec.ts`, `admin-seguimiento.spec.ts`, `admin.service.spec.ts`, `admin-seller-performance.spec.ts`, `login.spec.ts`, `admin-guard.spec.ts` y `app.spec.ts` (entre otros).
 
 ### Commits
 
@@ -362,7 +373,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 | Requerimiento                                                 | Estado           | Archivo(s)                                                                                |
 | ------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
-| Renombrar "Urgentes" → "Por caducar" en el dashboard          | **Implementado** | `admin-stats.ts`, `admin-stats.html`, `admin-quotes.ts`, `admin-quotes.html`              |
+| Renombrar "Urgentes" → "Por caducar" en el dashboard          | **Implementado** | `admin-stats.ts/.html`, `admin-seller-performance.ts/.html`, `admin.service.ts`        |
 | Aplicar permisos granulares (`permisos` JSONB) en rutas admin | **Implementado** | `admin-guard.ts` (`adminHomeGuard`, `moduleGuard`), `auth.service.ts` (`canAccessModule`) |
 
 ### Registro
@@ -378,7 +389,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 | Requerimiento                                      | Estado       | Archivo(s)                                            |
 | -------------------------------------------------- | ------------ | ----------------------------------------------------- |
 | Asignar/cambiar socio de un vendedor (super-admin) | Implementado | `admin-sellers.ts/.html`, `admin-admins.ts/.html`     |
-| CRUD de notas de seguimiento                       | Implementado | `admin-sellers.ts`, `admin-quotes.ts` (tabla `notas`) |
+| CRUD de notas de seguimiento                       | Implementado | `admin-sellers.ts` (vendedor), `admin-seguimiento.ts` (cotización; tabla `notas`) |
 
 ### Despliegue móvil
 
@@ -395,7 +406,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 3. **Fallbacks en `admin.service.ts`:** Las RPCs `get_admin_stats()` y `get_sellers_with_quote_counts()` pueden no existir en la BD si las migraciones no se aplicaron. El servicio tiene fallbacks con consultas REST + agregaciones locales (`computeQuoteColor`). Si la RPC falla con `PGRST202` o "could not find the function", usa el fallback.
 
-4. **Color de cotización recalculado:** El color (`rojo`/`amarillo`/`reciente`/`verde`) se recalcula en cliente (`admin.service.ts` `computeQuoteColor`) y en RPC (`supabase/migrations/20260910000005_socio_scope_rpcs.sql` → `get_admin_stats`). Regla: revisada=verde, >7 días=rojo, >2 días=amarillo, resto=reciente.
+4. **Color de cotización basado en actividad:** la fuente canónica es `src/app/utils/quote-activity.ts` y su espejo SQL `20260924010000_quote_activity.sql`. `admin.service.ts` aplica `aplicarActividadStats()` / `aplicarActividadPerformance()` sobre los resultados de las RPCs: <8 días `reciente/verde`, 8–15 `amarillo`, ≥16 `rojo`; revisar reinicia el contador y una cotización entregada siempre queda verde. Las RPCs históricas que aún colorean por `created_at` son sobrescritas en cliente cuando la RPC de actividad está disponible.
 
 5. **Snapshot vs recálculo:** Cuando se abre el detalle de una cotización, se prefiere el **snapshot guardado en JSONB** (`calculation` column) sobre recalcular. Si no existe, se recalcular con los datos de la fila (`buildInputFromRow`).
 
@@ -409,34 +420,51 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 10. **Commit `d63ddf0` — "Remove build/test/audit logs and update gitignore":** La limpieza de los archivos de diagnóstico de la raíz y de los directorios `dist-check/`/`.kilo/` **se ha completado**: `a*` se borraron físicamente, `dist-check/` y `.kilo/` se remitieron del índice con `git rm --cached`, y se añadió `/dist-check` al `.gitignore`. En una limpieza posterior (Paso 4), el directorio `dist-check/` fue además **eliminado físicamente del disco** (ya no existe en el working tree).
 
-11. **Catálogo de vehículos eliminado (`vehicles`):** El CRUD `admin-vehicles/` (componente TS/HTML/CSS), su ruta, su enlace en el sidebar (`admin-dashboard.html`) y sus métodos en `catalog.service.ts` fueron **eliminados** (commit `dc8944f`); la tabla `public.vehicles` se elimina en la migración `20260910000009_drop_vehicles_table.sql`. El ranking `topVehicles` del dashboard **no** depende de la tabla: se calcula sobre `public.quotes` (RPC `get_admin_stats` + fallback local en `admin.service.ts`). Limpieza **completa** de residuos: sin ruta `/admin/vehicles` (se quitó el stub de redirect), sin reglas CSS `.vehicles-container`/`.vehicle-card` en `styles.css`, sin `INSERT INTO public.vehicles` en la migración `000001` (además se consolidaron los 3 bloques duplicados de catálogos en uno) y sin filas de `vehicles` en `supabase/RLS_POLICY_MATRIX.md`. **Se conserva** `html[data-theme='dark'] .vehicle-name` en CSS porque lo usan `mis-cotizaciones` y `admin-quotes`, y el tipo `VehicleQuoteInput` de `leasing.model.ts` (es el input del cotizador, no el CRUD).
+11. **Catálogo de vehículos eliminado (`vehicles`):** El CRUD `admin-vehicles/` (componente TS/HTML/CSS), su ruta, su enlace en el sidebar (`admin-dashboard.html`) y sus métodos en `catalog.service.ts` fueron **eliminados** (commit `dc8944f`); la tabla `public.vehicles` se elimina en la migración `20260910000009_drop_vehicles_table.sql`. El ranking `topVehicles` del dashboard **no** depende de la tabla: se calcula sobre `public.quotes` (RPC `get_admin_stats` + fallback local en `admin.service.ts`). Limpieza **completa** de residuos: sin ruta `/admin/vehicles` (se quitó el stub de redirect), sin reglas CSS `.vehicles-container`/`.vehicle-card` en `styles.css`, sin `INSERT INTO public.vehicles` en la migración `000001` (además se consolidaron los 3 bloques duplicados de catálogos en uno) y sin filas de `vehicles` en `supabase/RLS_POLICY_MATRIX.md`. **Se conserva** `html[data-theme='dark'] .vehicle-name` en CSS porque lo usan `mis-cotizaciones`, `admin-stats` y `admin-seller-performance`, y el tipo `VehicleQuoteInput` de `leasing.model.ts` (es el input del cotizador, no el CRUD).
 
-12. **Limpieza de artefactos generados (22/09/2026):** Se eliminaron del disco únicamente elementos **generados o residuales**, ninguno versionado: (a) **`.angular/cache/`** — caché de build/tests de Angular (incluye el `.tsbuildinfo` y el `results.json` de Vitest); (b) **`dist/`** — salida de `npm run build`; (c) **`.kilo/`** — worktrees residuales de Kilo Code (ver nota 9). Los puntos (a) y (b) **se regeneran solos** en el siguiente `ng serve`/`ng test` y `npm run build`, así que es normal que vuelvan a aparecer: para verlos ausentes, borrar el caché **después** de correr los tests. Se **conservó** `supabase/.temp/` porque guarda el *link* del proyecto (`linked-project.json`, `project-ref`, `pooler-url`) que necesita `npx supabase db push`; borrarla obliga a re-vincular con `supabase link`. También se conservó el `git worktree` principal y, sobre todo, los archivos **sin seguimiento** que son **trabajo en progreso y no basura**: `src/app/utils/quote-retention.ts` (+ `quote-retention.spec.ts`, importado por `admin-quotes.ts` y `mis-cotizaciones.ts`), los specs nuevos (`admin-sellers-delete.spec.ts`, `admin-admins-delete.spec.ts`, `register.spec.ts`) y las migraciones `20260922010000_delete_user_cascades.sql`, `20260922020000_quotes_auto_cleanup.sql` y `20260922030000_profiles_socio_reassign_on_delete.sql`. Tras la limpieza se validó con `npm test -- --watch=false`: **20 archivos de test, 168 tests en verde**.
+12. **Limpieza de artefactos generados (22/09/2026):** Se eliminaron del disco únicamente elementos **generados o residuales**, ninguno versionado: (a) **`.angular/cache/`** — caché de build/tests de Angular (incluye el `.tsbuildinfo` y el `results.json` de Vitest); (b) **`dist/`** — salida de `npm run build`; (c) **`.kilo/`** — worktrees residuales de Kilo Code (ver nota 9). Los puntos (a) y (b) **se regeneran solos** en el siguiente `ng serve`/`ng test` y `npm run build`, así que es normal que vuelvan a aparecer: para verlos ausentes, borrar el caché **después** de correr los tests. Se **conservó** `supabase/.temp/` porque guarda el *link* del proyecto (`linked-project.json`, `project-ref`, `pooler-url`) que necesita `npx supabase db push`; borrarla obliga a re-vincular con `supabase link`. También se conservó el `git worktree` principal y, sobre todo, los archivos **sin seguimiento** que son **trabajo en progreso y no basura**: `src/app/utils/quote-retention.ts` (+ `quote-retention.spec.ts`, importado actualmente por `mis-cotizaciones.ts`), los specs nuevos (`admin-sellers-delete.spec.ts`, `admin-admins-delete.spec.ts`, `register.spec.ts`) y las migraciones `20260922010000_delete_user_cascades.sql`, `20260922020000_quotes_auto_cleanup.sql` y `20260922030000_profiles_socio_reassign_on_delete.sql`. Tras la limpieza se validó con `npm test -- --watch=false`: **20 archivos de test, 168 tests en verde**.
 
 13. **Ajuste 11 (23/09/2026) y AJUSTES 12 (24/09/2026) — módulo Seguimiento:**
     - **Ajuste 11 (HEAD `1718d57`)** eliminó el módulo **`admin-quotes/`** completo (componente, ruta `/admin/quotes`, spec) y el toggle **"Todos / Solo mi red"**: `AdminScopeService` quedó como **no-op** (`scope` fijo en `'todos'`, `sellerIds()` → `undefined`, `isRedMode()`/`isScopeVisible()` → `false`). El drawer de `admin-sellers` ahora enlaza a **`/admin/seguimiento?seller=<id>`**. Consecuencia: **`quotes.service.updateQuoteStatus()` (escribe `status_color` y `last_reviewed_at`) quedó sin llamadas** y el listado de cotizaciones del admin ya no existe como pantalla propia.
-    - **AJUSTES 12 (Seguimiento, `/admin/seguimiento`)** — columnas reordenadas/renombradas: **ASESOR** (socio del vendedor), **VENDEDOR** (antes "Referenciado"), **PLAZO** (`termmonths`), **FIN**, **ENTREGA** (checkbox que cierra/reabre el negocio) y **F. INICIO**; se retiró el **pill de días/aging** de la tabla (el semáforo de actividad vuelve a la tabla como columna **DÍAS** en la nota 14). Se agregó el **contador de NOTAS** + botón **ojo verde** (`visualizarCotizacion()`) que abre la hoja oficial en modal reutilizando `QuoteBreakdownComponent` (usa el snapshot `calculation` y, si no existe, recalcula con `buildInputFromRow()`), y el botón **ELIMINAR** con modal de confirmación.
-    - `SeguimientoItem` gana `asesorId`, `asesorName` y `termMonths`. `buildItem()` resuelve el nombre del asesor por `profiles.socio_id` (RLS: si el perfil está oculto, cae al usuario en sesión) y `buildTestItems()` expone esa lógica para tests.
+    - **AJUSTES 12 (Seguimiento, `/admin/seguimiento`)** — columnas reordenadas/renombradas: **ASESOR** (socio del vendedor), **VENDEDOR** (antes "Referenciado"), **PLAZO** (`termmonths`), **FIN**, **ENTREGA** (checkbox que cierra/reabre el negocio) y **F. INICIO**; el día transcurrido queda representado únicamente por la barra lateral local descrita en la nota 15. Se agregó el **contador de NOTAS** + botón **ojo verde** (`visualizarCotizacion()`) que abre la hoja oficial en modal reutilizando `QuoteBreakdownComponent` (usa el snapshot `calculation` y, si no existe, recalcula con `buildInputFromRow()`), y el botón **ELIMINAR** con modal de confirmación.
+    - `SeguimientoItem` gana `asesorId`, `asesorName` y `termMonths`. `buildItem()` resuelve el nombre del asesor por `profiles.socio_id` (RLS: si el perfil está oculto, cae al usuario en sesión); un vendedor sin `socio_id` muestra **Sin asesor** y no se agrupa bajo el usuario actual.
     - `quotes.service.ts`: `getAllQuotesWithSeller()` trae `profiles.socio_id` → `seller_socio_id`; nuevo `deleteQuote()` que borra primero las `notas` (`entidad_tipo='quote'`, sin FK) y luego la cotización.
     - **Migración nueva `20260924000000_quotes_delete_scope.sql`** (autocontenida e idempotente): helpers `seg_quote_owner()` / `seg_note_owner()` (`SECURITY DEFINER`) y políticas **DELETE** para `quotes` y `notas` con alcance `super_admin` + socio dueño de la red (`vendedor.socio_id = auth.uid()`). **Pendiente de aplicar en la BD** (`npx supabase db push`); sin ella el botón ELIMINAR falla por RLS. `quote_seguimiento` cae por `ON DELETE CASCADE`.
     - **Fix de rendimiento/UX:** `ngOnInit` del tablero ahora pinta el listado (`applyFilters()`) **antes** del conteo de notas; antes la tabla quedaba vacía hasta que respondía la consulta de `notas`.
     - **Specs:** se retiraron los tests del toggle "Solo mi red" (feature eliminada) y se corrigieron **7 errores TS preexistentes en HEAD** (`admin-sellers.spec.ts`, `admin-stats.spec.ts`, `admin-scope.service.spec.ts`) que impedían compilar el suite completo. Verificado: `npm test -- --watch=false` → **21 archivos / 171 tests en verde**; `npm run build` → OK (solo warnings CommonJS de `canvg`/`html2canvas`).
 
-14. **Días sin actividad (23/09/2026) — revisar ya reinicia el contador:**
-    - **Problema:** la antigüedad se medía siempre desde `quotes.created_at`, así que revisar una cotización, moverla de etapa, entregarla o escribirle una nota **no** reiniciaba el contador y terminaba marcada como "por caducar" aunque estuviera atendida. Además convivían dos escalas: **8/16** (aging del Seguimiento) y **2/7** (colores del dashboard).
-    - **Regla única** (`src/app/utils/quote-activity.ts`, espejo de `20260924010000_quote_activity.sql`): `ultimaActividad = max(created_at, last_reviewed_at, quote_seguimiento.updated_at, etapas completadas, fecha_cierre, última nota)`; umbrales **8/16** (< 8 días verde/reciente, 8–15 amarillo, ≥ 16 rojo); `revisada` da verde mientras no pasen 16 días sin actividad (si se abandona, vuelve a rojo); entregado (`fecha_cierre`) siempre verde.
-    - **Seguimiento:** columna **DÍAS** con badge de semáforo (clic = marcar/desmarcar revisada). El drawer muestra "Última actividad: dd/mm/aaaa — Hace N días" y el aging de etapa queda como línea secundaria con punto (`diasEnEtapa()`/`nivelItem()` se conservan).
-    - **Acción de revisión:** `SeguimientoService.marcarRevisada()` → `QuotesService.setQuoteReviewed()`, que **reemplaza al huérfano `updateQuoteStatus()`** (sin llamadas desde Ajuste 11) y sella `revisada` + `last_reviewed_at` + `color`/`status_color`. Permitido a super_admin y socio dueño por el trigger `secure_quotes_row`.
-    - `SeguimientoItem` gana `revisada` y `lastReviewedAt`; `getAllQuotesWithSeller()` selecciona `last_reviewed_at`; el conteo de notas también captura `created_at` (señal `notasUltima`) porque una nota cuenta como actividad.
-    - **Dashboard y Rendimiento:** `admin.service.ts` recolorea con la actividad (`aplicarActividadStats()` / `aplicarActividadPerformance()`) sobre las RPCs `get_admin_stats` / `get_seller_performance`, cuyos cuerpos viven en la BD (migraciones 1-13) y siguen coloreando desde `created_at`; si `get_quotes_activity()` no existe, el payload pasa intacto. `computeQuoteColor()` usa la regla única (antes 2/7).
-    - **Migración `20260924010000_quote_activity.sql`** (autocontenida e idempotente, **pendiente de aplicar** con `npx supabase db push`): `public.quote_last_activity(bigint)` (helper, uso interno), `public.get_quotes_activity()` (RPC con scope por `get_seller_scope_ids()`; devuelve `seller_name`, `last_activity` y `fecha_cierre`) y `public.purge_expired_quotes()` ahora cuenta la retención de **15 días desde la última actividad** (siguen protegiendo `fijada` y el seguimiento real). Sin esa migración: el Seguimiento funciona igual (calcula la actividad en el cliente) y el dashboard mantiene sus colores actuales.
-    - **Retención:** `quote-retention.ts` cambia de firma — `computePurgeDate(quote, seguimiento?, dias?)` y `formatPurgeDate(quote, seguimiento?)` reciben la cotización (ya no una fecha suelta); `mis-cotizaciones` sigue mostrando el chip con lo que el vendedor puede ver.
-    - **Tests:** `npm test -- --watch=false` → **23 archivos / 191 tests en verde** (`quote-activity.spec.ts` y `admin.service.spec.ts` nuevos; ampliados `admin-seguimiento.spec.ts` y `quote-retention.spec.ts`); `npm run build` → OK.
-    - **Cómo probarlo:** `npm start` → login `4421220799` / `123456` → `/#/admin/seguimiento`: la columna **DÍAS** muestra los días sin actividad; al hacer clic en el badge (o en "Marcar revisada" del drawer) el contador vuelve a **0** y el color pasa a verde; mover una etapa, entregar el negocio o escribir una nota también reinician el contador. En `/#/admin` los contadores **Recientes / Por caducar / Pendientes / Revisadas** se recalculan con la misma regla (a partir de la migración aplicada).
+14. **Actividad global 8/16 para Dashboard y Rendimiento (24/09/2026):**
+    - `src/app/utils/quote-activity.ts` y `20260924010000_quote_activity.sql` conservan la fuente canónica `ultimaActividad = max(created_at, last_reviewed_at, quote_seguimiento.updated_at, etapas completadas, fecha_cierre, última nota)` y los umbrales **8/16**. Esta regla alimenta Dashboard/Rendimiento; **no** controla la barra local de Seguimiento.
+    - `admin.service.ts` recolorea las RPCs con `aplicarActividadStats()` / `aplicarActividadPerformance()`. Una revisión sella `last_reviewed_at`; una cotización entregada permanece verde.
+    - `SeguimientoService.marcarRevisada()` y `SeguimientoItem.revisada/lastReviewedAt` se conservan para compatibilidad/histórico, pero el drawer ya no ofrece marcar/desmarcar revisada y la tabla no muestra DÍAS.
+    - `quote-retention.ts` recibe la cotización completa y `quote_seguimiento` para los avisos de retención de Mis Cotizaciones. La regla definitiva de purga SQL se actualiza en la nota 15.
 
+15. **Barra de interacción de Seguimiento + Expediente como única protección permanente (24/09/2026):**
+    - `estadoBarraSeguimiento()` en `seguimiento.service.ts` calcula la barra local: sin actividad usa **0–3 azul, 4–5 amarillo, 6+ rojo** desde `quotes.created_at`; con actividad reinicia el ciclo y muestra **verde durante menos de 24 horas**, luego azul/amarillo/rojo. `fecha_cierre` permanece verde. La función es pura y tiene specs de límites exactos.
+    - Abrir la fila, visualizar, abrir/editar/eliminar notas, cambiar etapas, guardar datos o entregar/reabrir llaman `SeguimientoService.registrarInteraccion()` → RPC `mark_quote_interaction(bigint)`. Búsqueda, filtros y hover no cuentan. La marca es compartida y se actualiza con cada interacción.
+    - `SeguimientoItem` gana `lastInteractedAt`; `getAllQuotesWithSeller()` selecciona `last_interacted_at` y, si la migración aún no está aplicada, reintenta sin esa columna para no dejar vacío el tablero.
+    - Los vendedores sin `socio_id` muestran **Sin asesor**. Ya no existe la columna DÍAS, badge de días ni botón Marcar revisada en el drawer; las columnas **FIN/EXPEDIENTE/ENTREGA/ELIMINAR** de AJUSTES 12 permanecen.
+    - **Migración `20260924020000_quote_interaction_tracking.sql`** (autocontenida e idempotente, **pendiente de aplicar** con `npx supabase db push`): agrega `quotes.last_interacted_at`, crea `mark_quote_interaction`, hace backfill de interacciones históricas y define `quote_purge_last_activity()` + `purge_expired_quotes()`. Cada interacción renueva 15 días. `fijada=true` mantiene su protección manual; **solo `etapas.exp` con valor no vacío** protege de forma permanente contra purga automática. Desmarcarlo restablece el conteo; **ELIMINAR** manual nunca se bloquea.
+    - La nueva función de purga no modifica `quote_last_activity()`, por lo que Dashboard/Rendimiento mantienen la regla 8/16.
+    - **Tests/build:** `npm test -- --watch=false` → **24 archivos / 206 tests en verde**; `npm run build` → OK.
+    - **Cómo probarlo:** abrir `/#/admin/seguimiento` y verificar que una cotización sin actividad usa 0–3/4–5/6+ desde su creación; al abrirla o modificarla queda verde durante menos de 24 horas y después vuelve a azul/amarillo/rojo. Los negocios entregados permanecen verdes.
 
+16. **Cotizaciones directas de socios/superadmins (24/09/2026):**
+    - `seller_id` conserva al creador real para ownership/RLS. `getAllQuotesWithSeller()` añade `profiles.role`; `SeguimientoService.buildItem()` clasifica dinámicamente: `socio`/`super_admin` → ASESOR=autor y VENDEDOR=**Directa**; `seller` → usa su `socio_id` actual.
+    - Las cotizaciones existentes se reclasifican al recargar; un cambio de rol o de socio actualiza la clasificación sin backfill. El filtro de asesores incluye al autor directo; el de vendedores excluye `esVentaDirecta`.
+    - **Migración `20260924030000_direct_advisor_quote_scope.sql`** (autocontenida e idempotente, **pendiente de aplicar**): redefine `can_access_seguimiento`, `seg_quote_owner`, `seg_note_owner` y `mark_quote_interaction`; permite al socio leer/editar su quote directa, operar etapas/notas y eliminarla, sin modificar `profiles.socio_id`.
+    - La clasificación es exclusiva de `/admin/seguimiento`; no cambia Dashboard, Rendimiento ni Mis Cotizaciones.
 
+17. **Corrección de revisión por default (24/09/2026):**
+    - `quotes.last_reviewed_at` tenía `DEFAULT now()`, por lo que una cotización nueva nacía con timestamp de revisión aunque `revisada=false`. La migración `20260924040000_fix_false_review_timestamp.sql` elimina ese default, limpia timestamps inválidos y redefine los helpers SQL para ignorar review timestamps cuando `revisada` no es true.
+    - `quote-activity.ts`, `quote-retention.ts` y `estadoBarraSeguimiento()` aplican la misma guarda defensiva. Una cotización nueva sin interacción comienza azul; abrirla/modificarla la hace verde solo durante las primeras 24 horas.
 
+18. **RLS granular de Seguimiento/Notas (24/09/2026):**
+    - `can_access_seguimiento()` y `seg_quote_owner()` exigen `permisos.seguimiento=true`; `seg_note_owner()` exige `permisos.notas=true` para socios. El guard Angular ya aplicaba esta regla, pero ahora también la BD para impedir acceso directo por REST.
+    - `mark_quote_interaction`, etapas, eliminación y notas de cotizaciones directas respetan los mismos permisos. Superadmin conserva bypass total.
 
-********** IGNORAR COMENTARIOS PROPIOS ****************
-como podriamos mejorar la logica de como se muestran las cotizaciones? ya que al revisar una no se actualizan los dias sin actividad, sera correcto agregar uno que sea dias sin actividad
+19. **Mis Cotizaciones como seguimiento de solo lectura (24/09/2026):**
+    - Se eliminaron todos los filtros de la pantalla del vendedor: buscador, últimos 7 días y últimos 30 días.
+    - Las cotizaciones se muestran como tarjetas verticales con fecha, cliente, activo, precio, plazo, estado/progreso y las ocho etapas en modo lectura. La única acción de cada tarjeta es **Ver detalle**; no hay edición, duplicado, cambio de etapa, entrega ni eliminación.
+    - `get_vendedor_seguimiento()` (`20260924060000_seller_followup_readonly.sql`) limita la consulta a `seller_id = auth.uid()` y expone solo el estado mínimo; no expone notas ni habilita mutaciones. El frontend mantiene fallback a `getVendedorQuotes()` si la RPC aún no está disponible.
+    - Los filtros y acciones de Admin → Seguimiento permanecen sin cambios.

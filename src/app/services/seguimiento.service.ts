@@ -15,14 +15,7 @@ import { QuotesService } from './quotes.service';
  */
 
 export type SeguimientoEtapaKey =
-  | 'exp'
-  | 'analisis'
-  | 'pago_ini'
-  | 'oc'
-  | 'factura'
-  | 'contrato'
-  | 'gps'
-  | 'placas';
+  'exp' | 'analisis' | 'pago_ini' | 'oc' | 'factura' | 'contrato' | 'gps' | 'placas';
 
 export interface SeguimientoEtapaDef {
   key: SeguimientoEtapaKey;
@@ -53,6 +46,11 @@ export const SEGUIMIENTO_COLUMNA_CERRADO = SEGUIMIENTO_ETAPAS.length + 1;
 export const SEGUIMIENTO_AGING_AMARILLO_DIAS = 8;
 export const SEGUIMIENTO_AGING_ROJO_DIAS = 16;
 
+/** Colores de la barra lateral de cada cotización en la vista de Seguimiento. */
+export type SeguimientoBarraColor = 'verde' | 'azul' | 'amarillo' | 'rojo';
+export const SEGUIMIENTO_BARRA_AZUL_HASTA_DIAS = 3;
+export const SEGUIMIENTO_BARRA_AMARILLO_HASTA_DIAS = 5;
+
 export type SeguimientoEtapas = Partial<Record<SeguimientoEtapaKey, string>>;
 
 export interface SeguimientoColumnaDef {
@@ -77,12 +75,15 @@ export const SEGUIMIENTO_COLUMNAS: readonly SeguimientoColumnaDef[] = [
 /** Fila del tablero: cotización + datos operativos de seguimiento. */
 export interface SeguimientoItem {
   quoteId: number;
+  /** Id real del creador; se conserva para ownership/RLS aunque la venta sea directa. */
   sellerId: string;
-  /** Vendedor (creador de la cotización). */
+  /** Nombre visible en VENDEDOR: vendedor real o "Directa". */
   sellerName: string;
-  /** Id del asesor GoLease (socio) del vendedor; '' si no tiene socio asignado. */
+  /** true cuando la creó un socio o superadmin y no existe un vendedor asociado. */
+  esVentaDirecta: boolean;
+  /** Id del asesor GoLease; '' si no tiene asesor asignado. */
   asesorId: string;
-  /** Asesor GoLease (socio) del vendedor; '—' si no tiene socio asignado. */
+  /** Asesor GoLease (socio) del vendedor; "Sin asesor" si no tiene socio asignado. */
   asesorName: string;
   clientName: string;
   /** Texto del activo: `activo_texto` si el admin lo editó, si no "Marca Modelo Año". */
@@ -94,6 +95,8 @@ export interface SeguimientoItem {
   /** Plazo de la cotización en meses (12/24/36/48). */
   termMonths: number;
   createdAt: string;
+  /** Última interacción directa registrada desde Seguimiento; reinicia el ciclo de color. */
+  lastInteractedAt: string | null;
   referenciado: string;
   financiera: string;
   etapas: SeguimientoEtapas;
@@ -105,6 +108,44 @@ export interface SeguimientoItem {
   lastReviewedAt: string | null;
   /** true si ya existe fila en `quote_seguimiento` (se crea al primer cambio). */
   tieneRegistro: boolean;
+}
+
+/**
+ * Color de la barra lateral de Seguimiento.
+ *
+ * - Sin actividad: 0–3 días azul, 4–5 amarillo, 6+ rojo desde `created_at`.
+ * - Con actividad: menos de 24 h verde, 1–3 días azul, 4–5 amarillo, 6+ rojo.
+ * - Entregada: verde permanente.
+ *
+ * La actividad se toma de last_interacted_at, revisión, edición de seguimiento
+ * o etapas. `created_at` solo es el fallback de una cotización nueva.
+ */
+export function estadoBarraSeguimiento(
+  item: Pick<SeguimientoItem, 'createdAt' | 'fechaCierre' | 'lastInteractedAt'> &
+    Partial<Pick<SeguimientoItem, 'revisada' | 'lastReviewedAt' | 'updatedAt' | 'etapas'>>,
+  now: Date = new Date(),
+): SeguimientoBarraColor {
+  if (item.fechaCierre) return 'verde';
+
+  const actividadMs = [
+    item.lastInteractedAt,
+    item.revisada === true ? item.lastReviewedAt : null,
+    item.updatedAt,
+    ...Object.values(item.etapas ?? {}),
+  ]
+    .filter((value): value is string => value !== null && value !== undefined && value !== '')
+    .map((value) => new Date(value).getTime())
+    .filter((value) => Number.isFinite(value));
+  const tieneActividad = actividadMs.length > 0;
+  const baseMs = tieneActividad ? Math.max(...actividadMs) : new Date(item.createdAt).getTime();
+
+  if (!Number.isFinite(baseMs)) return 'rojo';
+
+  const dias = Math.max(0, Math.floor((now.getTime() - baseMs) / 86_400_000));
+  if (tieneActividad && dias === 0) return 'verde';
+  if (dias <= SEGUIMIENTO_BARRA_AZUL_HASTA_DIAS) return 'azul';
+  if (dias <= SEGUIMIENTO_BARRA_AMARILLO_HASTA_DIAS) return 'amarillo';
+  return 'rojo';
 }
 
 // =====================================================================
@@ -126,7 +167,7 @@ export function etapasCompletadas(etapas: SeguimientoEtapas): SeguimientoEtapaKe
  */
 export function computeColumnaActual(
   etapas: SeguimientoEtapas,
-  fechaCierre?: string | null
+  fechaCierre?: string | null,
 ): number {
   if (fechaCierre) return SEGUIMIENTO_COLUMNA_CERRADO;
   let completadas = 0;
@@ -143,7 +184,7 @@ export function computeColumnaActual(
 export function computeFechaEntradaEtapa(
   etapas: SeguimientoEtapas,
   createdAt: string,
-  fechaCierre?: string | null
+  fechaCierre?: string | null,
 ): string {
   if (fechaCierre) return fechaCierre;
 
@@ -185,7 +226,7 @@ export function nivelAging(dias: number): 'verde' | 'amarillo' | 'rojo' {
 export function aplicarColumna(
   etapas: SeguimientoEtapas,
   columna: number,
-  nowIso: string
+  nowIso: string,
 ): { etapas: SeguimientoEtapas; fechaCierre: string | null } {
   if (columna <= SEGUIMIENTO_COLUMNA_COTIZADA) {
     return { etapas: {}, fechaCierre: null };
@@ -211,7 +252,7 @@ export function aplicarColumna(
 export function toggleEtapa(
   etapas: SeguimientoEtapas,
   key: SeguimientoEtapaKey,
-  nowIso: string
+  nowIso: string,
 ): { etapas: SeguimientoEtapas; fechaCierre: string | null } {
   const siguiente: SeguimientoEtapas = { ...etapas };
   if (siguiente[key]) {
@@ -264,7 +305,7 @@ export class SeguimientoService {
 
       this.itemsSignal.set(
         (quotes as any[]).map((q) =>
-          this.buildItem(q, porQuote.get(String(q.id)), mapa, porDefecto)
+          this.buildItem(q, porQuote.get(String(q.id)), mapa, porDefecto),
         ),
       );
     } finally {
@@ -285,14 +326,15 @@ export class SeguimientoService {
     const porQuote = new Map<string, any>();
     for (const r of registros) porQuote.set(String(r.quote_id), r);
     return quotes.map((q) =>
-      this.buildItem(q, porQuote.get(String(q.id)), asesoresPorId, asesorPorDefecto)
+      this.buildItem(q, porQuote.get(String(q.id)), asesoresPorId, asesorPorDefecto),
     );
   }
 
   /**
-   * Resuelve `socio_id → nombre del asesor` para las cotizaciones cargadas.
-   * La RLS de `profiles` puede ocultar perfiles al socio (solo ve su red):
-   * en ese caso los items sin nombre reciben el nombre del usuario actual.
+   * Resuelve `socio_id → nombre del asesor` para las cotizaciones creadas por
+   * sellers. Si el creador es socio/superadmin, `buildItem()` lo usa como asesor
+   * directo. La RLS puede ocultar el socio dueño de una red; entonces se usa el
+   * nombre de sesión. Un seller sin `socio_id` aparece como "Sin asesor".
    */
   private async resolverAsesores(
     quotes: any[],
@@ -335,7 +377,7 @@ export class SeguimientoService {
     const { data, error } = await this.client
       .from('quote_seguimiento')
       .select(
-        'quote_id, seller_id, referenciado, financiera, activo_texto, etapas, fecha_cierre, updated_at'
+        'quote_id, seller_id, referenciado, financiera, activo_texto, etapas, fecha_cierre, updated_at',
       );
 
     if (error) {
@@ -344,7 +386,7 @@ export class SeguimientoService {
       this.tablaDisponibleSignal.set(false);
       console.warn(
         'quote_seguimiento no está disponible; aplica supabase/migrations/20260917000000_quote_seguimiento.sql.',
-        error.message
+        error.message,
       );
       return [];
     }
@@ -360,13 +402,27 @@ export class SeguimientoService {
     asesorPorDefecto = '',
   ): SeguimientoItem {
     const activoBase = [quote.brand, quote.model, quote.year].filter(Boolean).join(' ').trim();
+    const sellerRole = quote.seller_role || 'seller';
+    const esVentaDirecta = sellerRole === 'socio' || sellerRole === 'super_admin';
     const socioId: string | null = quote.seller_socio_id || null;
+
+    // Socio/superadmin es el propio asesor de la operación directa. Seller usa
+    // su socio_id actual; así un cambio de rol o de asesor reclasifica el histórico.
+    const asesorId = esVentaDirecta ? quote.seller_id : socioId || '';
+    const asesorName = esVentaDirecta
+      ? quote.seller_name || 'Sin asesor'
+      : socioId
+        ? asesoresPorId.get(socioId) || asesorPorDefecto || 'Sin asesor'
+        : 'Sin asesor';
+    const sellerNameVisible = esVentaDirecta ? 'Directa' : quote.seller_name || 'N/A';
+
     return {
       quoteId: Number(quote.id),
       sellerId: quote.seller_id,
-      sellerName: quote.seller_name || 'N/A',
-      asesorId: socioId || '',
-      asesorName: (socioId && asesoresPorId.get(socioId)) || asesorPorDefecto || '—',
+      sellerName: sellerNameVisible,
+      esVentaDirecta,
+      asesorId,
+      asesorName,
       clientName: quote.client_name || 'Sin cliente',
       activo: registro?.activo_texto?.trim() ? registro.activo_texto.trim() : activoBase,
       brand: quote.brand || '',
@@ -375,6 +431,7 @@ export class SeguimientoService {
       priceNet: Number(quote.pricenet) || 0,
       termMonths: Number(quote.termmonths) || 0,
       createdAt: quote.created_at,
+      lastInteractedAt: quote.last_interacted_at || null,
       referenciado: registro?.referenciado || '',
       financiera: registro?.financiera || 'SIMPLE LEASE',
       etapas: (registro?.etapas || {}) as SeguimientoEtapas,
@@ -398,7 +455,7 @@ export class SeguimientoService {
       referenciado?: string;
       financiera?: string;
       activoTexto?: string | null;
-    }
+    },
   ): Promise<boolean> {
     await sessionReady();
     const user = currentUserSignal();
@@ -439,8 +496,8 @@ export class SeguimientoService {
               tieneRegistro: true,
               updatedAt: new Date().toISOString(),
             } as SeguimientoItem)
-          : i
-      )
+          : i,
+      ),
     );
     return true;
   }
@@ -470,6 +527,29 @@ export class SeguimientoService {
   }
 
   /**
+   * Registra una interacción directa y la comparte con los demás usuarios del
+   * módulo. La RPC valida el alcance de Seguimiento y actualiza
+   * `quotes.last_interacted_at`; desde ese momento la barra entra en verde y
+   * reinicia su ciclo de antigüedad.
+   */
+  public async registrarInteraccion(quoteId: number): Promise<boolean> {
+    await sessionReady();
+    const { data, error } = await this.client.rpc('mark_quote_interaction', {
+      p_quote_id: quoteId,
+    });
+    if (error) {
+      console.error('No se pudo registrar la interacción de la cotización:', error);
+      return false;
+    }
+
+    const sello = typeof data === 'string' ? data : new Date().toISOString();
+    this.itemsSignal.update((list) =>
+      list.map((item) => (item.quoteId === quoteId ? { ...item, lastInteractedAt: sello } : item)),
+    );
+    return true;
+  }
+
+  /**
    * Marca o desmarca la cotización como **revisada**.
    *
    * `quotes.last_reviewed_at` queda sellado al revisar y es una de las fuentes
@@ -488,9 +568,7 @@ export class SeguimientoService {
 
     const sello = revisada ? new Date().toISOString() : null;
     this.itemsSignal.update((list) =>
-      list.map((i) =>
-        i.quoteId === item.quoteId ? { ...i, revisada, lastReviewedAt: sello } : i
-      )
+      list.map((i) => (i.quoteId === item.quoteId ? { ...i, revisada, lastReviewedAt: sello } : i)),
     );
     return true;
   }
@@ -498,7 +576,7 @@ export class SeguimientoService {
   /** Actualiza los datos operativos editables del negocio. */
   public async actualizarDatos(
     item: SeguimientoItem,
-    datos: { referenciado: string; financiera: string; activoTexto: string }
+    datos: { referenciado: string; financiera: string; activoTexto: string },
   ): Promise<boolean> {
     return this.guardar(item, {
       referenciado: datos.referenciado.trim(),

@@ -2,18 +2,17 @@
  * Regla de retención de cotizaciones (purga automática).
  *
  * Espejo en TypeScript de la migración
- * `20260924010000_quote_activity.sql` (que reemplaza la regla original de
- * `20260922020000_quotes_auto_cleanup.sql`):
+ * `20260924020000_quote_interaction_tracking.sql` (que actualiza la regla de
+ * `20260924010000_quote_activity.sql`):
  * toda cotización con más de `QUOTE_RETENTION_DAYS` días **desde su última
  * actividad** se elimina físicamente, salvo que esté protegida:
  *   - `fijada = true` (pin manual del admin/socio), o
- *   - con seguimiento REAL (al menos una etapa completada o fecha
- *     de cierre; la fila perezosa vacía no protege).
- * `revisada = true` NO protege, pero revisar sella `last_reviewed_at` y por
- * tanto reinicia la ventana de retención.
+ *   - `quote_seguimiento.etapas.exp` con valor (Expediente marcado).
  *
- * La última actividad se resuelve con `utils/quote-activity.ts` (misma regla
- * que el semáforo "días sin actividad").
+ * Cualquier otra etapa, una entrega o `revisada = true` no protegen de forma
+ * permanente, pero sellan su respectiva actividad y renuevan los 15 días.
+ * Abrir o modificar una cotización desde Seguimiento actualiza
+ * `last_interacted_at`, que también reinicia la ventana.
  */
 
 import { resolveLastActivity } from './quote-activity';
@@ -25,13 +24,16 @@ export const QUOTE_RETENTION_DAYS = 15;
 export interface RetentionQuoteLike {
   created_at: Date | string | number;
   fijada?: boolean | null;
-  /** `quotes.last_reviewed_at`: revisar reinicia la ventana de retención. */
+  /** `quotes.last_reviewed_at`: solo cuenta si `revisada` es true. */
   last_reviewed_at?: Date | string | number | null;
+  revisada?: boolean | null;
+  /** Última apertura/modificación desde Seguimiento; renueva la ventana de 15 días. */
+  last_interacted_at?: Date | string | number | null;
 }
 
 /** Seguimiento asociado a una cotización (fila de `quote_seguimiento`). */
 export interface RetentionSeguimientoLike {
-  /** Etapas completadas (JSONB `etapas`); `{}` = fila perezosa sin trabajo real. */
+  /** Etapas (JSONB); solo `exp` protege, las demás solo renuevan actividad. */
   etapas?: Record<string, string> | null;
   /** Fecha de cierre del negocio (columna `fecha_cierre`). */
   fecha_cierre?: string | null;
@@ -43,47 +45,48 @@ export interface RetentionSeguimientoLike {
  * Última actividad conocida por el cliente.
  *
  * NOTA: el vendedor no puede leer `quote_seguimiento`, así que su estimación
- * se queda con `created_at` / `last_reviewed_at` y la purga SQL puede
- * posponerse más (la SQL también mira etapas, cierre y notas).
+ * conoce `created_at`, `revisada/last_reviewed_at` y `last_interacted_at`, pero
+ * la SQL además mira etapas, cierre y notas que el vendedor no puede consultar.
  */
 export function ultimaActividadPurga(
   quote: RetentionQuoteLike,
-  seguimiento?: RetentionSeguimientoLike | null
+  seguimiento?: RetentionSeguimientoLike | null,
 ): Date {
-  return resolveLastActivity({
+  const actividadSql = resolveLastActivity({
     createdAt: quote.created_at,
-    lastReviewedAt: quote.last_reviewed_at,
+    lastReviewedAt: quote.revisada === true ? quote.last_reviewed_at : null,
+    revisada: quote.revisada,
     seguimientoUpdatedAt: seguimiento?.updated_at,
     etapas: seguimiento?.etapas,
     fechaCierre: seguimiento?.fecha_cierre,
   });
+  const interaccion = quote.last_interacted_at ? new Date(quote.last_interacted_at).getTime() : 0;
+  return new Date(Math.max(actividadSql.getTime(), Number.isFinite(interaccion) ? interaccion : 0));
 }
 
 /** Fecha de purga programada de una cotización (última actividad + retención). */
 export function computePurgeDate(
   quote: RetentionQuoteLike,
   seguimiento?: RetentionSeguimientoLike | null,
-  retentionDays: number = QUOTE_RETENTION_DAYS
+  retentionDays: number = QUOTE_RETENTION_DAYS,
 ): Date {
   const base = ultimaActividadPurga(quote, seguimiento);
   return new Date(base.getTime() + retentionDays * 24 * 60 * 60 * 1000);
 }
 
-/** Indica si la fila de seguimiento cuenta como seguimiento REAL. */
+/** Solo Expediente marcado concede la protección permanente de purga. */
 export function hasRealSeguimiento(seg: RetentionSeguimientoLike | null | undefined): boolean {
-  if (!seg) return false;
-  const etapas = seg.etapas ?? {};
-  return Object.keys(etapas).length > 0 || seg.fecha_cierre != null;
+  return !!seg?.etapas?.['exp'];
 }
 
 /**
  * Determina si una cotización será eliminada por la purga automática.
- * Replica la condición SQL: antigüedad + sin fijar + sin seguimiento real.
+ * Replica la condición SQL: antigüedad + sin fijar + sin Expediente marcado.
  */
 export function willAutoDelete(
   quote: RetentionQuoteLike,
   seguimiento: RetentionSeguimientoLike | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): boolean {
   const purgeAt = computePurgeDate(quote, seguimiento).getTime();
   if (purgeAt > now.getTime()) return false;
@@ -123,7 +126,7 @@ export function markRetentionNoticeShown(key: string): void {
 /** Fecha legible dd/mm/aaaa de la purga programada. */
 export function formatPurgeDate(
   quote: RetentionQuoteLike,
-  seguimiento?: RetentionSeguimientoLike | null
+  seguimiento?: RetentionSeguimientoLike | null,
 ): string {
   return computePurgeDate(quote, seguimiento).toLocaleDateString('es-MX', {
     day: '2-digit',

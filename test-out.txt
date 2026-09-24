@@ -1,0 +1,60 @@
+
+> cotizador@0.0.0 test
+> ng test --watch=false
+
+❯ Building...
+✔ Building...
+Application bundle generation complete. [12.446 seconds] - 2026-09-23T19:35:17.039Z
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.11 [39m[90mC:/Programas/Cotizador/cotizador[39m
+
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-admins/admin-admins.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2284[2mms[22m[39m
+     [33m[2m✓[22m[39m should show linked sellers when opening role 'super_admin' [33m 1050[2mms[22m[39m
+     [33m[2m✓[22m[39m should show linked sellers when opening role 'socio' [33m 380[2mms[22m[39m
+     [33m[2m✓[22m[39m should reassign a linked seller when another network is selected [33m 513[2mms[22m[39m
+     [33m[2m✓[22m[39m should combine role and status filters when choosing a role chip [33m 338[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-sellers/admin-sellers.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2342[2mms[22m[39m
+     [33m[2m✓[22m[39m should render the full network list without local scope filtering [33m 1158[2mms[22m[39m
+     [33m[2m✓[22m[39m should link to the seller quotes with the seller filter when the detail drawer opens [33m 695[2mms[22m[39m
+     [33m[2m✓[22m[39m should hide the quotes link when the profile lacks the quotes permission [33m 401[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-seller-performance/admin-seller-performance.spec.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 840[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/cotizador/cotizador.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1156[2mms[22m[39m
+     [33m[2m✓[22m[39m should recalculate and render the sheet when the vehicle form is filled [33m 474[2mms[22m[39m
+     [33m[2m✓[22m[39m should apply the annual insurance cost when "Costo Anual" is selected [33m 363[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/auth/register/register.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[33m 755[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-sellers/admin-sellers-delete.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 459[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-admins/admin-admins-delete.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 272[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/auth/login/login.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 341[2mms[22m[39m
+[90mstderr[2m | src/app/services/pdf-export.service.spec.ts[2m > [22m[2mPdfExportService[2m > [22m[2mshould not capture anything when the sheet element does not exist
+[22m[39mElemento con ID "hoja-inexistente" no encontrado.
+
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/quote-breakdown/quote-breakdown.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/services/pdf-export.service.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 166[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/guards/admin-guard.spec.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-stats/admin-stats.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 130[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/services/theme.service.spec.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/services/seguimiento.service.spec.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/utils/quote-activity.spec.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/services/admin.service.spec.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/services/admin-scope.service.spec.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/services/financial-calculator.service.spec.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/utils/quote-retention.spec.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/quote-form/price-format.spec.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/utils/quote-validity.spec.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/app.spec.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m [30m[45m cotizador [49m[39m src/app/components/admin/admin-seguimiento/admin-seguimiento.spec.ts [2m([22m[2m28 tests[22m[2m)[22m[33m 6860[2mms[22m[39m
+     [33m[2m✓[22m[39m should create and load the list on init [33m 1263[2mms[22m[39m
+     [33m[2m✓[22m[39m should filter the deals by search term and seller [33m 466[2mms[22m[39m
+     [33m[2m✓[22m[39m should toggle a stage chip and persist it [33m 545[2mms[22m[39m
+     [33m[2m✓[22m[39m should warn when a stage cannot be toggled [33m 478[2mms[22m[39m
+     [33m[2m✓[22m[39m should render the AJUSTES 12 columns without the aging pill [33m 318[2mms[22m[39m
+     [33m[2m✓[22m[39m should open the detail drawer, save the operational data and close it [33m 347[2mms[22m[39m
+     [33m[2m✓[22m[39m should close and reopen a deal [33m 310[2mms[22m[39m
+     [33m[2m✓[22m[39m should delete a quote after confirmation [33m 749[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m23 passed[39m[22m[90m (23)[39m
+[2m      Tests [22m [1m[32m193 passed[39m[22m[90m (193)[39m
+[2m   Start at [22m 13:35:17
+[2m   Duration [22m 11.38s[2m (transform 2.06s, setup 3.38s, import 3.50s, tests 15.90s, environment 43.38s)[22m
+

@@ -62,7 +62,9 @@
 - `is_seguimiento_admin()` → `true` si el usuario actual es `super_admin` activo.
 - `can_access_seguimiento(bigint)` → `is_seguimiento_admin()` **OR** el `socio_id` del vendedor de la cotización = `auth.uid()` (socio activo).
 
-**Regla de negocio:** los **vendedores no tienen acceso** alguno a esta tabla (ni lectura). El `moduleGuard('seguimiento')` + `canAccessModule()` lo reflejan en el frontend.
+**Regla de negocio:** los **vendedores no tienen acceso directo** a esta tabla (ni lectura ni escritura). El `moduleGuard('seguimiento')` + `canAccessModule()` lo reflejan en el frontend.
+
+**Lectura segura para Mis Cotizaciones:** la RPC `get_vendedor_seguimiento()` permite a un vendedor consultar únicamente sus propias cotizaciones y el avance mínimo de seguimiento (`etapas`, `fecha_cierre` y actividad visible). No expone notas ni permite modificar la tabla; las mutaciones continúan reservadas al panel administrativo.
 
 **Trigger `trg_seguimiento_touch`:** actualiza `updated_at` en cada UPDATE.
 

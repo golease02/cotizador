@@ -36,9 +36,19 @@ describe('quote-activity', () => {
     expect(ultima).toEqual(new Date('2026-09-22T00:00:00Z'));
   });
 
+  it('should ignore a review timestamp when revisada is false', () => {
+    expect(
+      resolveLastActivity({
+        createdAt: '2026-09-01T00:00:00Z',
+        lastReviewedAt: '2026-09-24T00:00:00Z',
+        revisada: false,
+      }),
+    ).toEqual(new Date('2026-09-01T00:00:00Z'));
+  });
+
   it('should fall back to created_at when there is no other activity', () => {
     expect(resolveLastActivity({ createdAt: '2026-09-01T00:00:00Z' })).toEqual(
-      new Date('2026-09-01T00:00:00Z')
+      new Date('2026-09-01T00:00:00Z'),
     );
   });
 
@@ -101,7 +111,10 @@ describe('quote-activity', () => {
 
   it('should keep a delivered deal green regardless of the days', () => {
     expect(
-      computeActivityColor({ createdAt: '2026-06-01T00:00:00Z', fechaCierre: '2026-06-02T00:00:00Z' }, now)
+      computeActivityColor(
+        { createdAt: '2026-06-01T00:00:00Z', fechaCierre: '2026-06-02T00:00:00Z' },
+        now,
+      ),
     ).toBe('verde');
   });
 

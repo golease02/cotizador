@@ -24,6 +24,33 @@ export interface QuoteRow {
   valid_until?: string | null;
 }
 
+/**
+ * Fila de Mis Cotizaciones con el estado de seguimiento visible para el
+ * vendedor. Es de solo lectura: las etapas nunca se envían de vuelta a la BD
+ * desde el frontend del vendedor.
+ */
+export interface VendedorSeguimientoRow {
+  id: number;
+  seller_id: string;
+  client_name: string;
+  brand: string;
+  model: string;
+  year: number;
+  pricenet: number;
+  termmonths: number;
+  created_at: string;
+  valid_until?: string | null;
+  fijada?: boolean;
+  revisada?: boolean;
+  last_reviewed_at?: string | null;
+  last_interacted_at?: string | null;
+  activo_texto?: string | null;
+  etapas?: Record<string, string> | null;
+  fecha_cierre?: string | null;
+  seguimiento_updated_at?: string | null;
+  tiene_seguimiento?: boolean;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -35,7 +62,7 @@ export class QuotesService {
 
   public async saveQuote(
     quote: QuoteCalculationResult,
-    quoteId?: number
+    quoteId?: number,
   ): Promise<{ id: number | null; error: any }> {
     const user = currentUserSignal();
     if (!user) {
@@ -100,7 +127,9 @@ export class QuotesService {
 
     const { data, error } = await this.client
       .from('quotes')
-      .select('id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, created_at')
+      .select(
+        'id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, created_at',
+      )
       .eq('seller_id', user.id)
       .order('created_at', { ascending: false })
       .limit(200);
@@ -129,7 +158,9 @@ export class QuotesService {
   }
 
   /** Recupera el snapshot inmutable guardado de la cotización (null si no existe. */
-  public async getQuoteCalculation(quoteId: number | string): Promise<QuoteCalculationResult | null> {
+  public async getQuoteCalculation(
+    quoteId: number | string,
+  ): Promise<QuoteCalculationResult | null> {
     const { data, error } = await this.client
       .from('quotes')
       .select('calculation')
@@ -146,13 +177,72 @@ export class QuotesService {
   }
 
   public async getVendedorQuotes(sellerId: string): Promise<{ data: any; error: any }> {
-    const { data, error } = await this.client
+    const campos =
+      'id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, fijada, revisada, last_reviewed_at, last_interacted_at, valid_until, created_at';
+    let resultado: any = await this.client
       .from('quotes')
-      .select('id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, created_at')
+      .select(campos)
       .eq('seller_id', sellerId)
       .order('created_at', { ascending: false })
       .limit(200);
-    return { data, error };
+
+    if (
+      resultado.error &&
+      (resultado.error.code === 'PGRST204' ||
+        String(resultado.error.message || '').includes('last_interacted_at'))
+    ) {
+      resultado = await this.client
+        .from('quotes')
+        .select(campos.replace('last_interacted_at, ', ''))
+        .eq('seller_id', sellerId)
+        .order('created_at', { ascending: false })
+        .limit(200);
+    }
+
+    return { data: resultado.data, error: resultado.error };
+  }
+
+  /**
+   * Carga las cotizaciones propias junto con el avance de seguimiento visible.
+   * La RPC aplica el alcance `seller_id = auth.uid()` en la base de datos; el
+   * cliente nunca consulta ni escribe `quote_seguimiento` directamente.
+   *
+   * Antes de aplicar la migración se conserva un fallback de solo cotizaciones,
+   * para que la pantalla siga funcionando en entornos con la migración pendiente.
+   */
+  public async getVendedorSeguimientoQuotes(): Promise<{
+    data: VendedorSeguimientoRow[] | null;
+    error: any;
+  }> {
+    const user = currentUserSignal();
+    if (!user) return { data: [], error: null };
+
+    const { data, error } = await this.client.rpc('get_vendedor_seguimiento');
+    if (!error) {
+      return { data: (data || []) as VendedorSeguimientoRow[], error: null };
+    }
+
+    const mensaje = String(error?.message || '').toLowerCase();
+    const rpcNoDisponible =
+      error?.code === 'PGRST202' ||
+      error?.code === '42883' ||
+      mensaje.includes('could not find the function');
+
+    if (!rpcNoDisponible) return { data: null, error };
+
+    const fallback = await this.getVendedorQuotes(user.id);
+    if (fallback.error) return { data: null, error: fallback.error };
+
+    return {
+      data: (fallback.data || []).map((row: any) => ({
+        ...row,
+        etapas: {},
+        fecha_cierre: null,
+        seguimiento_updated_at: null,
+        tiene_seguimiento: false,
+      })) as VendedorSeguimientoRow[],
+      error: null,
+    };
   }
 
   /**
@@ -166,7 +256,7 @@ export class QuotesService {
    */
   public async setQuoteReviewed(
     quoteId: number | string,
-    revisada: boolean
+    revisada: boolean,
   ): Promise<{ error: any }> {
     const ahora = new Date().toISOString();
     const { error } = await this.client
@@ -183,19 +273,38 @@ export class QuotesService {
   }
 
   public async getAllQuotesWithSeller(): Promise<{ data: any; error: any }> {
-    const { data, error } = await this.client
+    const campos =
+      `id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, color, fijada, revisada, last_reviewed_at, last_interacted_at, created_at, ` +
+      `profiles!seller_id (full_name, agency_brand, socio_id, role)`;
+
+    let resultado = await this.client
       .from('quotes')
-       .select(`id, seller_id, client_name, brand, model, year, pricenet, ishybridorelectric, termmonths, extraordinaryrentpct, securitydepositpct, selectedstateplateid, isinsuranceestimated, annualinsurancecost, color, fijada, revisada, last_reviewed_at, created_at,
-        created_at,
-        profiles!seller_id (full_name, agency_brand, socio_id)`)
-       .order('created_at', { ascending: false })
-       .limit(200);
-    if (error) return { data: null, error };
-    const mapped = data.map((q: any) => ({
+      .select(campos)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    // Permite abrir el tablero antes de aplicar la migración nueva: si PostgREST
+    // no conoce la columna, se muestran las cotizaciones sin interacción verde.
+    if (
+      resultado.error &&
+      (resultado.error.code === 'PGRST204' ||
+        String(resultado.error.message || '').includes('last_interacted_at'))
+    ) {
+      resultado = await this.client
+        .from('quotes')
+        .select(campos.replace('last_interacted_at, ', ''))
+        .order('created_at', { ascending: false })
+        .limit(200);
+    }
+
+    if (resultado.error) return { data: null, error: resultado.error };
+    const mapped = (resultado.data || []).map((q: any) => ({
       ...q,
+      last_interacted_at: q.last_interacted_at || null,
       seller_name: q.profiles?.full_name || 'N/A',
       seller_agency_brand: q.profiles?.agency_brand || '',
       seller_socio_id: q.profiles?.socio_id || null,
+      seller_role: q.profiles?.role || 'seller',
     }));
     return { data: mapped, error: null };
   }

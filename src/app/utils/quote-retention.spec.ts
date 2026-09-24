@@ -19,21 +19,44 @@ describe('quote-retention', () => {
     expect(computePurgeDate({ created_at: old })).toEqual(new Date('2026-09-16T12:00:00Z'));
   });
 
-  it('should move the purge window when the quote is reviewed or edited', () => {
+  it('should move the purge window when the quote is reviewed or interacted with', () => {
     // Revisada el 20/09: la ventana corre 15 días desde esa actividad.
-    const revisada = { created_at: old, last_reviewed_at: '2026-09-20T12:00:00Z' };
+    const revisada = {
+      created_at: old,
+      revisada: true,
+      last_reviewed_at: '2026-09-20T12:00:00Z',
+    };
     expect(computePurgeDate(revisada)).toEqual(new Date('2026-10-05T12:00:00Z'));
     expect(willAutoDelete(revisada, null, now)).toBe(false);
 
+    // Interactuar desde Seguimiento el 21/09 reinicia la ventana una vez más.
+    const interactuada = {
+      created_at: old,
+      revisada: true,
+      last_reviewed_at: '2026-09-20T12:00:00Z',
+      last_interacted_at: '2026-09-21T12:00:00Z',
+    };
+    expect(computePurgeDate(interactuada)).toEqual(new Date('2026-10-06T12:00:00Z'));
+    expect(willAutoDelete(interactuada, null, now)).toBe(false);
+
     // Edición del seguimiento (aunque no haya etapas completadas).
     expect(
-      willAutoDelete({ created_at: old }, { etapas: {}, updated_at: '2026-09-21T00:00:00Z' }, now)
+      willAutoDelete({ created_at: old }, { etapas: {}, updated_at: '2026-09-21T00:00:00Z' }, now),
     ).toBe(false);
 
-    // Etapa completada (seguimiento REAL): protege sin importar la fecha.
+    // Expediente marcado protege sin importar la fecha.
     expect(
-      willAutoDelete({ created_at: old }, { etapas: { exp: '2026-09-10T00:00:00Z' } }, now)
+      willAutoDelete({ created_at: old }, { etapas: { exp: '2026-09-10T12:00:00Z' } }, now),
     ).toBe(false);
+  });
+
+  it('should ignore a review timestamp when revisada is false', () => {
+    const falseReview = {
+      created_at: old,
+      revisada: false,
+      last_reviewed_at: recent,
+    };
+    expect(computePurgeDate(falseReview)).toEqual(new Date('2026-09-16T12:00:00Z'));
   });
 
   it('should not delete young quotes', () => {
@@ -48,30 +71,24 @@ describe('quote-retention', () => {
     expect(willAutoDelete({ created_at: old, fijada: true }, null, now)).toBe(false);
   });
 
-  it('should not delete quotes with real seguimiento', () => {
+  it('should protect permanently only when Expediente is checked', () => {
     expect(
-      willAutoDelete({ created_at: old }, { etapas: { exp: '2026-09-10T00:00:00Z' } }, now)
+      willAutoDelete({ created_at: old }, { etapas: { exp: '2026-09-10T12:00:00Z' } }, now),
     ).toBe(false);
+    expect(hasRealSeguimiento({ etapas: { exp: '2026-09-10T12:00:00Z' } })).toBe(true);
+  });
+
+  it('should not protect permanently for another stage or fecha_cierre alone', () => {
+    expect(hasRealSeguimiento({ etapas: { analisis: '2026-09-10T12:00:00Z' } })).toBe(false);
+    expect(hasRealSeguimiento({ etapas: {}, fecha_cierre: '2026-09-20T12:00:00Z' })).toBe(false);
     expect(
-      willAutoDelete(
-        { created_at: old },
-        { etapas: { exp: '2026-09-10T00:00:00Z' }, fecha_cierre: null },
-        now
-      )
-    ).toBe(false);
+      willAutoDelete({ created_at: old }, { etapas: { analisis: old }, fecha_cierre: null }, now),
+    ).toBe(true);
   });
 
   it('should delete quotes with empty seguimiento (lazy row)', () => {
     expect(willAutoDelete({ created_at: old }, { etapas: {} }, now)).toBe(true);
-    expect(willAutoDelete({ created_at: old }, { etapas: {}, fecha_cierre: null }, now)).toBe(
-      true
-    );
-  });
-
-  it('should treat fecha_cierre as real seguimiento', () => {
-    expect(
-      hasRealSeguimiento({ etapas: {}, fecha_cierre: '2026-09-20T00:00:00Z' })
-    ).toBe(true);
+    expect(willAutoDelete({ created_at: old }, { etapas: {}, fecha_cierre: null }, now)).toBe(true);
   });
 
   it('should format the purge date in Spanish', () => {

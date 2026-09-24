@@ -8,9 +8,9 @@
  * como "por caducar" aunque estuviera atendida.
  *
  * REGLA
- *   ultimaActividad = max(created_at, last_reviewed_at, updated_at del
- *                         seguimiento, etapas completadas, fecha_cierre,
- *                         última nota)
+ *   ultimaActividad = max(created_at, last_reviewed_at [solo revisada=true],
+ *                         updated_at del seguimiento, etapas completadas,
+ *                         fecha_cierre, última nota)
  *
  * Umbrales ÚNICOS para toda la app (antes convivían 8/16 en el Seguimiento y
  * 2/7 en el dashboard, dando mensajes contradictorios):
@@ -38,8 +38,10 @@ export type QuoteColor = 'reciente' | 'amarillo' | 'rojo' | 'verde';
 export interface ActivitySources {
   /** `quotes.created_at`. */
   createdAt: Date | string | number;
-  /** `quotes.last_reviewed_at` (se sella al revisar). */
+  /** `quotes.last_reviewed_at`; solo cuenta cuando `revisada` es true. */
   lastReviewedAt?: Date | string | number | null;
+  /** Estado de revisión; evita que un default legacy sea actividad. */
+  revisada?: boolean | null;
   /** `quote_seguimiento.updated_at`. */
   seguimientoUpdatedAt?: Date | string | number | null;
   /** `quote_seguimiento.etapas` (valor = ISO de completado). */
@@ -65,7 +67,7 @@ export function resolveLastActivity(sources: ActivitySources): Date {
   let max = toMs(sources.createdAt) ?? 0;
 
   const candidatas: (Date | string | number | null | undefined)[] = [
-    sources.lastReviewedAt,
+    sources.revisada === true ? sources.lastReviewedAt : null,
     sources.seguimientoUpdatedAt,
     sources.fechaCierre,
     sources.lastNoteAt,
@@ -105,7 +107,7 @@ export function nivelActividad(dias: number): ActivityLevel {
  */
 export function computeActivityColor(
   sources: ActivitySources & { revisada?: boolean | null },
-  now: Date = new Date()
+  now: Date = new Date(),
 ): QuoteColor {
   if (sources.fechaCierre) return 'verde';
   const dias = diasSinActividad(sources, now);
@@ -123,10 +125,7 @@ export function etiquetaDias(dias: number): string {
 }
 
 /** Fecha legible dd/mm/aaaa de la última actividad. */
-export function formatUltimaActividad(
-  sources: ActivitySources,
-  now: Date = new Date()
-): string {
+export function formatUltimaActividad(sources: ActivitySources, now: Date = new Date()): string {
   return resolveLastActivity(sources).toLocaleDateString('es-MX', {
     day: '2-digit',
     month: '2-digit',

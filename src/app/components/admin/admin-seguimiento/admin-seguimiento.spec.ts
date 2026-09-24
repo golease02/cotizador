@@ -17,6 +17,7 @@ const buildItem = (over: Partial<SeguimientoItem> = {}): SeguimientoItem => ({
   quoteId: 1,
   sellerId: 's1',
   sellerName: 'Ana Vendedora',
+  esVentaDirecta: false,
   asesorId: 'a1',
   asesorName: 'Socio Asesor',
   clientName: 'Cliente Uno',
@@ -27,6 +28,7 @@ const buildItem = (over: Partial<SeguimientoItem> = {}): SeguimientoItem => ({
   priceNet: 900_000,
   termMonths: 48,
   createdAt: diasAtras(10),
+  lastInteractedAt: null,
   referenciado: '',
   financiera: 'SIMPLE LEASE',
   etapas: {},
@@ -55,6 +57,7 @@ describe('AdminSeguimientoComponent', () => {
     cerrar: vi.fn(),
     reabrir: vi.fn(),
     marcarRevisada: vi.fn(),
+    registrarInteraccion: vi.fn(),
     actualizarDatos: vi.fn(),
   };
 
@@ -113,6 +116,8 @@ describe('AdminSeguimientoComponent', () => {
     mockSeguimiento.alternarEtapa.mockResolvedValue(true);
     mockSeguimiento.cerrar.mockResolvedValue(true);
     mockSeguimiento.reabrir.mockResolvedValue(true);
+    mockSeguimiento.marcarRevisada.mockResolvedValue(true);
+    mockSeguimiento.registrarInteraccion.mockResolvedValue(true);
     mockSeguimiento.actualizarDatos.mockResolvedValue(true);
     mockQuotesService.getQuoteCalculation.mockReset().mockResolvedValue(null);
     mockQuotesService.deleteQuote.mockReset().mockResolvedValue({ error: null });
@@ -179,11 +184,45 @@ describe('AdminSeguimientoComponent', () => {
     expect(component.asesores().length).toBe(2);
   });
 
+  it('should show a direct advisor quote in the advisor filter but not the seller filter', async () => {
+    itemsSignal.set([
+      buildItem({ quoteId: 1 }),
+      buildItem({
+        quoteId: 2,
+        sellerId: 'admin-1',
+        sellerName: 'Directa',
+        esVentaDirecta: true,
+        asesorId: 'admin-1',
+        asesorName: 'César González',
+        clientName: 'Cliente Directo',
+      }),
+    ]);
+    await crearComponente();
+
+    expect(component.asesores()).toContainEqual({ id: 'admin-1', nombre: 'César González' });
+    expect(component.vendedores().map((v) => v.nombre)).toEqual(['Ana Vendedora']);
+
+    const filaDirecta = fixture.nativeElement.querySelectorAll('.seguimiento-tabla tbody tr')[1];
+    expect(filaDirecta.querySelector('.td-asesor')?.textContent?.trim()).toBe('César González');
+    expect(filaDirecta.querySelector('.td-vendedor')?.textContent?.trim()).toBe('Directa');
+
+    component.filtroAsesor = 'admin-1';
+    component.applyFilters();
+    expect(component.filtrados().map((i) => i.quoteId)).toEqual([2]);
+    expect(component.vendedores()).toEqual([]);
+
+    component.searchTerm = 'César González';
+    component.filtroAsesor = 'todos';
+    component.applyFilters();
+    expect(component.filtrados().map((i) => i.quoteId)).toEqual([2]);
+  });
+
   it('should toggle a stage chip and persist it', async () => {
     await crearComponente();
     const item = component.filtrados().find((i) => i.quoteId === 1)!;
     await component.toggleEtapa(item, 'exp');
     expect(mockSeguimiento.alternarEtapa).toHaveBeenCalledWith(item, 'exp');
+    expect(mockSeguimiento.registrarInteraccion).toHaveBeenCalledWith(item.quoteId);
   });
 
   it('should warn when a stage cannot be toggled', async () => {
@@ -204,12 +243,13 @@ describe('AdminSeguimientoComponent', () => {
     expect(chips.length).toBe(9);
   });
 
-  it('should render the AJUSTES 12 columns without the aging pill', async () => {
+  it('should render the AJUSTES 12 columns without the days column', async () => {
     await crearComponente();
     const root: HTMLElement = fixture.nativeElement;
 
-    // Punto 1: sin "días transcurridos", con Notas y Visualizar (ojo verde).
+    // Punto 1: sin días transcurridos, con Notas y Visualizar (ojo verde).
     expect(root.querySelector('.aging-pill')).toBeFalsy();
+    expect(root.querySelector('.dias-badge')).toBeFalsy();
     expect(root.querySelector('.inicio-acciones .notas-counter')).toBeTruthy();
     expect(root.querySelector('.inicio-acciones .btn-view')).toBeTruthy();
 
@@ -223,6 +263,7 @@ describe('AdminSeguimientoComponent', () => {
     expect(headers).toContain('FIN');
     expect(headers).toContain('EXPEDIENTE');
     expect(headers).toContain('ENTREGA');
+    expect(headers).not.toContain('DÍAS');
     expect(headers).not.toContain('REFERENCIADO');
     expect(headers).not.toContain('FINANCIERA');
     expect(headers).not.toContain('F. CIERRE');
@@ -230,7 +271,7 @@ describe('AdminSeguimientoComponent', () => {
     // Punto 2: columna ASESOR con el asesor, VENDEDOR con el vendedor.
     const filaUno = root.querySelectorAll('.seguimiento-tabla tbody tr')[0];
     expect(filaUno.querySelector('.td-asesor')?.textContent?.trim()).toBe('Socio Asesor');
-    expect(filaUno.querySelector('.td-ref')?.textContent?.trim()).toBe('Ana Vendedora');
+    expect(filaUno.querySelector('.td-vendedor')?.textContent?.trim()).toBe('Ana Vendedora');
 
     // Punto 3: columna PLAZO.
     expect(filaUno.querySelector('.td-plazo')?.textContent?.trim()).toContain('48');
@@ -242,9 +283,7 @@ describe('AdminSeguimientoComponent', () => {
     expect((casillas[2] as HTMLElement).textContent?.trim()).toBe('✓');
 
     // Punto 6: botón ELIMINAR en acciones (sin Cerrar/Reabrir en la tabla).
-    expect(root.querySelector('.td-acciones .btn-eliminar')?.textContent?.trim()).toBe(
-      'Eliminar',
-    );
+    expect(root.querySelector('.td-acciones .btn-eliminar')?.textContent?.trim()).toBe('Eliminar');
     expect(root.querySelector('.btn-cerrar')).toBeFalsy();
     expect(root.querySelector('.btn-reabrir')).toBeFalsy();
   });
@@ -258,6 +297,10 @@ describe('AdminSeguimientoComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.drawer')).toBeTruthy();
+    expect(mockSeguimiento.registrarInteraccion).toHaveBeenCalledWith(item.quoteId);
+    expect(fixture.nativeElement.textContent).toContain('FIN');
+    expect(fixture.nativeElement.textContent).not.toContain('Marcar revisada');
+    expect(fixture.nativeElement.textContent).not.toContain('Quitar revisada');
     expect(component.formActivo).toBe('VW Crafter 2026');
     expect(component.formFinanciera).toBe('SIMPLE LEASE');
 
@@ -373,54 +416,94 @@ describe('AdminSeguimientoComponent', () => {
     expect(component.nivelItem(clienteTres)).toBe('verde');
   });
 
-  it('should compute the days without activity from the latest movement', async () => {
+  it('should apply the exact 0–3 blue, 4–5 yellow and 6+ red bar colors', async () => {
     await crearComponente();
-    const clienteUno = component.filtrados().find((i) => i.quoteId === 1)!;
-    const clienteTres = component.filtrados().find((i) => i.quoteId === 3)!;
 
-    // La etapa más reciente (hace 10 días) es posterior a la etapa de hace 20.
-    expect(component.diasSinActividadItem(clienteUno)).toBe(10);
-    expect(component.nivelActividadItem(clienteUno)).toBe('amarillo');
-    // Entregado: atendido, siempre verde.
-    expect(component.nivelActividadItem(clienteTres)).toBe('verde');
-
-    // Un negocio abandonado pasa a rojo a los 16 días.
-    const abandonado = buildItem({ createdAt: diasAtras(20) });
-    expect(component.nivelActividadItem(abandonado)).toBe('rojo');
+    for (const dias of [0, 1, 2, 3]) {
+      expect(component.estadoBarraItem(buildItem({ createdAt: diasAtras(dias) }))).toBe('azul');
+    }
+    for (const dias of [4, 5]) {
+      expect(component.estadoBarraItem(buildItem({ createdAt: diasAtras(dias) }))).toBe('amarillo');
+    }
+    for (const dias of [6, 7, 30]) {
+      expect(component.estadoBarraItem(buildItem({ createdAt: diasAtras(dias) }))).toBe('rojo');
+    }
   });
 
-  it('should reset the days without activity when the quote is reviewed', async () => {
+  it('should reset the bar cycle after an interaction and keep delivered quotes green', async () => {
     await crearComponente();
-    const antes = component.filtrados().find((i) => i.quoteId === 1)!;
-    expect(component.diasSinActividadItem(antes)).toBe(10);
 
-    const despues = { ...antes, revisada: true, lastReviewedAt: diasAtras(0) };
-    expect(component.diasSinActividadItem(despues)).toBe(0);
-    expect(component.nivelActividadItem(despues)).toBe('verde');
-    expect(component.etiquetaActividadItem(despues)).toBe('Hoy');
+    const interactuada30 = buildItem({
+      createdAt: diasAtras(40),
+      lastInteractedAt: diasAtras(30),
+    });
+    const interactuadaAhora = buildItem({
+      createdAt: diasAtras(40),
+      lastInteractedAt: diasAtras(0),
+    });
+    const interactuadaHace1 = buildItem({
+      createdAt: diasAtras(40),
+      lastInteractedAt: diasAtras(1),
+    });
+    const entregada = buildItem({ createdAt: diasAtras(40), fechaCierre: diasAtras(30) });
+
+    expect(component.estadoBarraItem(interactuada30)).toBe('rojo');
+    expect(component.estadoBarraItem(interactuadaAhora)).toBe('verde');
+    expect(component.estadoBarraItem(interactuadaHace1)).toBe('azul');
+    expect(component.estadoBarraItem(entregada)).toBe('verde');
   });
 
-  it('should render the days badge and toggle the review action', async () => {
-    mockSeguimiento.marcarRevisada.mockResolvedValue(true);
+  it('should paint each row with its bar color and remain keyboard accessible', async () => {
+    await crearComponente();
+    const filas = fixture.nativeElement.querySelectorAll('.seguimiento-tabla tbody tr');
+
+    // La primera no tiene actividad; la segunda tiene una etapa hace 2 días.
+    expect(filas[0].classList.contains('estado-rojo')).toBe(true);
+    expect(filas[1].classList.contains('estado-azul')).toBe(true);
+    expect(filas[2].classList.contains('estado-verde')).toBe(true);
+    expect(filas[0].getAttribute('tabindex')).toBe('0');
+  });
+
+  it('should register and paint an interaction when a row is opened', async () => {
+    mockSeguimiento.registrarInteraccion.mockImplementation(async (quoteId: number) => {
+      itemsSignal.update((items) =>
+        items.map((item) =>
+          item.quoteId === quoteId ? { ...item, lastInteractedAt: new Date().toISOString() } : item,
+        ),
+      );
+      return true;
+    });
     await crearComponente();
     const item = component.filtrados().find((i) => i.quoteId === 1)!;
 
-    const badges = fixture.nativeElement.querySelectorAll('.dias-badge');
-    expect(badges.length).toBe(3);
-    expect(badges[0].textContent).toContain('10');
+    component.abrirDetalle(item);
+    await vi.waitFor(() => expect(mockSeguimiento.registrarInteraccion).toHaveBeenCalledWith(1));
+    fixture.detectChanges();
 
-    await component.toggleRevisada(item);
-    expect(mockSeguimiento.marcarRevisada).toHaveBeenCalledWith(item, true);
-    expect(mockToast.success).toHaveBeenCalled();
+    const fila = fixture.nativeElement.querySelectorAll('.seguimiento-tabla tbody tr')[0];
+    expect(fila.classList.contains('estado-verde')).toBe(true);
   });
 
-  it('should warn when the review action fails', async () => {
-    mockSeguimiento.marcarRevisada.mockResolvedValue(false);
+  it('should warn when a shared interaction cannot be registered', async () => {
+    mockSeguimiento.registrarInteraccion.mockResolvedValue(false);
     await crearComponente();
     const item = component.filtrados().find((i) => i.quoteId === 1)!;
 
-    await component.toggleRevisada(item);
-    expect(mockToast.error).toHaveBeenCalled();
+    component.abrirDetalle(item);
+    await vi.waitFor(() =>
+      expect(mockToast.error).toHaveBeenCalledWith('No se pudo registrar la interacción.'),
+    );
+  });
+
+  it('should not register an interaction for search or filters', async () => {
+    await crearComponente();
+    component.searchTerm = 'cliente dos';
+    component.applyFilters();
+    component.filtroAsesor = 'a2';
+    component.applyFilters();
+    component.clearFilters();
+
+    expect(mockSeguimiento.registrarInteraccion).not.toHaveBeenCalled();
   });
 
   it('should format dates and currency for the UI', async () => {

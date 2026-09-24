@@ -1,10 +1,4 @@
-import {
-  Component,
-  inject,
-  signal,
-  OnInit,
-  ChangeDetectorRef,
-} from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -18,27 +12,22 @@ import { QuoteCalculationResult, VehicleQuoteInput } from '../../../models/leasi
 import {
   SeguimientoService,
   SeguimientoItem,
+  SeguimientoBarraColor,
   SeguimientoEtapaKey,
   SEGUIMIENTO_ETAPAS,
   computeFechaEntradaEtapa,
   diasEntre,
+  estadoBarraSeguimiento,
   nivelAging,
 } from '../../../services/seguimiento.service';
-import {
-  ActivityLevel,
-  ActivitySources,
-  diasSinActividad,
-  etiquetaDias,
-  formatUltimaActividad,
-  nivelActividad,
-} from '../../../utils/quote-activity';
 
 /**
  * Módulo de seguimiento del proceso de cierre.
  *
  * Vista Lista: réplica operativa del Excel original (F. Inicio, Asesor,
- *   Referenciado, Cliente, Activo, Financiera, checklist de etapas, F. Cierre).
- *   El avance de etapas se gestiona vía checklist de chips y el drawer de detalle.
+ *   Vendedor, Cliente, Activo, Plazo, Fin, checklist de etapas y Entrega).
+ *   La barra lateral comunica antigüedad o interacción; el avance de etapas
+ *   se gestiona mediante chips y el drawer de detalle.
  *
  * Solo accesible para super_admin y socios (permiso granular `seguimiento`).
  */
@@ -81,11 +70,8 @@ export class AdminSeguimientoComponent implements OnInit {
   // Conteo de notas por cotización (entidad_tipo='quote')
   notasCount = signal<Record<string, number>>({});
 
-  /**
-   * Fecha de la última nota por cotización (ISO). Alimenta el cálculo de
-   * "días sin actividad": agregar una nota cuenta como actividad.
-   */
-  notasUltima = signal<Record<string, string | null>>({});
+  /** Evita solicitudes duplicadas cuando una acción abre y actualiza la misma fila. */
+  private readonly interaccionesEnCurso = new Set<number>();
 
   // Drawer de detalle
   showDetalle = false;
@@ -136,8 +122,7 @@ export class AdminSeguimientoComponent implements OnInit {
       if (this.filtroVendedor !== 'todos' && i.sellerId !== this.filtroVendedor) return false;
 
       if (term) {
-        const blob =
-          `${i.clientName} ${i.activo} ${i.sellerName} ${i.asesorName}`.toLowerCase();
+        const blob = `${i.clientName} ${i.activo} ${i.sellerName} ${i.asesorName}`.toLowerCase();
         if (!blob.includes(term)) return false;
       }
       return true;
@@ -149,9 +134,8 @@ export class AdminSeguimientoComponent implements OnInit {
   }
 
   /**
-   * Asesores (socios) únicos presentes en el tablero.
-   * El id se deriva del socio del vendedor; si no se resolvió nombre,
-   * el asesor queda agrupado bajo la etiqueta visible (fallback '—').
+   * Asesores únicos presentes en el tablero. Incluye socios de la red y al
+   * propio socio/superadmin cuando la cotización fue creada directamente.
    */
   private actualizarAsesores(): void {
     const mapa = new Map<string, string>();
@@ -168,12 +152,13 @@ export class AdminSeguimientoComponent implements OnInit {
   }
 
   /**
-   * Vendedores únicos del tablero. Si hay un asesor seleccionado, solo los
-   * vendedores de ese asesor (socio → sus vendedores).
+   * Vendedores reales del tablero. Las cotizaciones directas de socios y
+   * superadmins se excluyen porque no tienen un vendedor asociado.
    */
   private actualizarVendedores(): void {
     const mapa = new Map<string, string>();
     for (const i of this.items()) {
+      if (i.esVentaDirecta) continue;
       if (this.filtroAsesor !== 'todos' && (i.asesorId ?? '') !== this.filtroAsesor) continue;
       mapa.set(i.sellerId, i.sellerName);
     }
@@ -204,6 +189,40 @@ export class AdminSeguimientoComponent implements OnInit {
     return !!this.searchTerm || this.filtroAsesor !== 'todos' || this.filtroVendedor !== 'todos';
   }
 
+  // ===================== INTERACCIÓN COMPARTIDA =====================
+
+  /**
+   * Abre o modifica la cotización: sella `last_interacted_at`, mantiene verde
+   * la barra y reinicia la ventana de 15 días. No interrumpe la acción visible:
+   * el drawer/modal se abre de inmediato y la llamada termina en segundo plano.
+   */
+  private async registrarInteraccion(quoteId: number): Promise<boolean> {
+    if (this.interaccionesEnCurso.has(quoteId)) return true;
+    this.interaccionesEnCurso.add(quoteId);
+
+    try {
+      const ok = await this.seguimiento.registrarInteraccion(quoteId);
+      if (!ok) {
+        this.toastService.error('No se pudo registrar la interacción.');
+        return false;
+      }
+
+      this.applyFilters();
+      this.refrescarDetalle(quoteId);
+      return true;
+    } catch (error) {
+      console.error('No se pudo registrar la interacción:', error);
+      this.toastService.error('No se pudo registrar la interacción.');
+      return false;
+    } finally {
+      this.interaccionesEnCurso.delete(quoteId);
+    }
+  }
+
+  private registrarInteraccionEnSegundoPlano(quoteId: number): void {
+    void this.registrarInteraccion(quoteId);
+  }
+
   // ===================== ETAPAS (CHECKLIST) =====================
 
   etapaCompletada(item: SeguimientoItem, key: SeguimientoEtapaKey): boolean {
@@ -216,6 +235,7 @@ export class AdminSeguimientoComponent implements OnInit {
       this.toastService.error('No se pudo actualizar la etapa. Intenta de nuevo.');
       return;
     }
+    await this.registrarInteraccion(item.quoteId);
     this.applyFilters();
     this.refrescarDetalle(item.quoteId);
   }
@@ -228,6 +248,7 @@ export class AdminSeguimientoComponent implements OnInit {
       this.toastService.error('No se pudo cerrar el negocio. Intenta de nuevo.');
       return;
     }
+    await this.registrarInteraccion(item.quoteId);
     this.applyFilters();
     this.refrescarDetalle(item.quoteId);
     this.toastService.success(`${item.clientName} marcado como cerrado.`);
@@ -239,6 +260,7 @@ export class AdminSeguimientoComponent implements OnInit {
       this.toastService.error('No se pudo reabrir el negocio. Intenta de nuevo.');
       return;
     }
+    await this.registrarInteraccion(item.quoteId);
     this.applyFilters();
     this.refrescarDetalle(item.quoteId);
     this.toastService.info(`${item.clientName} reabierto; continúa su seguimiento.`);
@@ -299,6 +321,7 @@ export class AdminSeguimientoComponent implements OnInit {
 
   /** Abre la cotización con la hoja oficial (la misma que genera el PDF). */
   async visualizarCotizacion(item: SeguimientoItem): Promise<void> {
+    this.registrarInteraccionEnSegundoPlano(item.quoteId);
     this.quoteCargando = true;
     this.showQuoteModal = true;
     this.selectedQuote.set(null);
@@ -361,24 +384,15 @@ export class AdminSeguimientoComponent implements OnInit {
     try {
       const { data, error } = await this.client
         .from('notas')
-        .select('entidad_id, created_at')
+        .select('entidad_id')
         .eq('entidad_tipo', 'quote');
       if (error || !Array.isArray(data)) return;
       const conteo: Record<string, number> = {};
-      const ultima: Record<string, string | null> = {};
       for (const n of data) {
         const key = String((n as any).entidad_id);
         conteo[key] = (conteo[key] || 0) + 1;
-
-        const iso = (n as any).created_at as string | null;
-        if (!iso) continue;
-        const previa = ultima[key];
-        if (!previa || new Date(iso).getTime() > new Date(previa).getTime()) {
-          ultima[key] = iso;
-        }
       }
       this.notasCount.set(conteo);
-      this.notasUltima.set(ultima);
     } catch {
       // Sin conteo: los botones de notas siguen funcionando (modal por fila).
     }
@@ -386,6 +400,7 @@ export class AdminSeguimientoComponent implements OnInit {
 
   async abrirNotas(item: SeguimientoItem): Promise<void> {
     if (!this.canManageNotas) return;
+    this.registrarInteraccionEnSegundoPlano(item.quoteId);
     this.selectedQuoteId = item.quoteId;
     this.showNotasModal = true;
     this.notaText = '';
@@ -452,6 +467,7 @@ export class AdminSeguimientoComponent implements OnInit {
       this.notaEditando = null;
       await this.cargarNotasQuote(this.selectedQuoteId!);
       this.actualizarConteoNotas(this.selectedQuoteId!, this.notasCotizacion.length);
+      await this.registrarInteraccion(this.selectedQuoteId!);
       this.toastService.success(
         eraEdicion ? 'Nota actualizada correctamente' : 'Nota agregada correctamente',
       );
@@ -485,6 +501,7 @@ export class AdminSeguimientoComponent implements OnInit {
     } else {
       await this.cargarNotasQuote(this.selectedQuoteId!);
       this.actualizarConteoNotas(this.selectedQuoteId!, this.notasCotizacion.length);
+      await this.registrarInteraccion(this.selectedQuoteId!);
       this.toastService.success('Nota eliminada correctamente');
     }
     this.notaLoading = false;
@@ -511,76 +528,19 @@ export class AdminSeguimientoComponent implements OnInit {
 
   private actualizarConteoNotas(quoteId: number, count: number): void {
     this.notasCount.update((m) => ({ ...m, [String(quoteId)]: count }));
-    // Administrar notas (agregar/editar/eliminar) cuenta como actividad.
-    this.notasUltima.update((m) => ({ ...m, [String(quoteId)]: new Date().toISOString() }));
   }
 
-  // ===================== ACTIVIDAD (días sin actividad) =====================
+  // ===================== BARRA DE SEGUIMIENTO =====================
 
-  /**
-   * Fuentes de la "última actividad" de una cotización.
-   * La regla vive en `utils/quote-activity.ts` (misma que la purga automática).
-   */
-  private fuentesActividad(item: SeguimientoItem): ActivitySources {
-    return {
-      createdAt: item.createdAt,
-      lastReviewedAt: item.lastReviewedAt,
-      seguimientoUpdatedAt: item.updatedAt,
-      etapas: item.etapas,
-      fechaCierre: item.fechaCierre,
-      lastNoteAt: this.notasUltima()[String(item.quoteId)] ?? null,
-    };
-  }
-
-  /**
-   * Días transcurridos desde la última actividad: revisión, etapa marcada,
-   * entrega o nota. Revisar una cotización reinicia este contador.
-   */
-  diasSinActividadItem(item: SeguimientoItem): number {
-    return diasSinActividad(this.fuentesActividad(item));
-  }
-
-  /** Semáforo de actividad: verde < 8 días, amarillo 8–15, rojo ≥ 16. */
-  nivelActividadItem(item: SeguimientoItem): ActivityLevel {
-    return nivelActividad(this.diasSinActividadItem(item));
-  }
-
-  /** Fecha legible de la última actividad (dd/mm/aaaa). */
-  ultimaActividadItem(item: SeguimientoItem): string {
-    return formatUltimaActividad(this.fuentesActividad(item));
-  }
-
-  /** Etiqueta corta del contador: "Hoy", "Ayer" o "Hace N días". */
-  etiquetaActividadItem(item: SeguimientoItem): string {
-    return etiquetaDias(this.diasSinActividadItem(item));
-  }
-
-  // ===================== REVISIÓN =====================
-
-  /**
-   * Marca/desmarca la cotización como revisada.
-   * Revisar sella `quotes.last_reviewed_at`, que es una de las fuentes de la
-   * última actividad: los días sin actividad vuelven a cero.
-   */
-  async toggleRevisada(item: SeguimientoItem): Promise<void> {
-    const revisada = !item.revisada;
-    const ok = await this.seguimiento.marcarRevisada(item, revisada);
-    if (!ok) {
-      this.toastService.error('No se pudo actualizar la revisión. Intenta de nuevo.');
-      return;
-    }
-    this.applyFilters();
-    this.refrescarDetalle(item.quoteId);
-    this.toastService.success(
-      revisada
-        ? `${item.clientName} marcada como revisada.`
-        : `${item.clientName} vuelve a la lista de pendientes.`,
-    );
+  /** 0–3 azul, 4–5 amarillo, 6+ rojo; verde si fue interactuada o entregada. */
+  estadoBarraItem(item: SeguimientoItem): SeguimientoBarraColor {
+    return estadoBarraSeguimiento(item);
   }
 
   // ===================== DETALLE =====================
 
   abrirDetalle(item: SeguimientoItem): void {
+    this.registrarInteraccionEnSegundoPlano(item.quoteId);
     this.detalle.set(item);
     this.formReferenciado = item.referenciado;
     this.formFinanciera = item.financiera;
@@ -621,6 +581,7 @@ export class AdminSeguimientoComponent implements OnInit {
       this.toastService.error('No se pudieron guardar los datos del negocio.');
       return;
     }
+    await this.registrarInteraccion(item.quoteId);
     this.applyFilters();
     this.refrescarDetalle(item.quoteId);
     this.toastService.success('Datos del negocio actualizados.');
