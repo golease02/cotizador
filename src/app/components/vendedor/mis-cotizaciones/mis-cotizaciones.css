@@ -473,6 +473,16 @@
   }
 }
 
+@media (max-width: 768px) {
+  .dashboard-header {
+    display: none;
+  }
+
+  .dashboard-cotizaciones {
+    margin-top: 1rem;
+  }
+}
+
 @media (max-width: 640px) {
   .dashboard-cotizaciones {
     margin-top: 1rem;
