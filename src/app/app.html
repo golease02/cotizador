@@ -2,6 +2,7 @@
   <app-header />
 }
 <router-outlet />
+<app-mobile-admin-navigation />
 @if (!hideChromeRoute() && toastService.toasts().length) {
   <div class="toast-host" aria-live="polite">
     @for (t of toastService.toasts(); track t.id) {

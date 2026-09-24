@@ -209,10 +209,10 @@
   color: var(--text-on-accent);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .toast-host {
     right: 0.7rem;
-    bottom: 0.7rem;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
     left: 0.7rem;
   }
 }

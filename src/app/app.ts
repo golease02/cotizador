@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/header/header';
+import { MobileAdminNavigationComponent } from './components/navigation/mobile-admin-navigation/mobile-admin-navigation';
 import { ToastService } from './services/toast.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent],
+  imports: [RouterOutlet, HeaderComponent, MobileAdminNavigationComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
