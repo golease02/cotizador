@@ -47,7 +47,9 @@ export class MisCotizacionesComponent implements OnInit {
   showDetail = signal(false);
 
   async ngOnInit() {
-    await Promise.all([this.catalog.loadStatePlates(), this.catalog.loadCalculatorConfig()]);
+    // Catálogos y lista se cargan en paralelo: la tabla no debe esperar a
+    // placas/configuración para mostrar las cotizaciones del vendedor.
+    void Promise.all([this.catalog.loadStatePlates(), this.catalog.loadCalculatorConfig()]);
     await this.cargarCotizaciones();
   }
 

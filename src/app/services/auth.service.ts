@@ -35,6 +35,7 @@ export class AuthService {
   private client = getSupabaseClient();
 
   private currentProfileSignal = signal<Profile | null>(null);
+  private profileRequest: { userId: string; promise: Promise<Profile | null> } | null = null;
   public readonly currentUser = currentUserSignal.asReadonly();
   public readonly currentProfile = this.currentProfileSignal.asReadonly();
 
@@ -152,6 +153,7 @@ export class AuthService {
   public async signOut(): Promise<void> {
     await this.client.auth.signOut();
     resetSessionReady();
+    this.profileRequest = null;
     this.currentProfileSignal.set(null);
     if (typeof window !== 'undefined') {
       try {
@@ -186,18 +188,37 @@ export class AuthService {
   }
 
   public async loadProfile(userId: string): Promise<Profile | null> {
-    const { data, error } = await this.client
-      .from('profiles')
-      .select(
-        'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude, socio_id, permisos',
-      )
-      .eq('id', userId)
-      .maybeSingle();
-    if (!error && data) {
-      this.currentProfileSignal.set(data as Profile);
-      return data as Profile;
+    // Guards, header y navegación pueden pedir el perfil al mismo tiempo.
+    // Compartir la promesa evita varias consultas idénticas a profiles.
+    if (this.profileRequest?.userId === userId) {
+      return this.profileRequest.promise;
     }
-    return null;
+
+    const request = (async (): Promise<Profile | null> => {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select(
+          'id, email, recovery_email, full_name, role, active, seller_number, agency_brand, agency_location, latitude, longitude, socio_id, permisos',
+        )
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!error && data) {
+        const profile = data as Profile;
+        this.currentProfileSignal.set(profile);
+        return profile;
+      }
+      return null;
+    })();
+
+    this.profileRequest = { userId, promise: request };
+    try {
+      return await request;
+    } finally {
+      if (this.profileRequest?.promise === request) {
+        this.profileRequest = null;
+      }
+    }
   }
 
   public async updateProfile(userId: string, data: Record<string, unknown>): Promise<AuthResult> {

@@ -37,6 +37,11 @@ export function resetSessionReady(): void {
 
 export function setSessionUser(user: User | null): void {
   currentUserSignal.set(user);
+  // Un login exitoso ya resolvió la sesión; evita que el guard vuelva a
+  // consultar getSession() al navegar a la página destino.
+  if (user) {
+    _sessionReadyPromise = Promise.resolve();
+  }
 }
 
 export type { Session };

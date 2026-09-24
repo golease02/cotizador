@@ -202,6 +202,14 @@ export class QuotesService {
     return { data: resultado.data, error: resultado.error };
   }
 
+  private withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer!));
+  }
+
   /**
    * Carga las cotizaciones propias junto con el avance de seguimiento visible.
    * La RPC aplica el alcance `seller_id = auth.uid()` en la base de datos; el
@@ -217,7 +225,18 @@ export class QuotesService {
     const user = currentUserSignal();
     if (!user) return { data: [], error: null };
 
-    const { data, error } = await this.client.rpc('get_vendedor_seguimiento');
+    let rpcResult: { data: any; error: any };
+    try {
+      rpcResult = await this.withTimeout(
+        Promise.resolve(this.client.rpc('get_vendedor_seguimiento')),
+        10000,
+        'El servidor tardó demasiado en responder. Intenta de nuevo.',
+      );
+    } catch (error) {
+      return { data: null, error };
+    }
+
+    const { data, error } = rpcResult;
     if (!error) {
       return { data: (data || []) as VendedorSeguimientoRow[], error: null };
     }
@@ -230,7 +249,16 @@ export class QuotesService {
 
     if (!rpcNoDisponible) return { data: null, error };
 
-    const fallback = await this.getVendedorQuotes(user.id);
+    let fallback: { data: any; error: any };
+    try {
+      fallback = await this.withTimeout(
+        this.getVendedorQuotes(user.id),
+        10000,
+        'El servidor tardó demasiado en responder. Intenta de nuevo.',
+      );
+    } catch (fallbackError) {
+      return { data: null, error: fallbackError };
+    }
     if (fallback.error) return { data: null, error: fallback.error };
 
     return {

@@ -107,10 +107,26 @@ export class LoginComponent {
     try {
       const { data: profile, error: profileError } = await this.withTimeout(
         this.auth.getProfileBySellerNumber(this.phoneNumber),
-        15000,
+        10000,
         'No se pudo contactar al servidor. Revisa tu conexión e intenta de nuevo.'
       );
-      if (profileError || !profile) {
+      if (profileError) {
+        const detail = String(profileError?.message || '').toLowerCase();
+        const networkError =
+          detail.includes('fetch') ||
+          detail.includes('network') ||
+          detail.includes('timeout') ||
+          detail.includes('connection') ||
+          detail.includes('failed') ||
+          detail.includes('pgrst');
+        this.errorMessage.set(
+          networkError
+            ? 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.'
+            : 'Número de celular no registrado.',
+        );
+        return;
+      }
+      if (!profile) {
         this.errorMessage.set('Número de celular no registrado.');
         return;
       }
@@ -125,7 +141,7 @@ export class LoginComponent {
       }
       const { error } = await this.withTimeout(
         this.auth.signIn(email, this.password),
-        20000,
+        15000,
         'El servidor tardó demasiado en responder al iniciar sesión. Revisa tu conexión e intenta de nuevo.'
       );
       if (error) {
@@ -146,7 +162,7 @@ export class LoginComponent {
         try {
           loggedProfile = await this.withTimeout(
             this.auth.loadProfile(user.id),
-            15000,
+            10000,
             'Se inició sesión pero no se pudo cargar el perfil. Revisa tu conexión e intenta de nuevo.'
           );
         } catch (e: any) {
@@ -164,9 +180,8 @@ export class LoginComponent {
       } else {
         void this.router.navigate(['/']);
       }
-    } catch {
-      // Error silencioso: no se muestra en consola
-      this.errorMessage.set('Ocurrió un error inesperado. Intenta de nuevo.');
+    } catch (error: any) {
+      this.errorMessage.set(error?.message || 'Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       this.isLoading.set(false);
     }
