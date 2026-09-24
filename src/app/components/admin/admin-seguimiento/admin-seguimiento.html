@@ -122,7 +122,7 @@
           (click)="abrirDetalle(item)"
           (keydown.enter)="abrirDetalle(item)"
         >
-          <td class="td-fecha">
+          <td class="td-fecha" data-label="F. Inicio">
             <span class="celda-fecha">{{ formatFecha(item.createdAt) }}</span>
             <span class="inicio-acciones">
               <button
@@ -157,15 +157,17 @@
               </button>
             </span>
           </td>
-          <td class="td-asesor">{{ item.asesorName }}</td>
-          <td class="td-vendedor">{{ item.sellerName }}</td>
-          <td class="td-cliente">{{ item.clientName }}</td>
-          <td class="td-activo">{{ item.activo }}</td>
-          <td class="td-plazo">{{ item.termMonths ? item.termMonths + ' meses' : '—' }}</td>
-          <td class="td-fin">
+          <td class="td-asesor" data-label="Asesor">{{ item.asesorName }}</td>
+          <td class="td-vendedor" data-label="Vendedor">{{ item.sellerName }}</td>
+          <td class="td-cliente" data-label="Cliente">{{ item.clientName }}</td>
+          <td class="td-activo" data-label="Activo">{{ item.activo }}</td>
+          <td class="td-plazo" data-label="Plazo">
+            {{ item.termMonths ? item.termMonths + ' meses' : '—' }}
+          </td>
+          <td class="td-fin" data-label="Fin">
             <span class="financiera-chip">{{ item.financiera }}</span>
           </td>
-          <td class="td-etapa" *ngFor="let e of etapas">
+          <td class="td-etapa" *ngFor="let e of etapas" [attr.data-label]="e.short">
             <button
               type="button"
               class="etapa-chip"
@@ -176,7 +178,7 @@
               {{ etapaCompletada(item, e.key) ? '✓' : '' }}
             </button>
           </td>
-          <td class="td-cierre">
+          <td class="td-cierre" data-label="Entrega">
             <button
               type="button"
               class="etapa-chip entrega-chip"
@@ -193,7 +195,7 @@
               {{ item.fechaCierre ? '✓' : '' }}
             </button>
           </td>
-          <td class="td-acciones">
+          <td class="td-acciones" data-label="Acciones">
             <button
               type="button"
               class="btn-eliminar"
