@@ -200,18 +200,18 @@
               </span>
             </div>
 
-            <div class="seller-cell cell-quotes">
+            <div class="seller-cell cell-quotes" data-label="Cotizaciones">
               <span class="cell-value">{{ s.quotesPeriod }}</span>
               <span class="cell-delta" [ngClass]="deltaClass(s)">{{ deltaLabel(s) }}</span>
               <span class="cell-sub">{{ s.totalQuotes }} totales</span>
             </div>
 
-            <div class="seller-cell cell-activity">
+            <div class="seller-cell cell-activity" data-label="Última actividad">
               <span class="estado-badge" [ngClass]="estadoActividad(s).className">{{ estadoActividad(s).label }}</span>
               <span class="cell-sub">{{ s.quotesWeek }} en 7 días</span>
             </div>
 
-            <div class="seller-cell cell-status">
+            <div class="seller-cell cell-status" data-label="Estado de cotizaciones">
               <div class="status-bar" *ngIf="totalColores(s) > 0">
                 <span class="seg seg-reciente" [style.width.%]="colorWidth(s, 'reciente')"
                   [title]="'Recientes: ' + s.byColor.reciente"></span>
@@ -229,17 +229,17 @@
               <span class="cell-sub" *ngIf="totalColores(s) === 0">Sin cotizaciones</span>
             </div>
 
-            <div class="seller-cell cell-pipeline">
+            <div class="seller-cell cell-pipeline" data-label="Monto cotizado">
               <span class="cell-value">{{ s.pipelineValue | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
               <span class="cell-sub">Ticket: {{ s.avgTicket | currency: 'MXN' : 'symbol' : '1.0-0' }}</span>
             </div>
 
-            <div class="seller-cell cell-notes">
+            <div class="seller-cell cell-notes" data-label="Notas">
               <span class="cell-value">{{ s.notasCount }}</span>
               <span class="cell-sub">notas</span>
             </div>
 
-            <div class="seller-cell cell-actions">
+            <div class="seller-cell cell-actions" data-label="Acciones">
               <a class="btn-quotes" [routerLink]="['/admin/seguimiento']" [queryParams]="{ seller: s.id }">
                 Ver seguimiento
               </a>

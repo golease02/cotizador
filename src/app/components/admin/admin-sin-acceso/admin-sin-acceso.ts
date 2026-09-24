@@ -124,6 +124,25 @@ import { ThemeService } from '../../../services/theme.service';
     .back-link-btn:hover{
       color:var(--text-main);
     }
+    @media (max-width:768px){
+      .main-content{
+        min-height:0;
+        padding:.35rem;
+      }
+      .sin-acceso-card{
+        padding:1rem;
+        border:1px solid var(--border-color);
+      }
+      .sin-acceso-title{
+        font-size:1.25rem;
+      }
+      .module-link{
+        min-height:48px;
+      }
+      .back-link-btn{
+        min-height:44px;
+      }
+    }
   `],
 })
 export class AdminSinAccesoComponent {

@@ -127,7 +127,10 @@
   font-size: 0.9rem;
   background: var(--surface-subtle);
   color: var(--text-silver);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 .plates-container .search-input::placeholder {
@@ -189,7 +192,9 @@
   font-size: 0.85rem;
   cursor: pointer;
   appearance: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .toolbar-select select:focus {
@@ -243,7 +248,10 @@
   border-radius: 12px;
   background: var(--surface-card);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .plate-card:hover {
@@ -424,8 +432,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
@@ -442,8 +454,14 @@
 }
 
 @keyframes riseIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-content h3 {
@@ -495,7 +513,9 @@
   font-size: 0.85rem;
   cursor: pointer;
   box-shadow: 0 10px 20px -8px rgba(32, 176, 56, 0.5);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .btn-confirm:hover {
@@ -556,7 +576,10 @@
   color: var(--text-main);
   font-size: 0.92rem;
   font-family: var(--font-body);
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
 }
 
 .form-group input:focus,
@@ -678,8 +701,12 @@
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .form-drawer {
@@ -753,7 +780,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .form-banner {
@@ -790,14 +819,23 @@
   height: 180px;
   border-radius: 14px;
   border: 1px solid var(--border-color);
-  background: linear-gradient(90deg, var(--surface-muted) 25%, var(--surface-subtle) 50%, var(--surface-muted) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 25%,
+    var(--surface-subtle) 50%,
+    var(--surface-muted) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ===== CURRENCY ===== */
@@ -828,8 +866,7 @@
 
 @media (max-width: 768px) {
   .plates-container {
-    padding: 1rem;
-    border-radius: 12px;
+    padding: 0;
   }
 
   .plates-container .toolbar {
@@ -878,7 +915,6 @@
     width: 100%;
     justify-content: center;
   }
-
 
   /* Acciones del modal apiladas y a ancho completo (consistente con
      drawer-actions y el resto del panel en móvil). */
@@ -966,4 +1002,51 @@
 .plates-container > *:not(.modal-overlay):not(.drawer-overlay):not(.toast-host) {
   position: relative;
   z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .drawer {
+    width: 100vw;
+    height: 100dvh;
+  }
+
+  .drawer-header {
+    padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 0.85rem;
+  }
+
+  .drawer-body {
+    padding: 1rem;
+    overscroll-behavior: contain;
+  }
+
+  .modal-content {
+    width: calc(100% - 0.5rem);
+    max-width: none;
+    max-height: 90dvh;
+    box-sizing: border-box;
+  }
+
+  .plate-card {
+    padding: 0.9rem;
+  }
+
+  .plate-card-footer {
+    align-items: flex-end;
+    flex-direction: column;
+  }
+
+  .plate-usage {
+    align-self: flex-start;
+  }
+
+  .action-buttons {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+  }
+
+  .plates-container .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
 }

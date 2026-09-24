@@ -54,7 +54,9 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 .metric-card:hover {
   transform: translateY(-3px);
@@ -341,7 +343,9 @@
   margin-bottom: 1rem;
 }
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============================================
@@ -360,16 +364,47 @@
     grid-template-columns: 1fr;
   }
   .metrics-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
   }
+  .metric-card {
+    min-width: 0;
+  }
+  .bar-item {
+    min-width: 0;
+  }
+  .bar-label {
+    width: 38%;
+  }
 }
 @media (max-width: 480px) {
   .metrics-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+  .metric-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.85rem;
+  }
+  .metric-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .metric-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .metric-label {
+    min-height: 2.2em;
+    font-size: 0.66rem;
+  }
+  .metric-value {
+    font-size: 1.55rem;
   }
 }
 
@@ -527,7 +562,9 @@
   border-radius: 10px;
   background: var(--surface-card);
   box-shadow: 0 5px 14px rgba(15, 23, 42, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .quote-card-mini:hover {
@@ -782,5 +819,33 @@
 
   .quote-card-mini .card-header {
     gap: 0.5rem;
+  }
+
+  .chart-card,
+  .attention-panel,
+  .quotes-column {
+    padding: 0.85rem;
+  }
+
+  .attention-summary {
+    gap: 0.35rem;
+  }
+
+  .attention-action {
+    width: 100%;
+    margin-left: 1.35rem;
+    padding: 0.45rem 0;
+    text-align: left;
+  }
+
+  .quote-card-mini .card-footer,
+  .quote-card-mini .card-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .quote-card-mini .price-tag,
+  .quote-card-mini .status-badge {
+    white-space: nowrap;
   }
 }

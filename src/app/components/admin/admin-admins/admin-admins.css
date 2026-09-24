@@ -1116,8 +1116,7 @@ button.stat-card:hover {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .admins-container {
-    padding: 1rem;
-    border-radius: 12px;
+    padding: 0;
   }
 
   .admins-container .page-header {
@@ -1880,4 +1879,121 @@ button.stat-card:hover {
   border: 1px solid rgba(245, 158, 11, 0.4);
   font-size: 0.9rem;
   line-height: 1.4;
+}
+
+/* Ajustes táctiles adicionales para móvil */
+@media (max-width: 768px) {
+  .stat-card {
+    min-width: 0;
+  }
+
+  .stat-body {
+    min-width: 0;
+  }
+
+  .drawer {
+    width: 100vw;
+    height: 100dvh;
+  }
+
+  .drawer-header {
+    padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 0.85rem;
+  }
+
+  .drawer-body {
+    padding: 1rem;
+    overscroll-behavior: contain;
+  }
+
+  .drawer-actions,
+  .modal-actions,
+  .detail-actions,
+  .reassign-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .drawer-actions .btn-cancel,
+  .drawer-actions .btn-confirm,
+  .modal-actions .btn-cancel,
+  .modal-actions .btn-confirm,
+  .detail-actions .btn-cancel,
+  .detail-actions .btn-primary,
+  .detail-actions .btn-danger,
+  .reassign-actions .btn-cancel,
+  .reassign-actions .btn-primary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .modal-content,
+  .reassign-modal-content {
+    width: calc(100% - 0.5rem);
+    max-width: none;
+    max-height: 90dvh;
+    box-sizing: border-box;
+  }
+
+  .users-table td:not(.user-cell) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .users-table td:not(.user-cell)::before {
+    margin-bottom: 0.2rem;
+  }
+
+  .actions-column,
+  .action-buttons {
+    width: 100%;
+  }
+
+  .action-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .seller-linked-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .seller-linked-name {
+    min-width: calc(100% - 90px);
+  }
+
+  .seller-linked-phone {
+    margin-left: 2.35rem;
+  }
+
+  .btn-reassign-mini {
+    margin-left: auto;
+    min-height: 42px;
+  }
+
+  .permiso-item {
+    min-height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    gap: 0.6rem;
+  }
+
+  .stat-card {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.75rem;
+  }
+
+  .stat-body small {
+    min-height: 2.4em;
+    font-size: 0.64rem;
+  }
 }

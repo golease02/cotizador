@@ -2110,8 +2110,7 @@ html[data-theme='dark'] .notas-overlay {
 
 @media (max-width: 768px) {
   .sellers-container {
-    padding: 1rem;
-    border-radius: 12px;
+    padding: 0;
   }
 
   .sellers-container .page-header {
@@ -2473,7 +2472,7 @@ html[data-theme='dark'] .notas-overlay {
 
 @media (max-width: 480px) {
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .detail-actions {
@@ -2615,4 +2614,107 @@ html[data-theme='dark'] .notas-overlay {
 .delete-summary-error {
   color: #c0362c;
   font-size: 0.9rem;
+}
+
+/* Ajustes táctiles adicionales para móvil */
+@media (max-width: 768px) {
+  .stat-card {
+    min-width: 0;
+  }
+
+  .stat-body {
+    min-width: 0;
+  }
+
+  .stat-body small {
+    overflow-wrap: anywhere;
+  }
+
+  .drawer {
+    width: 100vw;
+    height: 100dvh;
+  }
+
+  .drawer-header {
+    padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 0.85rem;
+  }
+
+  .drawer-body {
+    padding: 1rem;
+    overscroll-behavior: contain;
+  }
+
+  .drawer-footer {
+    padding: 0.8rem 1rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .drawer-actions,
+  .drawer-footer,
+  .modal-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .drawer-actions .btn-cancel,
+  .drawer-actions .btn-confirm,
+  .drawer-footer .btn-secondary,
+  .drawer-footer .btn-primary,
+  .modal-actions .btn-cancel,
+  .modal-actions .btn-confirm {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .modal-content {
+    width: calc(100% - 0.5rem);
+    max-width: none;
+    max-height: 90dvh;
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+
+  .users-table td {
+    align-items: flex-start;
+  }
+
+  .users-table td:not(.user-cell) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .users-table td:not(.user-cell)::before {
+    margin-bottom: 0.2rem;
+  }
+
+  .actions-column,
+  .action-buttons {
+    width: 100%;
+  }
+
+  .action-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    gap: 0.6rem;
+  }
+
+  .stat-card {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.75rem;
+  }
+
+  .stat-body small {
+    min-height: 2.4em;
+    font-size: 0.64rem;
+  }
 }
