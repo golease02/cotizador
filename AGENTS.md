@@ -45,6 +45,8 @@ npm test           # ejecuta Vitest via ng test
 npx supabase db push
 ```
 
+> **Economía de recursos:** ejecuta estos comandos solo cuando son imprescindibles para validar un cambio concreto. Por rutina no corras `npm install`, `npm start`, `npm run build` ni `npx supabase db push` (toca la BD remota y pide password). **Los `git add` / `git commit` / `git push` los hace el usuario**; el agente solo propone el mensaje de commit.
+
 ## 2. Estructura del proyecto
 
 ```
@@ -336,6 +338,7 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 ### Commits
 
+- **Ejecución:** `git add` / `git commit` / `git push` los realiza **el usuario**, nunca el agente. El agente solo **propone** el mensaje de commit al resumir el trabajo.
 - **Formato:** español descriptivo (no Conventional Commits)
 - Ejemplos del historial:
   - `Fix crash al abrir drawer Nuevo Socio: catalogos constantes + detectChanges sincrono en zoneless`
@@ -348,14 +351,15 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 1. **Inspeccionar antes de modificar** — siempre lee el archivo, entiende el contexto, y verifica queries RPC antes de proponer cambios.
 2. **Trabajar en modo Plan antes de Act** — explora, analiza, propone, y confirma con el usuario antes de editar.
-3. **Commits pequeños y frecuentes** — un cambio de responsabilidad por commit. Usa mensajes descriptivos en español.
-4. **No reescribir código existente sin avisar** — propone primero; si hay refactor necesario, hazlo en un commit separado.
+3. **No ejecutar git de escritura** — nunca corras `git add`, `git commit`, `git push`, `git reset`, `git checkout` ni similares: los commits y pushes los hace el usuario. Propone el mensaje de commit (español descriptivo, uno por responsabilidad) al resumir. `git status`, `git log` y `git diff` de solo lectura sí, cuando aporten contexto.
+4. **No reescribir código existente sin avisar** — propone primero; si hay refactor necesario, sepáralo como cambio independiente en el resumen y propón un mensaje de commit distinto (sin ejecutarlo).
 5. **Usar el modo Debug para diagnosticar, no para construir** — lee logs, revisa errores, inspecciona la BD; no uses el debug como justificación para añadir features no solicitadas.
 6. **No tocar el PDF salvo requerimiento explícito** — el componente `quote-breakdown` y su HTML son el motor de generación de PDF; no modificar salvo que se pida expresamente.
-7. **Al terminar un bloque, correr pruebas** — `npm test -- --watch=false` y verificar que nada rompa.
-8. **Resumir cambios** — al finalizar, lista qué se modificó, por qué, y cómo probarlo.
+7. **Validar al cerrar el bloque, no en cada iteración** — si el bloque tocó código, corre `npm test -- --watch=false` una sola vez y verifica que nada rompa; no re-ejecutes la suite sin motivo. No corras `npm install`, `npm start`, `npm run build` ni `npx supabase db push` salvo petición explícita.
+8. **Resumir cambios** — al finalizar, lista qué se modificó, por qué, cómo probarlo y el mensaje de commit sugerido (sin ejecutarlo).
 9. **Si hay dudas, preguntar antes de asumir** — marca incertidumbres como `[POR CONFIRMAR]` en vez de inventar.
 10. **Respeta el stack existente** — no agregues librerías nuevas sin consultar.
+11. **Economía de tokens y procesos** — inspecciona con lecturas puntuales (rangos de línea y búsquedas) en vez de releer archivos completos; no repitas exploraciones ya hechas, no regeneres `dist/` ni limpies `.angular/cache/`, no instales dependencias, no levantes el servidor de desarrollo y no apliques migraciones ni seeds sin confirmación. Procesos largos (build, suite completa o `supabase db push`) solo con una razón clara.
 
 ## 7. Pendientes conocidos
 

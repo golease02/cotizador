@@ -70,6 +70,10 @@
   transition: transform 0.25s ease;
 }
 
+:host-context(html[data-theme='dark']) .header-logo-img {
+  filter: brightness(0) invert(1);
+}
+
 .logo-link:hover .header-logo-img {
   transform: scale(1.05);
 }
