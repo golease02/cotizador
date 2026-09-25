@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import type { User } from '@supabase/supabase-js';
 import { AdminSellersComponent } from './admin-sellers';
+import { AdminService } from '../../../services/admin.service';
 import { AuthService, Profile } from '../../../services/auth.service';
 import { AdminScopeService } from '../../../services/admin-scope.service';
 import { NotesService } from '../../../services/notes.service';
@@ -23,11 +24,28 @@ describe('AdminSellersComponent scope', () => {
   let network: { id: string }[];
   let networkError: object | null;
   let rpc: ReturnType<typeof vi.spyOn>;
-  let quoteIn = vi.fn<(column: string, values: string[]) => void>();
+  let profileIn = vi.fn<(column: string, values: string[]) => void>();
   const sellers = [
-    { id: 'seller-a', full_name: 'Ana', active: true, agency_brand: 'TOYOTA', quote_count: 2 },
-    { id: 'seller-b', full_name: 'Beto', active: false, agency_brand: 'FORD', quote_count: 5 },
+    {
+      id: 'seller-a',
+      full_name: 'Ana',
+      active: true,
+      agency_brand: 'TOYOTA',
+      agency_location: 'Blvd. Bernardo Quintana 300, Querétaro',
+      quote_count: 2,
+      socio_id: 'socio-1',
+    },
+    {
+      id: 'seller-b',
+      full_name: 'Beto',
+      active: false,
+      agency_brand: 'FORD',
+      agency_location: 'Av. Reino Unido 100, CDMX',
+      quote_count: 5,
+      socio_id: '',
+    },
   ];
+  const advisors = [{ id: 'socio-1', full_name: 'César González' }];
   const payload = () => ({ data: sellers.map((seller) => ({ seller })), error: null });
 
   beforeEach(async () => {
@@ -42,7 +60,7 @@ describe('AdminSellersComponent scope', () => {
     };
     network = [{ id: 'seller-a' }];
     networkError = null;
-    quoteIn = vi.fn();
+    profileIn = vi.fn();
     vi.spyOn(client.auth, 'getSession').mockResolvedValue({ data: { session: null }, error: null });
     vi.spyOn(client, 'from').mockImplementation((table: string): any => {
       let columns = '';
@@ -55,22 +73,19 @@ describe('AdminSellersComponent scope', () => {
         eq: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         in: vi.fn((column: string, values: string[]) => {
-          if (table === 'quotes') {
-            quoteIn(column, values);
+          // Solo la resolución de asesores consulta profiles por `id`; getSocios()
+          // filtra por `role` y no debe contar para esta aserción.
+          if (table === 'profiles' && column === 'id') {
+            profileIn(column, values);
             ids = values;
           }
           return query;
         }),
         maybeSingle: vi.fn(async () => ({ data: profile, error: null })),
         then: (resolve: (value: unknown) => unknown) => {
-          const quotes = sellers.map((s) => ({
-            seller_id: s.id,
-            revisada: true,
-            created_at: new Date().toISOString(),
-          }));
           const data =
-            table === 'quotes'
-              ? quotes.filter((q) => !ids || ids.includes(q.seller_id))
+            table === 'profiles'
+              ? advisors.filter((p) => !ids || ids.includes(p.id))
               : columns === 'id'
                 ? network
                 : [];
@@ -118,6 +133,135 @@ describe('AdminSellersComponent scope', () => {
     expect(component.filteredSellers()).toHaveLength(2);
     expect(fixture.nativeElement.textContent).toContain('Ana');
     expect(fixture.nativeElement.textContent).toContain('Beto');
+  });
+
+  // Ajuste 18: la tabla arranca con ASESOR y todos los rótulos van en
+  // mayúsculas sin acentos (Whatsapp, Ubicacion).
+  it('should render the header in order starting with the advisor column', async () => {
+    await render();
+    const headers = Array.from(
+      fixture.nativeElement.querySelectorAll('.users-table thead th') as NodeListOf<HTMLElement>,
+    ).map((th) => th.textContent?.trim());
+
+    expect(headers).toEqual(['Asesor', 'Agencia', 'Nombre', 'Whatsapp', 'Ubicacion', 'Acciones']);
+    expect(headers.join(' ')).not.toContain('Semáforo');
+    expect(headers.join(' ')).not.toContain('Teléfono');
+    expect(headers.join(' ')).not.toContain('Ubicación');
+  });
+
+  // Ajuste 19: la barra vuelve a existir, pero solo con buscador y orden.
+  it('should keep a toolbar with only the search box and the sort select', async () => {
+    await render();
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelectorAll('.toolbar')).toHaveLength(1);
+    expect(root.querySelectorAll('.search-wrapper')).toHaveLength(1);
+    expect(root.querySelectorAll('.search-input')).toHaveLength(1);
+    expect(root.querySelectorAll('.toolbar-select')).toHaveLength(1);
+    // El contador de resultados y el filtro de estatus no vuelven.
+    expect(root.querySelector('.results-count')).toBeNull();
+    expect(root.querySelector('.chip-group')).toBeNull();
+    expect(root.querySelectorAll('.toolbar-select option[value="todas"]')).toHaveLength(0);
+  });
+
+  // Ajuste 18: las tarjetas de resumen y el semáforo siguen fuera.
+  it('should drop the summary cards and the traffic light', async () => {
+    await render();
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelector('.stats-grid')).toBeNull();
+    expect(root.querySelector('.stat-card')).toBeNull();
+    expect(root.querySelector('.semaforo-cell')).toBeNull();
+    expect(root.querySelector('.dot')).toBeNull();
+  });
+
+  it('should offer only the three A-Z sort options', async () => {
+    await render();
+    const opciones = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.toolbar-select option',
+      ) as NodeListOf<HTMLOptionElement>,
+    ).map((o) => o.textContent?.trim());
+
+    expect(opciones).toEqual(['Asesor A-Z', 'Agencia A-Z', 'Ubicacion A-Z']);
+    const texto = opciones.join(' ');
+    expect(texto).not.toContain('Más recientes');
+    expect(texto).not.toContain('Más cotizaciones');
+    expect(texto).not.toContain('Antiguos');
+    expect(texto).not.toContain('Nombre A');
+  });
+
+  it('should sort by advisor by default', async () => {
+    await render();
+
+    expect(component.sortBy).toBe('asesor');
+    const celdas = Array.from(
+      fixture.nativeElement.querySelectorAll('td.asesor-cell') as NodeListOf<HTMLElement>,
+    ).map((td) => td.textContent?.trim());
+
+    // "César González" (C) antes que "Sin asesor" (S).
+    expect(celdas).toEqual(['César González', 'Sin asesor']);
+  });
+
+  it('should search by the advisor name', async () => {
+    await render();
+
+    component.searchTerm = 'César';
+    component.onSearch();
+    fixture.detectChanges();
+
+    expect(component.filteredSellers().map((s: any) => s.full_name)).toEqual(['Ana']);
+
+    component.clearSearch();
+    fixture.detectChanges();
+    expect(component.filteredSellers()).toHaveLength(2);
+  });
+
+  it('should sort by agency and by location on demand', async () => {
+    await render();
+    const nombres = () => component.filteredSellers().map((s: any) => s.full_name);
+
+    component.setSortBy('agencia');
+    // TOYOTA antes que FORD: T > F.
+    expect(nombres()).toEqual(['Beto', 'Ana']);
+
+    component.setSortBy('ubicacion');
+    // "Av. Reino Unido" antes que "Blvd. Bernardo Quintana".
+    expect(nombres()).toEqual(['Beto', 'Ana']);
+  });
+
+  it('should show the empty state and restore the list when nothing matches', async () => {
+    await render();
+
+    component.searchTerm = 'no-existe-este-texto';
+    component.onSearch();
+    fixture.detectChanges();
+
+    const vacio = fixture.nativeElement.querySelector('.empty-state') as HTMLElement;
+    expect(component.filteredSellers()).toHaveLength(0);
+    expect(vacio.textContent).toContain('Sin resultados');
+    expect(vacio.textContent).toContain('Ajusta tu búsqueda');
+
+    component.clearFilters();
+    fixture.detectChanges();
+    expect(component.searchTerm).toBe('');
+    expect(component.sortBy).toBe('asesor');
+    expect(component.filteredSellers()).toHaveLength(2);
+  });
+
+  it('should resolve the advisor name and fall back to "Sin asesor"', async () => {
+    await render();
+
+    // Una sola consulta con el socio_id de cada vendedor + el usuario en sesión.
+    expect(profileIn).toHaveBeenCalledTimes(1);
+    const [, ids] = profileIn.mock.calls[0];
+    expect(ids).toEqual(expect.arrayContaining(['socio-1']));
+
+    const celdas = Array.from(
+      fixture.nativeElement.querySelectorAll('td.asesor-cell') as NodeListOf<HTMLElement>,
+    ).map((td) => td.textContent?.trim());
+
+    expect(celdas).toEqual(['César González', 'Sin asesor']);
   });
 
   it('should link to the seller quotes with the seller filter when the detail drawer opens', async () => {
@@ -198,31 +342,69 @@ describe('AdminSellersComponent scope', () => {
     expect(component.showNotaConfirmModal).toBe(false);
   });
 
-  it('should include the author in the seller notes tooltip', async () => {
+  it('should not find sellers without an advisor when searching "sin asesor"', async () => {
     await render();
-    vi.spyOn(notes, 'getNotes').mockResolvedValue({
-      data: [
-        {
-          id: '3f1b9a52-0c4d-4f7e-9a11-2b6c8d5e4f30',
-          entidad_tipo: 'seller',
-          entidad_id: 'seller-a',
-          texto: 'Revisar documentación',
-          creado_por: 'admin-a',
-          created_at: new Date().toISOString(),
-          autor_nombre: 'César González',
-          autor_rol: 'super_admin',
-          es_propia: true,
-        },
-      ],
-      error: null,
+
+    component.searchTerm = 'Sin asesor';
+    component.onSearch();
+    fixture.detectChanges();
+
+    // "Sin asesor" es la etiqueta de ausencia, no un nombre: no debe filtrar.
+    expect(component.filteredSellers()).toHaveLength(0);
+  });
+
+  it('should warn and show every seller as "Sin asesor" when the advisor lookup fails', async () => {
+    vi.spyOn(TestBed.inject(AdminService), 'getAsesorNames').mockResolvedValue({
+      mapa: {},
+      error: { message: 'fallo de red' },
     });
+    await render();
+    fixture.detectChanges();
 
-    await component.mostrarNotasTooltip(
-      { clientX: 20, clientY: 20 } as MouseEvent,
-      component.sellers()[0],
-    );
+    const banner = fixture.nativeElement.querySelector('.sellers-alert') as HTMLElement;
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toContain('No se pudieron cargar las asesorías');
+    expect(component.avisoAsesores()).not.toBe('');
 
-    expect(component.sellerTooltipContent).toContain('Revisar documentación');
-    expect(component.sellerTooltipContent).toContain('César González');
+    const celdas = Array.from(
+      fixture.nativeElement.querySelectorAll('td.asesor-cell') as NodeListOf<HTMLElement>,
+    ).map((td) => td.textContent?.trim());
+    expect(celdas).toEqual(['Sin asesor', 'Sin asesor']);
+  });
+
+  it('should discard a stale advisor lookup when a newer load takes over', async () => {
+    // Componente aislado con su propio `admin`: así el spy no recibe llamadas de
+    // los componentes que crearon los tests anteriores (mismo servicio root).
+    const lonely = TestBed.createComponent(AdminSellersComponent).componentInstance;
+
+    let liberar: (v: { mapa: Record<string, string>; error: any }) => void = () => {};
+    let llamada = 0;
+    const advisorSpy = vi.fn(async () => {
+      llamada++;
+      // La 1a llamada (la de ngOnInit) queda en espera: es la que va a quedar vieja.
+      if (llamada === 1) return new Promise((res) => (liberar = res)) as any;
+      return { mapa: { 'socio-1': 'César González' }, error: null };
+    });
+    (lonely as any).admin = {
+      getSellersWithQuoteCount: async () => ({
+        data: sellers.map((s) => ({ seller: s })),
+        error: null,
+      }),
+      getAsesorNames: advisorSpy,
+    };
+
+    // La carga de ngOnInit se queda esperando el mapa de asesores.
+    await vi.waitFor(() => expect(advisorSpy).toHaveBeenCalledTimes(1));
+
+    // La segunda carga la supera y escribe el mapa vigente.
+    await lonely.loadSellers();
+    expect(lonely.getAsesorName({ socio_id: 'socio-1' })).toBe('César González');
+
+    // La respuesta vieja por fin llega: ya no debe escribirse.
+    liberar({ mapa: { 'socio-1': 'NOMBRE OBSOLETO' }, error: null });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(advisorSpy).toHaveBeenCalledTimes(2);
+    expect(lonely.getAsesorName({ socio_id: 'socio-1' })).toBe('César González');
   });
 });

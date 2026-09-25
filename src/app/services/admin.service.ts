@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { getSupabaseClient } from './supabase-client';
+import { getSupabaseClient, currentUserSignal } from './supabase-client';
 import { QuoteColor, computeActivityColor } from '../utils/quote-activity';
 
 export interface SellerWithQuoteCount {
@@ -144,6 +144,42 @@ export class AdminService {
   }
 
   /**
+   * Resuelve `socio_id → nombre` para la columna ASESOR de Admin → Vendedores
+   * con UNA sola consulta. `socio_id` ya viene en cada vendedor porque el RPC
+   * devuelve la fila completa del perfil (`to_jsonb(p)`).
+   *
+   * Se incluye también el usuario en sesión porque la RLS puede ocultarle al
+   * socio su propio perfil: sin él, toda su red caería en "Sin asesor".
+   *
+   * El error se devuelve en vez de tragárselo: si falla, la columna entera se
+   * degrada a "Sin asesor" y la pantalla debe avisar en lugar de mentir.
+   */
+  public async getAsesorNames(sellers: Array<{ socio_id?: string | null }>): Promise<{
+    mapa: Record<string, string>;
+    error: any;
+  }> {
+    const ids = new Set<string>();
+    const yo = currentUserSignal()?.id;
+    if (yo) ids.add(yo);
+    for (const s of sellers ?? []) {
+      if (s?.socio_id) ids.add(String(s.socio_id));
+    }
+    if (ids.size === 0) return { mapa: {}, error: null };
+
+    const { data, error } = await this.client
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', [...ids]);
+    if (error || !Array.isArray(data)) return { mapa: {}, error };
+
+    const mapa: Record<string, string> = {};
+    for (const p of data as any[]) {
+      if (p?.id && p?.full_name) mapa[String(p.id)] = String(p.full_name);
+    }
+    return { mapa, error: null };
+  }
+
+  /**
    * Estadísticas completas del dashboard.
    * Si se pasa `scopeSellerIds` (modo "Solo mi red" del super admin), se agregan
    * localmente sobre ese conjunto (las RPCs `get_admin_stats` no aceptan scope
@@ -279,13 +315,20 @@ export class AdminService {
     if (error || !Array.isArray(filas) || filas.length === 0) return payload;
 
     const colorPorQuote = new Map<string, QuoteColor>();
-    const porVendedor = new Map<string, { reciente: number; amarillo: number; rojo: number; verde: number }>();
+    const porVendedor = new Map<
+      string,
+      { reciente: number; amarillo: number; rojo: number; verde: number }
+    >();
 
     for (const fila of filas) {
       const color = computeQuoteColor(fila);
       colorPorQuote.set(String(fila.quote_id), color);
-      const acc =
-        porVendedor.get(fila.seller_id) ?? { reciente: 0, amarillo: 0, rojo: 0, verde: 0 };
+      const acc = porVendedor.get(fila.seller_id) ?? {
+        reciente: 0,
+        amarillo: 0,
+        rojo: 0,
+        verde: 0,
+      };
       acc[color]++;
       porVendedor.set(fila.seller_id, acc);
     }
@@ -482,7 +525,9 @@ export class AdminService {
 
       const { data: rows, error: quotesError } = await this.client
         .from('quotes')
-        .select('id, seller_id, client_name, brand, model, pricenet, created_at, revisada, last_reviewed_at')
+        .select(
+          'id, seller_id, client_name, brand, model, pricenet, created_at, revisada, last_reviewed_at',
+        )
         .order('created_at', { ascending: false });
       if (quotesError) throw quotesError;
       const allQuotes: any[] = (rows ?? []) as any[];

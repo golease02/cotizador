@@ -104,7 +104,9 @@
   font-size: 0.83rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
 }
 
 .mat-switch button.is-active {
@@ -159,7 +161,9 @@
   color: var(--text-muted);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .mat-mode:hover {

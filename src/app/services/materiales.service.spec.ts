@@ -29,7 +29,9 @@ describe('MaterialesService', () => {
   beforeEach(() => {
     profileSignal.set({ role: 'super_admin', permisos: {} });
     TestBed.configureTestingModule({
-      providers: [{ provide: AuthService, useValue: { currentProfile: profileSignal.asReadonly() } }],
+      providers: [
+        { provide: AuthService, useValue: { currentProfile: profileSignal.asReadonly() } },
+      ],
     });
     service = TestBed.inject(MaterialesService);
   });
@@ -127,6 +129,8 @@ describe('MaterialesService', () => {
         clave: 'pre_fisica',
         titulo: 'Pre Solicitud Persona Física',
         descripcion: 'hola',
+        // Sin timestamp la columna se quedaría congelada en la fecha de creación.
+        actualizado_at: expect.any(String),
       }),
       { onConflict: 'clave' },
     );

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 import { MaterialComponent } from './material';
 import { ClaveMaterial, MaterialesService } from '../../../services/materiales.service';
@@ -42,15 +42,21 @@ describe('MaterialComponent', () => {
     get: vi.fn(),
     getPdfSignedUrl: vi.fn(),
   };
+  let params$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const crear = async (clave: string): Promise<MaterialComponent> => {
+    params$.next(convertToParamMap({ clave }));
+    return crearComponente();
+  };
+
+  const crearComponente = async (): Promise<MaterialComponent> => {
     await TestBed.configureTestingModule({
       imports: [MaterialComponent],
       providers: [
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { paramMap: of(convertToParamMap({ clave })) },
+          useValue: { paramMap: params$.asObservable() },
         },
         { provide: MaterialesService, useValue: mockService },
       ],
@@ -59,13 +65,14 @@ describe('MaterialComponent', () => {
     fixture = TestBed.createComponent(MaterialComponent);
     const component = fixture.componentInstance;
     fixture.detectChanges();
-    // ngOnInit carga la configuración (y el PDF si aplica) de forma asíncrona.
+    // La carga inicial (y cualquier recarga) es asíncrona.
     await vi.waitFor(() => expect(component.cargando()).toBe(false));
     fixture.detectChanges();
     return component;
   };
 
   beforeEach(() => {
+    params$ = new BehaviorSubject(convertToParamMap({ clave: 'pre_fisica' }));
     mockService.get.mockReset().mockImplementation(async (clave: ClaveMaterial) => ({
       ...CONFIG[clave],
     }));
@@ -165,5 +172,45 @@ describe('MaterialComponent', () => {
     await crear('guia');
 
     expect(fixture.nativeElement.textContent).toContain('Documento no disponible');
+  });
+
+  it('should reload when the route param changes on the same route', async () => {
+    await crear('pre_fisica');
+    expect(fixture.nativeElement.textContent).toContain('Documento: acta de nacimiento');
+
+    // ngOnInit no se re-dispara al cambiar el parámetro: sin el effect() de
+    // `clave` el contenido quedaría congelado en el material anterior.
+    params$.next(convertToParamMap({ clave: 'pre_moral' }));
+    await vi.waitFor(() => expect(fixture.componentInstance.config()?.clave).toBe('pre_moral'));
+    await vi.waitFor(() => expect(fixture.componentInstance.cargando()).toBe(false));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.clave()).toBe('pre_moral');
+    expect(fixture.nativeElement.textContent).toContain('Documento: acta constitutiva');
+    expect(fixture.nativeElement.textContent).not.toContain('acta de nacimiento');
+  });
+
+  it('should clear the previous pdf when the material changes', async () => {
+    mockService.get.mockImplementation(async (clave: ClaveMaterial) => ({
+      ...CONFIG[clave],
+      modo: 'pdf',
+    }));
+    mockService.getPdfSignedUrl.mockImplementation(async (clave: ClaveMaterial) => ({
+      url: `https://signed.example/${clave}.pdf`,
+      error: null,
+    }));
+
+    const comp = await crear('guia');
+    await vi.waitFor(() => expect(comp.pdfUrl()).toBeTruthy());
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('iframe')).toBeTruthy();
+
+    params$.next(convertToParamMap({ clave: 'pre_moral' }));
+    await vi.waitFor(() => expect(fixture.componentInstance.config()?.clave).toBe('pre_moral'));
+    await vi.waitFor(() => expect(fixture.componentInstance.cargando()).toBe(false));
+    fixture.detectChanges();
+
+    const iframe = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+    expect(iframe.getAttribute('src')).toContain('pre_moral.pdf');
   });
 });

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import type { User } from '@supabase/supabase-js';
 import { AdminService } from './admin.service';
-import { getSupabaseClient } from './supabase-client';
+import { getSupabaseClient, resetSessionReady, setSessionUser } from './supabase-client';
 
 const diasAtras = (d: number): string => new Date(Date.now() - d * 86_400_000).toISOString();
 
@@ -117,7 +118,9 @@ describe('AdminService (días sin actividad)', () => {
       fn === 'get_admin_stats'
         ? { data: stats, error: null }
         : {
-            data: [fila({ revisada: true, last_activity: diasAtras(20), created_at: diasAtras(40) })],
+            data: [
+              fila({ revisada: true, last_activity: diasAtras(20), created_at: diasAtras(40) }),
+            ],
             error: null,
           },
     );
@@ -125,5 +128,77 @@ describe('AdminService (días sin actividad)', () => {
     const { data } = await service.getStats();
 
     expect(data.totalUrgentes).toBe(1);
+  });
+});
+
+describe('AdminService (nombre del asesor)', () => {
+  let service: AdminService;
+  let inSpy: any;
+  const perfiles = [
+    { id: 'socio-1', full_name: 'César González' },
+    { id: 'admin-a', full_name: 'Admin' },
+  ];
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({});
+    setSessionUser({ id: 'admin-a' } as User);
+    service = TestBed.inject(AdminService);
+    const client = getSupabaseClient();
+    const query: any = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      then: (resolve: (v: unknown) => unknown) =>
+        Promise.resolve({ data: perfiles, error: null }).then(resolve),
+    };
+    inSpy = query.in;
+    vi.spyOn(client, 'from').mockReturnValue(query as any);
+  });
+
+  afterEach(() => {
+    resetSessionReady();
+    TestBed.resetTestingModule();
+    vi.restoreAllMocks();
+  });
+
+  it('should resolve socio_id to name with a single query', async () => {
+    const { mapa, error } = await service.getAsesorNames([
+      { socio_id: 'socio-1' },
+      { socio_id: '' },
+    ]);
+
+    // Una sola consulta, con el socio de cada vendedor + el usuario en sesión.
+    expect(error).toBeNull();
+    expect(inSpy).toHaveBeenCalledTimes(1);
+    expect(inSpy.mock.calls[0][0]).toBe('id');
+    expect(inSpy.mock.calls[0][1]).toEqual(expect.arrayContaining(['socio-1', 'admin-a']));
+    expect(mapa['socio-1']).toBe('César González');
+    expect(mapa['admin-a']).toBe('Admin');
+  });
+
+  it('should surface the error instead of returning a silently empty map', async () => {
+    const client = getSupabaseClient();
+    const query: any = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      then: (resolve: (v: unknown) => unknown) =>
+        Promise.resolve({ data: null, error: { message: 'fallo de red' } }).then(resolve),
+    };
+    vi.spyOn(client, 'from').mockReturnValue(query as any);
+
+    const { mapa, error } = await service.getAsesorNames([{ socio_id: 'socio-1' }]);
+
+    // La columna ASESOR se degrada a "Sin asesor": la pantalla debe poder avisar.
+    expect(mapa).toEqual({});
+    expect(error).toEqual({ message: 'fallo de red' });
+  });
+
+  it('should not query when there is neither a session nor an advisor', async () => {
+    resetSessionReady(); // limpia currentUserSignal
+    const { mapa, error } = await service.getAsesorNames([{ socio_id: null }]);
+
+    expect(mapa).toEqual({});
+    expect(error).toBeNull();
+    expect(inSpy).not.toHaveBeenCalled();
   });
 });

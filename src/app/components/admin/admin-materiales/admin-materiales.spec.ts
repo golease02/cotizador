@@ -234,4 +234,55 @@ describe('AdminMaterialesComponent', () => {
     expect(fixture.nativeElement.querySelector('.mat-actions')).toBeFalsy();
     expect(fixture.nativeElement.textContent).toContain('no tiene el permiso');
   });
+
+  it('should discard a stale pdf preview when switching tabs quickly', async () => {
+    // Moral en modo PDF para que sí haya una vista previa que comparar.
+    mockService.getAll.mockResolvedValue({
+      guia: { ...CONFIG_BASE.guia },
+      pre_fisica: { ...CONFIG_BASE.pre_fisica },
+      pre_moral: { ...CONFIG_BASE.pre_moral, modo: 'pdf' },
+    });
+
+    // La carga inicial (de la guía) se queda esperando; el admin salta a Moral,
+    // que resuelve primero. Al final llega la de la guía y debe descartarse.
+    let liberarGuia: (v: boolean) => void = () => {};
+    let n = 0;
+    mockService.tienePdf.mockImplementation((clave: ClaveMaterial) => {
+      n++;
+      if (n === 1) return new Promise((res) => (liberarGuia = res)) as any;
+      return Promise.resolve(true);
+    });
+    mockService.getPdfSignedUrl.mockImplementation(async (clave: ClaveMaterial) => ({
+      url: `https://signed.example/${clave}.pdf`,
+      error: null,
+    }));
+
+    await TestBed.configureTestingModule({
+      imports: [AdminMaterialesComponent],
+      providers: [
+        { provide: MaterialesService, useValue: mockService },
+        { provide: AuthService, useValue: { currentProfile: profileSignal.asReadonly() } },
+        { provide: ToastService, useValue: mockToast },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AdminMaterialesComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges(); // arranca la carga de la guía, sin esperarla
+    await vi.waitFor(() => expect(mockService.tienePdf).toHaveBeenCalledTimes(1));
+
+    await component.cambiarMaterial('pre_moral');
+    expect(component.activo()).toBe('pre_moral');
+    expect(String(component.pdfPreviewUrl())).toContain('pre_moral.pdf');
+
+    // Llega por fin la respuesta vieja: no debe pisar la vista de Moral.
+    liberarGuia(true);
+    await vi.waitFor(() => expect(component.cargando()).toBe(false));
+    fixture.detectChanges();
+
+    const iframe = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement | null;
+    expect(iframe).toBeTruthy();
+    expect(iframe!.getAttribute('src')).toContain('pre_moral.pdf');
+    expect(iframe!.getAttribute('src')).not.toContain('guia.pdf');
+  });
 });

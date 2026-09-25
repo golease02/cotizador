@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -18,7 +18,7 @@ import {
   templateUrl: './material.html',
   styleUrls: ['./material.css'],
 })
-export class MaterialComponent implements OnInit {
+export class MaterialComponent {
   private route = inject(ActivatedRoute);
   private materialesService = inject(MaterialesService);
   private sanitizer = inject(DomSanitizer);
@@ -33,6 +33,19 @@ export class MaterialComponent implements OnInit {
   readonly pdfUrl = signal<SafeResourceUrl | null>(null);
   readonly error = signal('');
 
+  /** Invalida cargas viejas si el usuario navega entre materiales muy rápido. */
+  private request = 0;
+
+  constructor() {
+    // `ngOnInit` no se re-dispara cuando cambia el parámetro de la misma ruta
+    // (p. ej. editar el hash de /material/pre_fisica a /material/pre_moral):
+    // el componente se reutiliza y el contenido quedaría congelado.
+    effect(() => {
+      const clave = this.clave();
+      untracked(() => void this.cargar(clave));
+    });
+  }
+
   private normalizar(valor: string | null): ClaveMaterial {
     const clave = valor as ClaveMaterial;
     return MATERIALES.some((m) => m.clave === clave) ? clave : 'guia';
@@ -42,20 +55,20 @@ export class MaterialComponent implements OnInit {
     return MATERIALES.find((m) => m.clave === this.clave()) ?? MATERIALES[0];
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.cargar();
-  }
-
-  private async cargar(): Promise<void> {
+  private async cargar(clave: ClaveMaterial): Promise<void> {
+    const request = ++this.request;
     this.cargando.set(true);
     this.error.set('');
+    this.config.set(null);
+    this.pdfUrl.set(null);
 
-    const clave = this.clave();
     const config = await this.materialesService.get(clave);
+    if (request !== this.request) return;
     this.config.set(config);
 
     if (config.modo === 'pdf') {
       const { url, error } = await this.materialesService.getPdfSignedUrl(clave);
+      if (request !== this.request) return;
       if (error) {
         this.error.set('No se pudo cargar el documento. Intenta de nuevo.');
       } else if (url) {

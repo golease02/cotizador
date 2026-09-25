@@ -1,6 +1,6 @@
 <div class="mat-page">
   <header class="mat-header">
-    <div class="mat-headings">
+    <div>
       <span class="mat-eyebrow">Panel de administrador</span>
       <h1>Materiales</h1>
       <p>
@@ -44,7 +44,7 @@
 
     <section class="mat-card">
       <!-- Selector de modo -->
-      <div class="mat-modes">
+      <div>
         <h2>¿Qué debe mostrar el vendedor?</h2>
         <div class="mat-mode-grid">
           <button
@@ -122,7 +122,9 @@
               placeholder="Escribe aquí las secciones, requisitos y documentos que el vendedor debe presentar."
             ></textarea>
           </label>
-          <p class="mat-hint">Se muestra tal cual en la página del vendedor, respetando los saltos de línea.</p>
+          <p class="mat-hint">
+            Se muestra tal cual en la página del vendedor, respetando los saltos de línea.
+          </p>
         </div>
 
         <!-- URL externa -->
@@ -132,8 +134,7 @@
             <input type="url" [(ngModel)]="url" placeholder="https://ejemplo.com/tramite" />
           </label>
           <p class="mat-hint">
-            Al presionar el botón, el vendedor será enviado a esta dirección en una pestaña
-            nueva.
+            Al presionar el botón, el vendedor será enviado a esta dirección en una pestaña nueva.
           </p>
         </div>
 

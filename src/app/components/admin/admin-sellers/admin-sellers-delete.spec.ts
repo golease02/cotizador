@@ -6,6 +6,7 @@ import { AdminSellersComponent } from './admin-sellers';
 import { AdminService } from '../../../services/admin.service';
 import { AdminScopeService } from '../../../services/admin-scope.service';
 import { AuthService } from '../../../services/auth.service';
+import { NotesService } from '../../../services/notes.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({ template: '' })
@@ -23,6 +24,8 @@ describe('AdminSellersComponent - resumen de eliminacion', () => {
 
   const mockAdminService = {
     getSellersWithQuoteCount: vi.fn().mockResolvedValue({ data: fakeSellers, error: null }),
+    // Columna ASESOR: sin asesor asignado en este escenario.
+    getAsesorNames: vi.fn().mockResolvedValue({ mapa: {}, error: null }),
   };
 
   const reloadCount = { current: 0 };
@@ -86,6 +89,12 @@ describe('AdminSellersComponent - resumen de eliminacion', () => {
     return Promise.resolve({ data: [], error: null });
   }
 
+  // El resumen de notas ya no consulta `notas` directo: pasa por NotesService
+  // (nota 21 de AGENTS.md), así que se mockea el servicio.
+  const mockNotesService = {
+    getNotes: vi.fn(async () => ({ data: fakeNotas, error: null })),
+  };
+
   beforeEach(async () => {
     chain.select.mockClear();
     chain.eq.mockClear();
@@ -102,6 +111,7 @@ describe('AdminSellersComponent - resumen de eliminacion', () => {
         { provide: AdminService, useValue: mockAdminService },
         { provide: AdminScopeService, useValue: mockScopeService },
         { provide: AuthService, useValue: mockAuthService },
+        { provide: NotesService, useValue: mockNotesService },
         { provide: ToastService, useValue: mockToastService },
       ],
     }).compileComponents();
@@ -119,6 +129,8 @@ describe('AdminSellersComponent - resumen de eliminacion', () => {
     expect(component.deleteSummaryLoading).toBe(false);
     expect(component.deleteSummaryQuotes).toEqual(fakeQuotes);
     expect(component.deleteSummaryNotas).toEqual(fakeNotas);
+    // Las notas pasan por el servicio, no por una consulta directa a la tabla.
+    expect(mockNotesService.getNotes).toHaveBeenCalledWith('seller', SELLER_ID);
   });
 
   it('should llamar deleteUserFromAuth al confirmar la eliminacion', async () => {

@@ -18,6 +18,12 @@ import { AdminScopeService } from '../../../services/admin-scope.service';
 import { EntityNote, NotesService } from '../../../services/notes.service';
 import { ToastService } from '../../../services/toast.service';
 
+/** Criterios de orden de la tabla de Vendedores (Ajuste 19). */
+export type SortBy = 'asesor' | 'agencia' | 'ubicacion';
+
+/** Texto que se muestra cuando el vendedor no tiene asesor resoluble. */
+export const SIN_ASESOR = 'Sin asesor';
+
 @Component({
   selector: 'app-admin-sellers',
   standalone: true,
@@ -28,12 +34,12 @@ import { ToastService } from '../../../services/toast.service';
 export class AdminSellersComponent implements OnInit {
   private admin = inject(AdminService);
   public auth = inject(AuthService);
+  /** Solo para el resumen previo a eliminar y el alta de usuarios. */
   private client = getSupabaseClient();
   private notesService = inject(NotesService);
   private cdr = inject(ChangeDetectorRef);
   private readonly scope = inject(AdminScopeService);
   private sellersRequest = 0;
-  private colorsRequest = 0;
   readonly toastService = inject(ToastService);
 
   get canManageNotas(): boolean {
@@ -50,30 +56,85 @@ export class AdminSellersComponent implements OnInit {
   filteredSellers = signal<any[]>([]);
   loading = true;
   actionLoading = false;
+
+  // ------------------- BÚSQUEDA Y ORDEN (Ajuste 19) -------------------
+  /** Único criterio de filtro: texto libre sobre nombre, número, agencia, ubicación y asesor. */
   searchTerm = '';
-  statusFilter: 'todos' | 'activos' | 'inactivos' = 'todos';
-  brandFilter = 'todas';
-  sortBy: 'recientes' | 'nombre' | 'cotizaciones' | 'antiguos' = 'recientes';
+  sortBy: SortBy = 'asesor';
 
-  get stats() {
-    const list = this.sellers();
-    const total = list.length;
-    const activos = list.filter((s) => s.active ?? true).length;
-    const cotizaciones = list.reduce((acc, s) => acc + (Number(s.quote_count) || 0), 0);
-    return { total, activos, inactivos: total - activos, cotizaciones };
+  /** Valor por el que se ordena cada vendedor, según la opción elegida. */
+  private readonly sortKeys: Record<SortBy, (s: any) => string> = {
+    asesor: (s) => this.getAsesorName(s),
+    agencia: (s) => s.agency_brand || '',
+    ubicacion: (s) => s.agency_location || '',
+  };
+
+  /**
+   * Aplica el texto de búsqueda y el orden elegido.
+   * Debe ejecutarse DESPUÉS de `loadAsesores()`, porque el orden por asesor
+   * necesita el mapa `socio_id → nombre` ya resuelto.
+   */
+  applyFilters() {
+    let filtered = this.sellers();
+    const term = this.searchTerm.trim().toLowerCase();
+    if (term) {
+      filtered = filtered.filter((s) => {
+        const campos: unknown[] = [s.full_name, s.seller_number, s.agency_brand, s.agency_location];
+        // El asesor solo entra al comparador si es un nombre real: escribir
+        // "sin asesor" no debe listar a todos los que no lo tienen.
+        const asesor = this.getAsesorName(s);
+        if (asesor !== SIN_ASESOR) campos.push(asesor);
+        return campos.some((valor) =>
+          String(valor ?? '')
+            .toLowerCase()
+            .includes(term),
+        );
+      });
+    }
+
+    // `sensitivity: 'base'` ignora mayúsculas y acentos, para que el orden no se
+    // rompa con "AGENCIA" vs "Agencia" o "Querétaro" vs "Queretaro".
+    const clave = this.sortKeys[this.sortBy] ?? this.sortKeys.asesor;
+    filtered = [...filtered].sort((a, b) =>
+      clave(a).localeCompare(clave(b), 'es', { sensitivity: 'base' }),
+    );
+
+    this.filteredSellers.set(filtered);
+    this.cdr.detectChanges();
   }
 
-  get brandsList(): string[] {
-    const set = new Set<string>();
-    this.sellers().forEach((s) => {
-      if (s.agency_brand) set.add(s.agency_brand);
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  onSearch() {
+    this.applyFilters();
   }
+
+  clearSearch() {
+    this.searchTerm = '';
+    this.applyFilters();
+  }
+
+  setSortBy(value: SortBy) {
+    this.sortBy = value;
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.sortBy = 'asesor';
+    this.selectedSellerCardId = null;
+    this.applyFilters();
+  }
+
+  // ------------------- ASESOR (columna inicial) -------------------
+  /**
+   * Mapa `socio_id → nombre del asesor`. `socio_id` viene en cada vendedor
+   * porque la RPC `get_sellers_with_quote_counts()` devuelve la fila completa
+   * del perfil (`to_jsonb(p)`). Se resuelve con una consulta extra a
+   * `profiles`, igual que en Seguimiento.
+   */
+  private asesores = signal<Record<string, string>>({});
 
   // ------------------- CONFIRMACIÓN (solo eliminar) -------------------
   showConfirmModal = false;
-  confirmAction: 'delete' | null = null;
   selectedSellerId: string | null = null;
   selectedSellerCardId: string | null = null;
 
@@ -110,9 +171,6 @@ export class AdminSellersComponent implements OnInit {
   // ------------------- NOTAS -------------------
   showNotasModal = false;
   notasVendedor: EntityNote[] = [];
-  showSellerTooltip = false;
-  sellerTooltipContent = '';
-  sellerTooltipPosition = { x: 0, y: 0 };
   notaText = '';
   notaEditando: EntityNote | null = null;
   notaLoading = false;
@@ -120,68 +178,45 @@ export class AdminSellersComponent implements OnInit {
   showNotaConfirmModal = false;
   notaToDelete: EntityNote | null = null;
 
-  // ------------------- SEMAFORO COTIZACIONES -------------------
-  /** Mapa de colores por vendedor: { revisadas, porCaducar, pendientes, recientes } */
-  sellersQuoteColors = signal<
-    Record<string, { revisadas: number; porCaducar: number; pendientes: number; recientes: number }>
-  >({});
+  // ------------------- ASESOR -------------------
 
-  /** Calcula los colores de cotizaciones por vendedor para el semaforo. */
-  async loadSellersQuoteColors(): Promise<void> {
-    const request = ++this.colorsRequest;
-    const revision = this.scope.reloadCount();
-    try {
-      const ids = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
-      if (ids?.size === 0) {
-        this.sellersQuoteColors.set({});
-        return;
-      }
-      let query = this.client.from('quotes').select('seller_id, revisada, created_at');
-      if (ids) query = query.in('seller_id', [...ids]);
-      const { data: quotes, error } = await query;
-      if (request !== this.colorsRequest || revision !== this.scope.reloadCount()) return;
-      if (error || !quotes) return;
+  /**
+   * Aviso visible cuando la resolución de asesorías falla. Si no se mostrara,
+   * toda la columna caería en "Sin asesor" y el orden por asesor quedaría
+   * inservible sin que nadie se entere.
+   */
+  readonly avisoAsesores = signal('');
 
-      const now = Date.now();
-      const map: Record<
-        string,
-        { revisadas: number; porCaducar: number; pendientes: number; recientes: number }
-      > = {};
-
-      for (const q of quotes) {
-        const sid = q.seller_id;
-        if (!map[sid]) map[sid] = { revisadas: 0, porCaducar: 0, pendientes: 0, recientes: 0 };
-
-        if (q.revisada === true) {
-          map[sid].revisadas++;
-        } else {
-          const dias = Math.floor((now - new Date(q.created_at).getTime()) / 86_400_000);
-          if (dias > 7) map[sid].porCaducar++;
-          else if (dias > 2) map[sid].pendientes++;
-          else map[sid].recientes++;
-        }
-      }
-
-      this.sellersQuoteColors.set(map);
-    } catch (err) {
-      console.error('Error cargando colores de cotizaciones:', err);
-    }
+  /** Nombre del socio asignado al vendedor; SIN_ASESOR si no tiene o no resuelve. */
+  getAsesorName(seller: any): string {
+    const socioId = seller?.socio_id ? String(seller.socio_id) : '';
+    if (!socioId) return SIN_ASESOR;
+    return this.asesores()[socioId] || SIN_ASESOR;
   }
 
-  getQuoteColors(sellerId: string): {
-    revisadas: number;
-    porCaducar: number;
-    pendientes: number;
-    recientes: number;
-  } {
-    return (
-      this.sellersQuoteColors()[sellerId] || {
-        revisadas: 0,
-        porCaducar: 0,
-        pendientes: 0,
-        recientes: 0,
-      }
+  /**
+   * Pide al servicio el mapa `socio_id → nombre`. **Devuelve** el mapa en vez
+   * de escribirlo, para que `loadSellers()` pueda descartar una respuesta vieja
+   * antes de que contamine la lista vigente.
+   */
+  private async loadAsesores(lista: any[]): Promise<Record<string, string>> {
+    const { mapa, error } = await this.admin.getAsesorNames(lista ?? []);
+    this.avisoAsesores.set(
+      error
+        ? 'No se pudieron cargar las asesorías. Todos los vendedores aparecen como "' +
+            SIN_ASESOR +
+            '".'
+        : '',
     );
+    if (error) console.error('getAsesorNames:', error);
+    return mapa;
+  }
+
+  /** Reintenta la resolución de asesorías y vuelve a aplicar búsqueda y orden. */
+  async reintentarAsesores(): Promise<void> {
+    const mapa = await this.loadAsesores(this.sellers());
+    this.asesores.set(mapa);
+    this.applyFilters();
   }
 
   // ------------------- MARCAS -------------------
@@ -231,7 +266,7 @@ export class AdminSellersComponent implements OnInit {
       untracked(() => {
         this.sellers.set([]);
         this.filteredSellers.set([]);
-        this.sellersQuoteColors.set({});
+        this.asesores.set({});
         this.selectedSellerCardId = null;
         void this.loadSellers();
       });
@@ -239,13 +274,7 @@ export class AdminSellersComponent implements OnInit {
   }
 
   async ngOnInit() {
-    // loadSellers(false): los colores se cargan en paralelo justo abajo, así que
-    // loadSellers NO debe volver a pedirlos (antes duplicaba la consulta de quotes).
-    await Promise.all([
-      this.loadSellers(false),
-      this.loadSellersQuoteColors(),
-      this.loadSociosIfNeeded(),
-    ]);
+    await Promise.all([this.loadSellers(), this.loadSociosIfNeeded()]);
   }
 
   async loadSociosIfNeeded(): Promise<void> {
@@ -269,102 +298,33 @@ export class AdminSellersComponent implements OnInit {
 
   // ===================== LISTADO =====================
 
-  async loadSellers(refreshColors = true) {
+  async loadSellers() {
     const request = ++this.sellersRequest;
     const revision = this.scope.reloadCount();
     this.loading = true;
     const { data, error } = await this.admin.getSellersWithQuoteCount();
     if (request !== this.sellersRequest || revision !== this.scope.reloadCount()) return;
     if (!error) {
-      // La RPC permite al super admin ver todo; el toggle acota solo este listado.
+      // La RPC acota el alcance por rol en el servidor; el orden lo aplica
+      // applyFilters() porque depende del mapa de asesores.
       const ids = this.scope.isRedMode() ? this.scope.sellerIds() : undefined;
-      this.sellers.set(ids ? (data || []).filter((s) => ids.has(s.id)) : data || []);
+      const lista = ids ? (data || []).filter((s) => ids.has(s.id)) : data || [];
+      this.sellers.set(lista);
+      // El orden por asesor necesita los nombres resueltos: primero los asesores,
+      // después el filtrado/ordenado.
+      const mapa = await this.loadAsesores(lista);
+      // Tras el await otra carga pudo haber tomado el relevo: si es así, el
+      // mapa que acabamos de resolver ya no corresponde a `sellers()` y no
+      // debe escribirse, o dejaría filas con "Sin asesor" sin motivo.
+      if (request !== this.sellersRequest || revision !== this.scope.reloadCount()) return;
+      this.asesores.set(mapa);
       this.applyFilters();
-      // En el ngOnInit los colores se piden en paralelo (refreshColors=false).
-      // En los refrescos tras crear/editar/eliminar vendedor sí se recalculan.
-      if (refreshColors) await this.loadSellersQuoteColors();
     } else {
       this.toastService.error('No se pudieron cargar los vendedores');
     }
     if (request !== this.sellersRequest || revision !== this.scope.reloadCount()) return;
     this.loading = false;
     this.cdr.detectChanges();
-  }
-
-  applyFilters() {
-    let filtered = this.sellers();
-    const term = this.searchTerm.trim().toLowerCase();
-    if (term) {
-      filtered = filtered.filter(
-        (s) =>
-          (s.full_name || '').toLowerCase().includes(term) ||
-          (s.seller_number || '').toLowerCase().includes(term) ||
-          (s.agency_brand || '').toLowerCase().includes(term) ||
-          (s.agency_location || '').toLowerCase().includes(term),
-      );
-    }
-    if (this.statusFilter === 'activos') filtered = filtered.filter((s) => s.active ?? true);
-    if (this.statusFilter === 'inactivos') filtered = filtered.filter((s) => !(s.active ?? true));
-    if (this.brandFilter !== 'todas')
-      filtered = filtered.filter((s) => s.agency_brand === this.brandFilter);
-
-    switch (this.sortBy) {
-      case 'nombre':
-        filtered = [...filtered].sort((a, b) =>
-          (a.full_name || '').localeCompare(b.full_name || ''),
-        );
-        break;
-      case 'cotizaciones':
-        filtered = [...filtered].sort(
-          (a, b) => (Number(b.quote_count) || 0) - (Number(a.quote_count) || 0),
-        );
-        break;
-      case 'antiguos':
-        filtered = [...filtered].reverse();
-        break;
-      case 'recientes':
-      default:
-        break;
-    }
-    this.filteredSellers.set(filtered);
-    this.cdr.detectChanges();
-  }
-
-  onSearch() {
-    this.applyFilters();
-  }
-
-  clearSearch() {
-    this.searchTerm = '';
-    this.applyFilters();
-  }
-
-  clearFilters() {
-    this.searchTerm = '';
-    this.statusFilter = 'todos';
-    this.brandFilter = 'todas';
-    this.sortBy = 'recientes';
-    this.selectedSellerCardId = null;
-    this.applyFilters();
-  }
-
-  setStatusFilter(f: 'todos' | 'activos' | 'inactivos') {
-    this.statusFilter = f;
-    this.applyFilters();
-  }
-
-  setBrandFilter(value: string) {
-    this.brandFilter = value;
-    this.applyFilters();
-  }
-
-  setSortBy(value: 'recientes' | 'nombre' | 'cotizaciones' | 'antiguos') {
-    this.sortBy = value;
-    this.applyFilters();
-  }
-
-  selectSeller(sellerId: string): void {
-    this.selectedSellerCardId = sellerId;
   }
 
   // ===================== TOGGLE DE ESTADO (INLINE + DESHACER) =====================
@@ -409,7 +369,6 @@ export class AdminSellersComponent implements OnInit {
 
   async deleteSeller(sellerId: string) {
     this.selectedSellerId = sellerId;
-    this.confirmAction = 'delete';
     this.showConfirmModal = true;
     this.deleteSummaryQuotes = [];
     this.deleteSummaryNotas = [];
@@ -417,18 +376,15 @@ export class AdminSellersComponent implements OnInit {
     this.deleteSummaryLoading = true;
     this.cdr.detectChanges();
     try {
+      // Las notas van por NotesService (único punto de acceso, nota 21 de
+      // AGENTS.md); las cotizaciones se leen directo porque no pasan por RPC.
       const [quotesRes, notasRes] = await Promise.all([
         this.client
           .from('quotes')
           .select('id, client_name, brand, model, year, pricenet, created_at')
           .eq('seller_id', sellerId)
           .order('created_at', { ascending: false }),
-        this.client
-          .from('notas')
-          .select('id, texto, creado_por, created_at')
-          .eq('entidad_tipo', 'seller')
-          .eq('entidad_id', sellerId)
-          .order('created_at', { ascending: false }),
+        this.notesService.getNotes('seller', sellerId),
       ]);
       if (quotesRes.error) throw quotesRes.error;
       if (notasRes.error) throw notasRes.error;
@@ -447,11 +403,6 @@ export class AdminSellersComponent implements OnInit {
     return seller?.full_name || 'este vendedor';
   }
 
-  getSellerQuoteCount(): number {
-    const seller = this.sellers().find((s) => s.id === this.selectedSellerId);
-    return seller?.quote_count || 0;
-  }
-
   confirmSellerDelete() {
     if (!this.selectedSellerId) return;
     this.actionLoading = true;
@@ -464,7 +415,6 @@ export class AdminSellersComponent implements OnInit {
         this.toastService.success('Vendedor eliminado correctamente');
         this.showConfirmModal = false;
         this.selectedSellerId = null;
-        this.confirmAction = null;
         if (this.showDetailDrawer) this.closeDetail();
         this.loadSellers();
       }
@@ -475,7 +425,6 @@ export class AdminSellersComponent implements OnInit {
   cancelModal() {
     this.showConfirmModal = false;
     this.selectedSellerId = null;
-    this.confirmAction = null;
     this.cdr.detectChanges();
   }
 
@@ -923,31 +872,6 @@ export class AdminSellersComponent implements OnInit {
     this.notaEditando = null;
     this.notaError = '';
     this.selectedSellerId = null;
-  }
-
-  // ===================== TOOLTIP =====================
-
-  async mostrarNotasTooltip(event: MouseEvent, seller: any) {
-    if (!this.canManageNotas) return;
-    const { data, error } = await this.notesService.getNotes('seller', seller.id);
-    const notes =
-      !error && data.length
-        ? data.map((note) => `• ${note.texto} — ${this.getNotaAutorNombre(note)}`).join('\n')
-        : '';
-    this.sellerTooltipContent = notes || 'Sin notas';
-    this.showSellerTooltip = true;
-    let x = event.clientX + 14;
-    let y = event.clientY + 14;
-    if (x + 300 > window.innerWidth) x = event.clientX - 314;
-    if (y + 140 > window.innerHeight) y = event.clientY - 150;
-    this.sellerTooltipPosition = { x, y };
-    this.cdr.detectChanges();
-  }
-
-  ocultarNotasTooltip() {
-    this.showSellerTooltip = false;
-    this.sellerTooltipContent = '';
-    this.cdr.detectChanges();
   }
 
   // ===================== HELPERS =====================

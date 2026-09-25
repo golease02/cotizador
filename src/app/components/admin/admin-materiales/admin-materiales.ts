@@ -26,7 +26,6 @@ export class AdminMaterialesComponent implements OnInit {
 
   readonly maxBytes = MATERIALES_MAX_BYTES;
   readonly materiales = MATERIALES;
-  readonly claves: ClaveMaterial[] = MATERIALES.map((m) => m.clave);
 
   readonly cargando = signal(true);
   readonly guardando = signal(false);
@@ -47,6 +46,9 @@ export class AdminMaterialesComponent implements OnInit {
   readonly tienePdf = signal(false);
   readonly pdfPreviewUrl = signal<SafeResourceUrl | null>(null);
 
+  /** Invalida respuestas viejas de `tienePdf` / `getPdfSignedUrl`. */
+  private pdfRequest = 0;
+
   get activoMeta() {
     return MATERIALES.find((m) => m.clave === this.activo()) ?? MATERIALES[0];
   }
@@ -62,7 +64,7 @@ export class AdminMaterialesComponent implements OnInit {
 
     this.original = await this.materialesService.getAll();
     this.aplicarAlFormulario(this.activo());
-    await this.refrescarPdf();
+    await this.refrescarPdf(this.activo());
 
     this.cargando.set(false);
     this.cdr.detectChanges();
@@ -82,18 +84,25 @@ export class AdminMaterialesComponent implements OnInit {
   async cambiarMaterial(clave: ClaveMaterial): Promise<void> {
     this.activo.set(clave);
     this.aplicarAlFormulario(clave);
-    await this.refrescarPdf();
+    await this.refrescarPdf(clave);
     this.cdr.detectChanges();
   }
 
-  private async refrescarPdf(): Promise<void> {
+  /**
+   * Recarga el estado del PDF del material indicado. `pdfRequest` invalida
+   * respuestas viejas: al cambiar de pestaña rápido, la última en resolverse
+   * podría ser la de un material que ya no está activo.
+   */
+  private async refrescarPdf(clave: ClaveMaterial): Promise<void> {
+    const request = ++this.pdfRequest;
     this.pdfPreviewUrl.set(null);
-    const clave = this.activo();
     const existe = await this.materialesService.tienePdf(clave);
+    if (request !== this.pdfRequest) return;
     this.tienePdf.set(existe);
 
     if (existe) {
       const { url, error } = await this.materialesService.getPdfSignedUrl(clave);
+      if (request !== this.pdfRequest) return;
       if (error) {
         this.error.set('No se pudo generar la vista previa del PDF: ' + (error.message || ''));
       } else if (url) {
@@ -171,7 +180,7 @@ export class AdminMaterialesComponent implements OnInit {
       this.toastService.error('No se pudo cargar el PDF');
     } else {
       this.toastService.success('PDF cargado correctamente');
-      await this.refrescarPdf();
+      await this.refrescarPdf(this.activo());
     }
 
     this.subiendo.set(false);
@@ -190,7 +199,7 @@ export class AdminMaterialesComponent implements OnInit {
       this.toastService.error('No se pudo eliminar el PDF');
     } else {
       this.toastService.success('PDF eliminado');
-      await this.refrescarPdf();
+      await this.refrescarPdf(this.activo());
     }
 
     this.subiendo.set(false);

@@ -11,77 +11,7 @@
     </button>
   </div>
 
-  <!-- MÉTRICAS -->
-  <div class="stats-grid">
-    <button
-      type="button"
-      class="stat-card"
-      [class.is-active]="statusFilter === 'todos'"
-      (click)="setStatusFilter('todos')"
-    >
-      <span class="stat-icon tone-slate">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-        </svg>
-      </span>
-      <span class="stat-body"
-        ><strong>{{ stats.total }}</strong
-        ><small>Vendedores</small></span
-      >
-    </button>
-    <button
-      type="button"
-      class="stat-card"
-      [class.is-active]="statusFilter === 'activos'"
-      (click)="setStatusFilter('activos')"
-    >
-      <span class="stat-icon tone-green">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <path d="M22 4 12 14.01l-3-3"></path>
-        </svg>
-      </span>
-      <span class="stat-body"
-        ><strong>{{ stats.activos }}</strong
-        ><small>Activos</small></span
-      >
-    </button>
-    <button
-      type="button"
-      class="stat-card"
-      [class.is-active]="statusFilter === 'inactivos'"
-      (click)="setStatusFilter('inactivos')"
-    >
-      <span class="stat-icon tone-amber">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <path d="M8 11l3 3 6-6"></path>
-        </svg>
-      </span>
-      <span class="stat-body"
-        ><strong>{{ stats.inactivos }}</strong
-        ><small>Inactivos</small></span
-      >
-    </button>
-    <div class="stat-card stat-plain">
-      <span class="stat-icon tone-blue">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <path d="M14 2v6h6"></path>
-          <path d="M9 13h6"></path>
-          <path d="M9 17h4"></path>
-        </svg>
-      </span>
-      <span class="stat-body"
-        ><strong>{{ stats.cotizaciones }}</strong
-        ><small>Cotizaciones generadas</small></span
-      >
-    </div>
-  </div>
-  <!-- BÚSQUEDA Y FILTROS -->
+  <!-- BÚSQUEDA Y ORDEN (Ajuste 19) -->
   <div class="toolbar">
     <div class="search-wrapper">
       <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -92,8 +22,9 @@
         type="text"
         [(ngModel)]="searchTerm"
         (input)="onSearch()"
-        placeholder="Buscar por nombre, número, marca o sucursal..."
+        placeholder="Buscar por nombre, número, marca, sucursal o asesor..."
         class="search-input"
+        aria-label="Buscar vendedores"
       />
       <button
         *ngIf="searchTerm"
@@ -106,61 +37,31 @@
       </button>
     </div>
 
-    <div class="chip-group" role="group" aria-label="Filtrar por estado">
-      <button
-        type="button"
-        class="chip"
-        [class.is-active]="statusFilter === 'todos'"
-        (click)="setStatusFilter('todos')"
-      >
-        Todos
-      </button>
-      <button
-        type="button"
-        class="chip"
-        [class.is-active]="statusFilter === 'activos'"
-        (click)="setStatusFilter('activos')"
-      >
-        Activos
-      </button>
-      <button
-        type="button"
-        class="chip"
-        [class.is-active]="statusFilter === 'inactivos'"
-        (click)="setStatusFilter('inactivos')"
-      >
-        Inactivos
-      </button>
-    </div>
-
-    <label class="toolbar-select" *ngIf="brandsList.length">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-      </svg>
-      <select [(ngModel)]="brandFilter" (change)="setBrandFilter(brandFilter)">
-        <option value="todas">Todas las agencias</option>
-        <option *ngFor="let b of brandsList" [value]="b">{{ b }}</option>
-      </select>
-    </label>
-
     <label class="toolbar-select">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 6h18"></path>
         <path d="M7 12h10"></path>
         <path d="M10 18h4"></path>
       </svg>
-      <select [(ngModel)]="sortBy" (change)="setSortBy(sortBy)">
-        <option value="recientes">Más recientes</option>
-        <option value="nombre">Nombre A–Z</option>
-        <option value="cotizaciones">Más cotizaciones</option>
-        <option value="antiguos">Antiguos</option>
+      <select [(ngModel)]="sortBy" (change)="setSortBy(sortBy)" aria-label="Ordenar vendedores">
+        <option value="asesor">Asesor A-Z</option>
+        <option value="agencia">Agencia A-Z</option>
+        <option value="ubicacion">Ubicacion A-Z</option>
       </select>
     </label>
+  </div>
 
-    <span class="results-count" *ngIf="!loading">{{ filteredSellers().length }} resultado(s)</span>
+  <!-- AVISO: LA COLUMNA ASESOR NO SE PUDO RESOLVER -->
+  <div class="sellers-alert" *ngIf="avisoAsesores()" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>{{ avisoAsesores() }}</span>
+    <button type="button" class="sellers-alert-retry" (click)="reintentarAsesores()">
+      Reintentar
+    </button>
   </div>
 
   <!-- SKELETON -->
@@ -172,11 +73,11 @@
     <table class="users-table">
       <thead>
         <tr>
+          <th>Asesor</th>
           <th>Agencia</th>
           <th>Nombre</th>
-          <th>Teléfono</th>
-          <th>Ubicación</th>
-          <th>Semáforo</th>
+          <th>Whatsapp</th>
+          <th>Ubicacion</th>
           <th class="actions-column">Acciones</th>
         </tr>
       </thead>
@@ -190,57 +91,22 @@
           (keydown.space)="openDetail(seller); $event.preventDefault()"
           [attr.aria-label]="'Ver detalle de ' + seller.full_name"
         >
+          <td class="asesor-cell" data-label="Asesor" [title]="getAsesorName(seller)">
+            {{ getAsesorName(seller) }}
+          </td>
           <td data-label="Agencia">
             <span class="brand-chip">{{ seller.agency_brand || '—' }}</span>
           </td>
           <td data-label="Nombre">
             <strong>{{ seller.full_name }}</strong>
           </td>
-          <td data-label="Teléfono">{{ seller.seller_number || '-' }}</td>
-          <td class="location-cell" data-label="Ubicación" [title]="seller.agency_location || '-'">
+          <td data-label="Whatsapp">{{ seller.seller_number || '-' }}</td>
+          <td class="location-cell" data-label="Ubicacion" [title]="seller.agency_location || '-'">
             <svg class="pin-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
             {{ seller.agency_location || '-' }}
-          </td>
-          <td data-label="Semáforo">
-            <div class="semaforo-cell">
-              <span
-                class="dot dot-green"
-                title="Revisadas"
-                *ngIf="getQuoteColors(seller.id).revisadas > 0"
-                >{{ getQuoteColors(seller.id).revisadas }}</span
-              >
-              <span
-                class="dot dot-yellow"
-                title="Pendientes"
-                *ngIf="getQuoteColors(seller.id).pendientes > 0"
-                >{{ getQuoteColors(seller.id).pendientes }}</span
-              >
-              <span
-                class="dot dot-red"
-                title="Por caducar"
-                *ngIf="getQuoteColors(seller.id).porCaducar > 0"
-                >{{ getQuoteColors(seller.id).porCaducar }}</span
-              >
-              <span
-                class="dot dot-blue"
-                title="Recientes"
-                *ngIf="getQuoteColors(seller.id).recientes > 0"
-                >{{ getQuoteColors(seller.id).recientes }}</span
-              >
-              <span
-                class="dot dot-gray"
-                *ngIf="
-                  getQuoteColors(seller.id).revisadas === 0 &&
-                  getQuoteColors(seller.id).pendientes === 0 &&
-                  getQuoteColors(seller.id).porCaducar === 0 &&
-                  getQuoteColors(seller.id).recientes === 0
-                "
-                >—</span
-              >
-            </div>
           </td>
           <td class="actions-column" data-label="Acciones" (click)="$event.stopPropagation()">
             <div class="action-buttons">
@@ -290,7 +156,7 @@
   </div>
 
   <!-- ESTADO VACÍO -->
-  <div *ngIf="!loading && filteredSellers().length === 0" class="catalog-state empty-state">
+  <div *ngIf="!loading && sellers().length === 0" class="catalog-state empty-state">
     <span class="empty-state-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24">
         <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path>
@@ -299,48 +165,28 @@
         <path d="M23 11h-6"></path>
       </svg>
     </span>
-    <strong>{{
-      sellers().length === 0 ? 'Aún no hay vendedores registrados' : 'Sin resultados'
-    }}</strong>
-    <span>{{
-      sellers().length === 0
-        ? 'Agrega tu primer vendedor para empezar.'
-        : 'Ajusta tu búsqueda o los filtros.'
-    }}</span>
-    <button
-      *ngIf="sellers().length > 0"
-      type="button"
-      class="btn-secondary"
-      (click)="clearFilters()"
-    >
-      Limpiar filtros
-    </button>
-    <button
-      *ngIf="sellers().length === 0"
-      type="button"
-      class="btn-primary"
-      (click)="openNewSeller()"
-    >
-      + Nuevo Vendedor
-    </button>
+    <strong>Aún no hay vendedores registrados</strong>
+    <span>Agrega tu primer vendedor para empezar.</span>
+    <button type="button" class="btn-primary" (click)="openNewSeller()">+ Nuevo Vendedor</button>
   </div>
-</div>
-<!-- TOOLTIP NOTAS -->
-<div
-  class="seller-notes-tooltip"
-  *ngIf="showSellerTooltip"
-  [style.left.px]="sellerTooltipPosition.x"
-  [style.top.px]="sellerTooltipPosition.y"
->
-  <div class="seller-notes-tooltip-header">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 4h16v13H7l-3 3Z"></path>
-      <path d="M8 8h8"></path>
-      <path d="M8 12h6"></path>
-    </svg>
-    <span>Notas del vendedor</span>
+
+  <!-- SIN RESULTADOS DE BÚSQUEDA -->
+  <div
+    *ngIf="!loading && sellers().length > 0 && filteredSellers().length === 0"
+    class="catalog-state empty-state"
+  >
+    <span class="empty-state-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        <line x1="8" y1="8" x2="14" y2="14"></line>
+        <line x1="14" y1="8" x2="8" y2="14"></line>
+      </svg>
+    </span>
+    <strong>Sin resultados</strong>
+    <span>Ajusta tu búsqueda.</span>
+    <button type="button" class="btn-secondary" (click)="clearFilters()">Limpiar búsqueda</button>
   </div>
-  <div class="seller-notes-tooltip-body">{{ sellerTooltipContent }}</div>
 </div>
 
 <!-- DRAWER: DETALLE DEL VENDEDOR -->

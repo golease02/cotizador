@@ -36,25 +36,21 @@ export const MATERIALES: Array<{
   clave: ClaveMaterial;
   etiqueta: string;
   descripcionCorta: string;
-  ruta: string;
 }> = [
   {
     clave: 'guia',
     etiqueta: 'Guía Autométrica',
     descripcionCorta: 'Documento de consulta para el vendedor.',
-    ruta: '/material/guia',
   },
   {
     clave: 'pre_fisica',
     etiqueta: 'Pre Solicitud Persona Física',
     descripcionCorta: 'Trámite de pre solicitud para personas físicas.',
-    ruta: '/material/pre_fisica',
   },
   {
     clave: 'pre_moral',
     etiqueta: 'Pre Solicitud Persona Moral',
     descripcionCorta: 'Trámite de pre solicitud para personas morales.',
-    ruta: '/material/pre_moral',
   },
 ];
 
@@ -161,6 +157,9 @@ export class MaterialesService {
       descripcion: datos.descripcion?.trim() || '',
       contenido: datos.contenido ?? '',
       url: datos.url?.trim() || '',
+      // La tabla no tiene trigger: sin esto `actualizado_at` se quedaría
+      // congelado en la fecha de creación.
+      actualizado_at: new Date().toISOString(),
     };
     const { error } = await this.table().upsert(payload, { onConflict: 'clave' });
     return { error };
