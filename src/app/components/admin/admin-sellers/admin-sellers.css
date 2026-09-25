@@ -257,6 +257,10 @@
 .users-table {
   width: 100%;
   min-width: 860px;
+  /* Los anchos por columna llegan en el <colgroup> del HTML. Sin esto, el
+     sobrante de ancho se concentraba en ACCIONES (la única columna sin tope) y
+     dejaba un hueco vacío entre UBICACION y los botones. */
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.88rem;
 }
@@ -275,6 +279,11 @@
   border-top: 1px solid var(--border-color);
   color: var(--text-silver);
   vertical-align: middle;
+  /* Con ancho fijo, una marca larga (nowrap) desbordaría su celda. */
+  overflow: hidden;
+}
+.users-table td.actions-column {
+  overflow: visible;
 }
 .users-table tbody tr {
   cursor: pointer;
@@ -474,6 +483,9 @@
 .action-buttons {
   display: inline-flex;
   gap: 0.35rem;
+  /* Sin este margen la 1fr de la primera fila se la queda el hueco invisible
+     que introduce `gap` al final de un grid. */
+  margin-right: -0.35rem;
 }
 .btn-icon {
   display: inline-flex;
@@ -1911,6 +1923,11 @@ html[data-theme='dark'] .notas-overlay {
   .users-table td + td {
     border-top: 1px solid var(--surface-hover);
   }
+  /* En modo tarjeta cada celda es un contenedor flex: el `overflow: hidden` del
+     escritorio recortaría el contenido. */
+  .users-table td {
+    overflow: visible;
+  }
   .users-table td::before {
     content: attr(data-label);
     flex-shrink: 0;
@@ -2174,7 +2191,9 @@ html[data-theme='dark'] .notas-overlay {
   }
   .action-buttons {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* `auto-fit`: sin el permiso de notas solo hay 2 botones, y con 3 columnas
+       fijas la tercera celda quedaba vacía. */
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
   }
   .btn-icon {
     min-width: 44px;

@@ -48,6 +48,20 @@
     </div>
   </header>
 
+  <!-- Accesos rápidos del vendedor (Ajuste 21).
+       El `.dashboard-header` se oculta a ≤768px, así que aquí se replican los
+       tres botones de Materiales para que el vendedor no los pierda en celular.
+       Mismo `*ngIf` y mismos handlers que la versión de escritorio. -->
+  <div class="mobile-materiales" *ngIf="esVendedor()">
+    <button type="button" class="btn-guia" (click)="abrirGuia()">Guía Autométrica</button>
+    <button type="button" class="btn-guia" (click)="abrirMaterial('pre_fisica')">
+      Pre Solicitud Persona Física
+    </button>
+    <button type="button" class="btn-guia" (click)="abrirMaterial('pre_moral')">
+      Pre Solicitud Persona Moral
+    </button>
+  </div>
+
   <!-- Lista tabular: mismo estilo operativo de Admin → Seguimiento -->
   <div class="content-area" *ngIf="!showDetail()">
     <div *ngIf="loading()" class="loading-state">

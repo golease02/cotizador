@@ -191,6 +191,28 @@ describe('AdminSellersComponent scope', () => {
     expect(texto).not.toContain('Nombre A');
   });
 
+  // Ajuste 20: los anchos fijos evitan que ACCIONES (la única columna sin tope)
+  // absorbiera el sobrante y dejara un hueco entre UBICACION y los botones.
+  it('should declare fixed column widths for the six columns', async () => {
+    await render();
+    const root: HTMLElement = fixture.nativeElement;
+    const cols = Array.from(root.querySelectorAll('colgroup col') as NodeListOf<HTMLElement>);
+    const pcts = cols.map((c) => c.getAttribute('style'));
+
+    expect(cols).toHaveLength(6);
+    expect(pcts).toEqual([
+      'width: 16%;',
+      'width: 13%;',
+      'width: 17%;',
+      'width: 12%;',
+      'width: 25%;',
+      'width: 17%;',
+    ]);
+    // Reparto completo: ninguna columna se queda sin ancho.
+    const total = pcts.reduce((acc, s) => acc + parseFloat(String(s).replace(/[^0-9.]/g, '')), 0);
+    expect(total).toBe(100);
+  });
+
   it('should sort by advisor by default', async () => {
     await render();
 

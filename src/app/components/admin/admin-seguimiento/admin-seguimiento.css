@@ -1595,7 +1595,13 @@
   }
 
   .search-wrapper {
-    min-width: 100%;
+    /* Imprescindible: en `flex-direction: column` el `flex-basis` de la base
+       (260px) pasa a controlar la ALTURA, no el ancho, y `flex-grow: 1` lo
+       estira más. Sin este reset el buscador queda altísimo y los filtros se
+       comen la pantalla. Espejo de lo que ya hace `admin-sellers.css`. */
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
   }
 
   .results-count {

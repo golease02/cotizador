@@ -71,6 +71,22 @@
   <!-- TABLA -->
   <div class="table-wrapper" *ngIf="!loading && filteredSellers().length > 0">
     <table class="users-table">
+      <!--
+        Anchos fijos (Ajuste 20): con `table-layout: auto` el sobrante de ancho
+        lo absorbía la única columna sin tope (ACCIONES) y dejaba un hueco visible
+        entre UBICACION y los botones. Con `table-layout: fixed` cada columna
+        ocupa su porcentaje exacto y no hay dónde dejar el sobrante.
+        ASESOR y UBICACION conservan su `max-width` porque son los que hacen
+        funcionar el texto con puntos suspensivos.
+      -->
+      <colgroup>
+        <col style="width: 16%" />
+        <col style="width: 13%" />
+        <col style="width: 17%" />
+        <col style="width: 12%" />
+        <col style="width: 25%" />
+        <col style="width: 17%" />
+      </colgroup>
       <thead>
         <tr>
           <th>Asesor</th>

@@ -196,6 +196,28 @@ describe('MisCotizacionesComponent', () => {
     expect(botones[2].textContent).toContain('Pre Solicitud Persona Moral');
   });
 
+  // Ajuste 21: en ≤768px el `.dashboard-header` se oculta, así que los mismos
+  // tres botones se replican en `.mobile-materiales`.
+  it('should replicate the three help buttons in the mobile block for sellers', () => {
+    const root: HTMLElement = fixture.nativeElement;
+    const bloque = root.querySelector('.mobile-materiales') as HTMLElement;
+    const botones = bloque.querySelectorAll('.btn-guia');
+
+    expect(bloque).toBeTruthy();
+    expect(botones.length).toBe(3);
+    expect(botones[0].textContent).toContain('Guía Autométrica');
+    expect(botones[1].textContent).toContain('Pre Solicitud Persona Física');
+    expect(botones[2].textContent).toContain('Pre Solicitud Persona Moral');
+  });
+
+  it('should hide the mobile help buttons for admin roles', () => {
+    profileSignal.set({ role: 'super_admin' });
+    mockAuth.isAdmin.mockReturnValue(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.mobile-materiales')).toBeNull();
+  });
+
   it('should hide the help buttons for admin roles', () => {
     profileSignal.set({ role: 'super_admin' });
     mockAuth.isAdmin.mockReturnValue(true);
@@ -218,7 +240,10 @@ describe('MisCotizacionesComponent', () => {
   });
 
   it('should warn the seller when the guide has not been uploaded', async () => {
-    mockMateriales.getPdfSignedUrl.mockResolvedValue({ url: null, error: { message: 'no existe' } });
+    mockMateriales.getPdfSignedUrl.mockResolvedValue({
+      url: null,
+      error: { message: 'no existe' },
+    });
 
     await component.abrirGuia();
 

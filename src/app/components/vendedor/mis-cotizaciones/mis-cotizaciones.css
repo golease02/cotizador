@@ -125,6 +125,12 @@
   outline-offset: 2px;
 }
 
+/* Bloque móvil de los mismos tres botones (Ajuste 21). Oculto en escritorio:
+   allí ya viven dentro del `.dashboard-header`. */
+.mobile-materiales {
+  display: none;
+}
+
 /* Botones de ayuda (Ajuste 17): visibles solo para vendedores. Mismo verde que
    el CTA, con texto en dos líneas para no desbordar el encabezado. */
 .btn-guia {
@@ -508,6 +514,25 @@
   .dashboard-cotizaciones {
     margin-top: 1rem;
   }
+
+  /* Los tres botones de Materiales, replicados fuera del encabezado (Ajuste 21).
+     Dos columnas y el tercero a lo ancho: en pantallas angostas un texto por
+     columna se partiría en tres líneas y quedaría muy alto. */
+  .mobile-materiales {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .mobile-materiales .btn-guia {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .mobile-materiales .btn-guia:last-child {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 640px) {
@@ -816,8 +841,18 @@
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
 }
 
-/* Con filas tipo tarjeta se anulan los separadores internos: cada <tr> ya es
-   una banda propia con su radio y su sombra. */
+/* El fondo va en el <thead>, no en cada <th> (Ajuste 21).
+   Antes los <th> eran transparentes porque cada fila ya era una banda con su
+   radio y su sombra, y el encabezado "flotaba" sin fondo. Ahora que la vista
+   móvil es una lista con scroll, el encabezado necesita ancla visual.
+   Además la tabla usa `border-collapse: separate` con `border-spacing: 0 8px`:
+   si el fondo estuviera en los <th>, los 8px de separación los convertirían en
+   6 bloques sueltos en vez de una barra continua. Al ponerlo en el <thead>, los
+   huecos muestran el mismo fondo y se lee como una sola franja. */
+.seller-followup-table thead {
+  background: var(--surface-subtle);
+}
+
 .seller-followup-table th {
   background: transparent;
 }
@@ -925,147 +960,43 @@ html[data-theme='dark'] .quote-row-action:hover {
   color: var(--accent-green-bright);
 }
 
+/* ============================================================
+   Vista de lista en pantallas angostas (Ajuste 21)
+   Mismo comportamiento que Admin -> Seguimiento: la tabla mantiene
+   su ancho minimo dentro de un contenedor con scroll horizontal, en
+   vez de convertirse en tarjetas apiladas. El tfoot con la leyenda
+   sigue siendo un <td colspan="14"> normal.
+   ============================================================ */
 @media (max-width: 1100px) {
   .lista-wrapper {
-    overflow: visible;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
+    /* Necesario para que la tabla pueda desplazarse: en la base es
+       `overflow-x: hidden` porque alli nunca hay desborde. */
+    overflow-x: auto;
   }
 
   .seller-followup-table {
-    display: block;
-    min-width: 0;
-    border-collapse: collapse;
-    border-spacing: 0;
-  }
-
-  .seller-followup-table thead {
-    display: none;
-  }
-
-  .seller-followup-table tbody {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .seller-followup-table tbody tr {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    overflow: hidden;
-    border: 1px solid var(--input-border);
-    border-radius: 12px;
-    background: var(--surface-card);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
-  }
-
-  .seller-followup-table tbody tr:hover td {
-    background: transparent;
-  }
-
-  .seller-followup-table td {
-    display: block;
-    min-width: 0;
-    padding: 0.65rem 0.7rem;
-    border-top: 0;
-    border-right: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    text-align: left;
-  }
-
-  .seller-followup-table td::before {
-    display: block;
-    margin-bottom: 0.25rem;
-    color: var(--text-muted);
-    content: attr(data-label);
-    font-size: 0.58rem;
-    font-weight: 800;
-    letter-spacing: 0.35px;
-    text-transform: uppercase;
-  }
-
-  .seller-followup-table .td-fecha,
-  .seller-followup-table .td-cliente {
-    grid-column: span 2;
-  }
-
-  .seller-followup-table .td-activo {
-    grid-column: 1 / -1;
-  }
-
-  .seller-followup-table .td-precio,
-  .seller-followup-table .td-plazo {
-    grid-column: span 2;
-  }
-
-  .seller-followup-table .td-etapa {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    gap: 0.3rem;
-    padding: 0.55rem 0.3rem;
-    border-right: 1px solid var(--border-color);
-    text-align: center;
-  }
-
-  .seller-followup-table .td-etapa::before {
-    margin-bottom: 0;
-    font-size: 0.52rem;
-  }
-
-  .seller-followup-table .td-cierre {
-    grid-column: 1 / -1;
-    border-right: 0;
-    border-bottom: 0;
-  }
-
-  .seller-followup-table .date-with-actions {
-    width: 100%;
-  }
-
-  .seller-followup-table .quote-row-actions {
-    flex-wrap: wrap;
-  }
-
-  .seller-followup-table tfoot {
-    display: block;
-    margin-top: 0.75rem;
-  }
-
-  .seller-followup-table tfoot tr {
-    display: block;
-  }
-
-  .seller-followup-table tfoot td {
-    display: block;
-    border: 1px solid var(--input-border);
-    border-radius: 12px;
-  }
-
-  .table-legend {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 0.55rem 0.9rem;
-  }
-
-  .legend-help {
-    width: 100%;
-    margin-left: 0;
+    /* `auto` para que las columnas repartan segun su contenido (Cliente
+       ancho, etapas angostas) igual que Seguimiento. Con `fixed` las 14
+       columnas quedarian del mismo ancho. */
+    table-layout: auto;
+    /* 6 datos + 8 etapas + entrega. Punto de partida: si la columna Activo
+       deja mucho aire, se ajusta este numero. */
+    min-width: 1240px;
   }
 }
 
 @media (max-width: 640px) {
-  .seller-followup-table tbody tr {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .seller-followup-table td {
-    padding: 0.55rem 0.5rem;
-  }
-
   .seller-followup-table .etapa-chip {
+    /* Objetivo tactil comodo: en la lista con scroll (Ajuste 21) las etapas
+       se tocan horizontalmente. */
     width: 28px;
     height: 28px;
+  }
+
+  /* La barra inferior movil es fija y mide 60px + safe area: sin este
+     margen la ultima fila de la lista queda debajo. */
+  .dashboard-cotizaciones {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) + 1rem);
   }
 }
 
