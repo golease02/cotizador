@@ -97,8 +97,7 @@ export class AdminAdminsComponent implements OnInit {
     {
       key: 'seguimiento',
       label: 'Seguimiento',
-      description:
-        'Vista Lista del proceso de cierre: etapas, fechas y datos operativos.',
+      description: 'Vista Lista del proceso de cierre: etapas, fechas y datos operativos.',
     },
     {
       key: 'plates',
@@ -114,6 +113,12 @@ export class AdminAdminsComponent implements OnInit {
       key: 'notas',
       label: 'Notas de seguimiento',
       description: 'Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones.',
+    },
+    {
+      key: 'guias',
+      label: 'Materiales',
+      description:
+        'Administrar la guía automática y las pre solicitudes (Física y Moral) que ven los vendedores.',
     },
   ];
 

@@ -1,0 +1,65 @@
+<div class="material">
+  <header class="material-header">
+    <div class="material-headings">
+      <span class="material-eyebrow">Go Lease MX</span>
+      <h1>{{ titulo }}</h1>
+      <p *ngIf="descripcion">{{ descripcion }}</p>
+    </div>
+    <a routerLink="/" class="material-back">← Volver a Mis Cotizaciones</a>
+  </header>
+
+  <div class="material-loading" *ngIf="cargando()">
+    <span class="material-spinner" aria-hidden="true"></span>
+    <span>Cargando...</span>
+  </div>
+
+  <div class="material-alert" *ngIf="error()" role="alert">
+    <span>{{ error() }}</span>
+  </div>
+
+  <ng-container *ngIf="!cargando()">
+    <!-- Modo PDF -->
+    <section class="material-card" *ngIf="config()?.modo === 'pdf'">
+      <div class="material-pdf" *ngIf="pdfUrl(); else pdfVacio">
+        <iframe [src]="pdfUrl()" title="Documento"></iframe>
+        <a class="material-btn-primary" [href]="pdfUrl()" target="_blank" rel="noopener">
+          Abrir en otra pestaña
+        </a>
+      </div>
+      <ng-template #pdfVacio>
+        <span class="material-badge">En preparación</span>
+        <h2>Documento no disponible</h2>
+        <p>El asesor todavía no ha cargado este documento. Vuelve a intentarlo más tarde.</p>
+      </ng-template>
+    </section>
+
+    <!-- Modo contenido editable -->
+    <section class="material-card" *ngIf="config()?.modo === 'contenido'">
+      <ng-container *ngIf="contenido; else contenidoVacio">
+        <div class="material-contenido">{{ contenido }}</div>
+      </ng-container>
+      <ng-template #contenidoVacio>
+        <span class="material-badge">En construcción</span>
+        <h2>Contenido en preparación</h2>
+        <p>Esta información estará disponible próximamente.</p>
+      </ng-template>
+    </section>
+
+    <!-- Modo URL externa -->
+    <section class="material-card" *ngIf="config()?.modo === 'url'">
+      <ng-container *ngIf="url; else urlVacia">
+        <span class="material-badge">Trámite en línea</span>
+        <h2>Continúa en el sitio oficial</h2>
+        <p>Este trámite se realiza fuera de Go Lease. Se abrirá en una pestaña nueva.</p>
+        <a class="material-btn-primary" [href]="url" target="_blank" rel="noopener">
+          Ir al trámite
+        </a>
+      </ng-container>
+      <ng-template #urlVacia>
+        <span class="material-badge">En construcción</span>
+        <h2>Enlace no disponible</h2>
+        <p>El asesor todavía no ha publicado el enlace.</p>
+      </ng-template>
+    </section>
+  </ng-container>
+</div>

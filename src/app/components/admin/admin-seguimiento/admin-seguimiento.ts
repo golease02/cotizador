@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { QuotesService } from '../../../services/quotes.service';
+import { EntityNote, NotesService } from '../../../services/notes.service';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { QuoteBreakdownComponent } from '../../quote-breakdown/quote-breakdown';
@@ -41,6 +42,7 @@ import {
 export class AdminSeguimientoComponent implements OnInit {
   private seguimiento = inject(SeguimientoService);
   private quotesService = inject(QuotesService);
+  private notesService = inject(NotesService);
   private auth = inject(AuthService);
   private calculator = inject(FinancialCalculatorService);
   private client = getSupabaseClient();
@@ -91,11 +93,11 @@ export class AdminSeguimientoComponent implements OnInit {
   notaLoading = false;
   notaError = '';
   notaText = '';
-  notaEditando: any = null;
-  notasCotizacion: any[] = [];
+  notaEditando: EntityNote | null = null;
+  notasCotizacion: EntityNote[] = [];
   selectedQuoteId: number | null = null;
   showNotaConfirmModal = false;
-  notaToDelete: any = null;
+  notaToDelete: EntityNote | null = null;
 
   // Confirmación de eliminación definitiva (punto 6)
   showDeleteModal = false;
@@ -409,19 +411,22 @@ export class AdminSeguimientoComponent implements OnInit {
     await this.cargarNotasQuote(item.quoteId);
   }
 
+  esNotaPropia(nota: EntityNote): boolean {
+    return nota.es_propia;
+  }
+
+  getNotaAutorNombre(nota: EntityNote): string {
+    return nota.autor_nombre || 'Autor no disponible';
+  }
+
   async cargarNotasQuote(quoteId: number): Promise<void> {
     this.notaLoading = true;
     try {
-      const { data, error } = await this.client
-        .from('notas')
-        .select('*')
-        .eq('entidad_tipo', 'quote')
-        .eq('entidad_id', String(quoteId))
-        .order('created_at', { ascending: false });
+      const { data, error } = await this.notesService.getNotes('quote', quoteId);
       if (error) {
         this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
       } else {
-        this.notasCotizacion = data || [];
+        this.notasCotizacion = data;
         this.notaError = '';
       }
     } catch (err: any) {
@@ -437,53 +442,40 @@ export class AdminSeguimientoComponent implements OnInit {
     this.notaLoading = true;
     this.notaError = '';
 
-    const user = this.auth.currentUser();
-    const payload = {
-      entidad_tipo: 'quote',
-      entidad_id: String(this.selectedQuoteId),
-      texto: this.notaText.trim(),
-      creado_por: user?.id || null,
-      created_at: new Date().toISOString(),
-    };
-
-    let error = null;
-    if (this.notaEditando) {
-      const { error: updateError } = await this.client
-        .from('notas')
-        .update({ texto: this.notaText.trim() })
-        .eq('id', this.notaEditando.id);
-      error = updateError;
-    } else {
-      const { error: insertError } = await this.client.from('notas').insert([payload]);
-      error = insertError;
-    }
+    const editando = this.notaEditando;
+    const { error } = editando
+      ? await this.notesService.updateOwnNote(editando.id, this.notaText.trim())
+      : await this.notesService.createNote(
+          'quote',
+          String(this.selectedQuoteId),
+          this.notaText.trim(),
+        );
 
     if (error) {
       this.notaError = 'Error al guardar nota';
       this.toastService.error('No se pudo guardar la nota');
     } else {
-      const eraEdicion = !!this.notaEditando;
       this.notaText = '';
       this.notaEditando = null;
       await this.cargarNotasQuote(this.selectedQuoteId!);
       this.actualizarConteoNotas(this.selectedQuoteId!, this.notasCotizacion.length);
       await this.registrarInteraccion(this.selectedQuoteId!);
       this.toastService.success(
-        eraEdicion ? 'Nota actualizada correctamente' : 'Nota agregada correctamente',
+        editando ? 'Nota actualizada correctamente' : 'Nota agregada correctamente',
       );
     }
     this.notaLoading = false;
     this.cdr.detectChanges();
   }
 
-  editarNotaQuote(nota: any): void {
-    if (!this.canManageNotas) return;
+  editarNotaQuote(nota: EntityNote): void {
+    if (!this.canManageNotas || !this.esNotaPropia(nota)) return;
     this.notaEditando = nota;
     this.notaText = nota.texto;
   }
 
-  eliminarNotaQuote(nota: any): void {
-    if (!this.canManageNotas) return;
+  eliminarNotaQuote(nota: EntityNote): void {
+    if (!this.canManageNotas || !this.esNotaPropia(nota)) return;
     this.notaToDelete = nota;
     this.showNotaConfirmModal = true;
     this.cdr.detectChanges();
@@ -491,10 +483,10 @@ export class AdminSeguimientoComponent implements OnInit {
 
   async confirmarEliminarNota(): Promise<void> {
     if (!this.canManageNotas) return;
-    if (!this.notaToDelete) return;
+    if (!this.notaToDelete || !this.esNotaPropia(this.notaToDelete)) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
-    const { error } = await this.client.from('notas').delete().eq('id', this.notaToDelete.id);
+    const { error } = await this.notesService.deleteOwnNote(this.notaToDelete.id);
     if (error) {
       this.notaError = 'Error al eliminar nota';
       this.toastService.error('No se pudo eliminar la nota');

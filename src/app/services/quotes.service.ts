@@ -274,6 +274,24 @@ export class QuotesService {
   }
 
   /**
+   * Obtiene, para cada cotización propia, el número de notas compartidas con el
+   * asesor. El RPC aplica el alcance `seller_id = auth.uid()` en PostgreSQL.
+   */
+  public async getSellerQuoteNoteCounts(): Promise<{
+    data: Record<string, number>;
+    error: any;
+  }> {
+    const { data, error } = await this.client.rpc('get_seller_quote_note_counts');
+    if (error || !Array.isArray(data)) return { data: {}, error };
+
+    const counts: Record<string, number> = {};
+    for (const row of data) {
+      counts[String((row as any).quote_id)] = Number((row as any).notas_count) || 0;
+    }
+    return { data: counts, error: null };
+  }
+
+  /**
    * Marca o desmarca la cotización como **revisada** (acción "Revisada" del
    * módulo de Seguimiento).
    *
@@ -340,16 +358,15 @@ export class QuotesService {
   /**
    * Elimina definitivamente una cotización (AJUSTES 12, punto 6).
    * - `quote_seguimiento` cae por ON DELETE CASCADE.
-   * - Las `notas` (entidad_tipo='quote', sin FK) se borran a mano primero.
-   * Requiere que la política DELETE de `quotes` cubra al usuario
-   * (super_admin + socio dueño; ver migración `..._quotes_delete_scope.sql`).
+   * - Las `notas` se limpian mediante RPC: la política DELETE ahora solo
+   *   permite borrar notas propias, por lo que la cascada debe validarse en
+   *   el servidor antes de eliminar la entidad padre.
    */
   public async deleteQuote(quoteId: number | string): Promise<{ error: any }> {
-    await this.client
-      .from('notas')
-      .delete()
-      .eq('entidad_tipo', 'quote')
-      .eq('entidad_id', String(quoteId));
+    const { error: notasError } = await this.client.rpc('delete_notes_for_quote', {
+      p_quote_id: Number(quoteId),
+    });
+    if (notasError) return { error: notasError };
 
     const { error } = await this.client.from('quotes').delete().eq('id', quoteId);
     return { error };

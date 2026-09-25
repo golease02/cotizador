@@ -67,6 +67,8 @@ cotizador/
 │   │   │   ├── financial-calculator.service.ts  # Motor de cálculo (PMT 3 opciones)
 │   │   │   ├── quotes.service.ts       # CRUD de cotizaciones
 │   │   │   ├── seguimiento.service.ts  # Proceso de cierre (etapas y upsert de seguimiento)
+│   │   │   ├── notes.service.ts         # Notas de cotización/vendedor con autor y propiedad
+│   │   │   ├── materiales.service.ts     # Materiales del vendedor (guía + pre solicitudes)
 │   │   │   ├── catalog.service.ts      # Catálogo de placas + config del cotizador
 │   │   │   ├── admin.service.ts        # RPCs de dashboard + fallbacks
 │   │   │   ├── pdf-export.service.ts   # Exportación a PDF (lazy load html2canvas/jspdf)
@@ -88,21 +90,23 @@ cotizador/
 │   │   │   ├── quote-options/         # 3 tarjetas de opciones de arrendamiento
 │   │   │   ├── quote-breakdown/       # Desglose detallado + PDF (NO MODIFICAR)
 │   │   │   ├── vendedor/
-│   │   │   │   └── mis-cotizaciones/  # Lista de cotizaciones del vendedor
+│   │   │   │   ├── mis-cotizaciones/      # Lista de cotizaciones del vendedor
+│   │   │   │   └── material/              # Vista de material del vendedor (guía / pre solicitudes)
 │   │   │   ├── admin/                       # Panel de administración:
-│   │   │   │   ├── admin-dashboard/          # Layout con sidebar + navegación
-│   │   │   │   ├── admin-stats/              # Métricas del dashboard
-│   │   │   │   ├── admin-seller-performance/  # Rendimiento por vendedor
-│   │   │   │   ├── admin-sellers/            # CRUD de vendedores
-│   │   │   │   ├── admin-admins/             # CRUD de socios (super-admin only)
-│   │   │   │   ├── admin-seguimiento/        # Lista operativa del proceso de cierre
-│   │   │   │   ├── admin-plates/             # CRUD de placas por estado
-│   │   │   │   └── admin-parameters/         # Configuración del cotizador
+│   │   │   │   │   ├── admin-dashboard/          # Layout con sidebar + navegación
+│   │   │   │   │   ├── admin-stats/              # Métricas del dashboard
+│   │   │   │   │   ├── admin-seller-performance/  # Rendimiento por vendedor
+│   │   │   │   │   ├── admin-sellers/            # CRUD de vendedores
+│   │   │   │   │   ├── admin-admins/             # CRUD de socios (super-admin only)
+│   │   │   │   │   ├── admin-seguimiento/        # Lista operativa del proceso de cierre
+│   │   │   │   │   ├── admin-plates/             # CRUD de placas por estado
+│   │   │   │   │   ├── admin-parameters/         # Configuración del cotizador
+│   │   │   │   │   └── admin-materiales/          # Materiales del vendedor (guía + pre solicitudes)
 │   │   │   ├── perfil/                # Perfil de usuario
 │   │   │   └── header/                # Header + navegación móvil
 │   │   └── environments/
-│   │       ├── environment.ts         # Dev config (Supabase URL + anon key)
-│   │       └── environment.prod.ts    # Prod config (mismo URL/key)
+│   │   │   ├── environment.ts         # Dev config (Supabase URL + anon key)
+│   │   │   └── environment.prod.ts    # Prod config (mismo URL/key)
 │   ├── index.html
 │   └── styles.css
 ├── supabase/
@@ -168,6 +172,7 @@ cotizador/
 | `plates`      | Placas de Estado         | Administrar el catálogo de placas por estado.                                              |
 | `parameters`  | Parámetros del cotizador | Configurar IVA, comisión, seguros y valores residuales.                                    |
 | `notas`       | Notas de seguimiento     | Agregar, editar y eliminar notas de seguimiento de vendedores y cotizaciones.              |
+| `guias`       | Materiales              | Administrar los materiales del vendedor (guía automática y pre solicitudes Física/Moral): modo, contenido, URL y PDF. |
 
 Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats` (no se usaba). `rendimiento` también se eliminó del JSONB: ahora es inherente al rol socio. Default del socio nuevo: **sin permisos marcados** — el super-admin elige cuáles otorgar.
 
@@ -319,7 +324,11 @@ Keys eliminadas: `dashboard` (permiso morto — panel del super admin) y `stats`
   20. `20260924040000_fix_false_review_timestamp.sql` — elimina el default inválido de `last_reviewed_at` y limpia falsos timestamps de revisión
   21. `20260924050000_followup_granular_permissions.sql` — exige permisos JSONB de Seguimiento/Notas en helpers y policies RLS
   22. `20260924060000_seller_followup_readonly.sql` — RPC de solo lectura para que Mis Cotizaciones muestre las etapas propias sin abrir permisos del panel
-- **⚠️ Estado real de `supabase/migrations/`:** el commit `e632a0f` ("Corecciones") **eliminó del repositorio** los archivos de migración 1–13: en disco sólo existen las migraciones añadidas después (a partir de la 14). El historial de las anteriores vive en `supabase_migrations.schema_migrations` de la BD remota. Por eso **toda migración nueva debe ser autocontenida** (no asumir que las anteriores están en disco) y aplicar con `npx supabase db push` (pide el password de la BD) o pegándola en el SQL Editor.
+  23. `20260925020000_notes_authorship_and_ownership.sql` — autor visible + propiedad estricta de notas (solo el autor edita o borra, en todos los módulos)
+  24. `20260926010000_guia_storage.sql` — bucket privado `guias` + políticas de Storage (subir/eliminar solo con permiso `guias`; lectura de metadatos para todo autenticado)
+  25. `20260926020000_pre_solicitudes_config.sql` — tabla `pre_solicitudes` (una fila por tipo) con RLS: lectura para autenticados, escritura con permiso `guias`
+  26. `20260926030000_materiales_unified.sql` — tabla única `materiales` (guía + pre solicitudes) con RLS; traslada la config de `pre_solicitudes` y elimina esa tabla
+- **⚠️ Estado real de `supabase/migrations/`:** el 25/09/2026 el directorio de migraciones fue limpiado en el working tree (Git registra los archivos históricos 1–24 como eliminados). El historial vive en `supabase_migrations.schema_migrations` de la BD remota y **no se restauran esos archivos**. Por eso **toda migración nueva debe ser totalmente autocontenida** (recrear helpers, políticas y RPC que necesite) y se aplica con `npx supabase db push` (pide el password de la BD) o pegándola en el SQL Editor.
 - **Aplicar cambios:** `npx supabase db push` (o `supabase db reset` para desarrollo)
 - **No hay seeders tradicionales** — los catálogos base se insertan en `000001_bootstrap_super_admin.sql` (placas). El catálogo de **vehículos** (`vehicles`) fue **eliminado** en `20260910000009_drop_vehicles_table.sql`.
 - **Seed manual de datos de prueba:** `supabase/scripts/seed_datos_prueba.sql` (no es migración: no se aplica con `db push`). Se ejecuta a mano en el SQL Editor o con `npx supabase db query --linked -f supabase/scripts/seed_datos_prueba.sql`. Es **destructivo**: borra `quotes`, `notas` y todos los usuarios excepto el super admin actual, y crea 3 socios + 15 vendedores + 60 cotizaciones. **No toca** `state_plates` ni `calculator_settings`. Credenciales: socios `4421000001/02/03` y vendedores `44211xxxxx…44213xxxxx`, contraseña `123456` (login por celular). Detalle: publica `request.jwt.claims` del super admin dentro de la transacción para que los triggers `secure_profiles_row`/`secure_quotes_row` tomen la vía exenta (si no, las cotizaciones quedarían sin `seller_id`/`color`).
@@ -469,6 +478,30 @@ npm test -- --watch=false  # Ejecución única (CI, sin watch)
 
 19. **Mis Cotizaciones como seguimiento de solo lectura (24/09/2026):**
     - Se eliminaron todos los filtros de la pantalla del vendedor: buscador, últimos 7 días y últimos 30 días.
-    - Las cotizaciones se muestran como tarjetas verticales con fecha, cliente, activo, precio, plazo, estado/progreso y las ocho etapas en modo lectura. La única acción de cada tarjeta es **Ver detalle**; no hay edición, duplicado, cambio de etapa, entrega ni eliminación.
-    - `get_vendedor_seguimiento()` (`20260924060000_seller_followup_readonly.sql`) limita la consulta a `seller_id = auth.uid()` y expone solo el estado mínimo; no expone notas ni habilita mutaciones. El frontend mantiene fallback a `getVendedorQuotes()` si la RPC aún no está disponible.
+    - Las cotizaciones se muestran en una lista tabular con fecha, cliente, activo, precio, plazo y las ocho etapas en modo lectura. No hay edición, duplicado, cambio de etapa, entrega ni eliminación de la cotización.
+    - `get_vendedor_seguimiento()` (`20260924060000_seller_followup_readonly.sql`) limita la consulta a `seller_id = auth.uid()` y expone solo el estado mínimo de la cotización. El frontend mantiene fallback a `getVendedorQuotes()` si la RPC aún no está disponible.
     - Los filtros y acciones de Admin → Seguimiento permanecen sin cambios.
+
+20. **Acciones y notas compartidas en Mis Cotizaciones (25/09/2026 — Ajuste 15):**
+    - La columna **F. Inicio** muestra solo la fecha (sin hora) y, debajo, las acciones compactas y alineadas: ícono de **Ver cotización** seguido del ícono de notas con contador (`2 notas`). El pie replica la leyenda con **Ver cotización**, **0 notas**, `Pon y revisa notas de seguimiento` y, a la derecha, `* Las etapas se actualizan por GoLease`.
+    - La columna **Activo** muestra el nombre completo del vehículo capturado como `marca + modelo + año`; si no cabe en una línea, ajusta palabras en varias líneas sin puntos suspensivos y la fila crece lo necesario. `quote_seguimiento.activo_texto` es solo el respaldo cuando la cotización no tiene marca ni modelo.
+    - El modal de notas es compartido por cotización. Cada nota muestra el **nombre real de su autor** a la derecha de la fecha. El vendedor puede agregar, editar y borrar solo sus propias notas; las de su asesor son de solo lectura.
+    - `20260925020000_notes_authorship_and_ownership.sql` centraliza la lectura/escritura de notas de todos los módulos: devuelve `autor_nombre` y solo permite UPDATE/DELETE cuando `creado_por = auth.uid()` (también para superadmin). `delete_notes_for_quote` mantiene la limpieza de notas al eliminar una cotización.
+    - Las etapas, el detalle de cotización y el PDF permanecen intactos.
+
+21. **Autoría y propiedad de notas en todos los módulos (25/09/2026 — Ajuste 16):**
+    - Alcance: **Mis Cotizaciones**, **Admin → Seguimiento**, **Admin → Vendedores** y el tooltip de notas de Vendedores.
+    - La tarjeta de nota muestra `fecha` a la izquierda y `autor_nombre` a la derecha; los botones editar/borrar viven en la esquina superior derecha y **solo aparecen en notas propias**.
+    - `src/app/services/notes.service.ts` es el único punto de acceso a `notas` en el frontend (`getNotes`, `createNote`, `updateOwnNote`, `deleteOwnNote`). Los tres componentes lo usan y bloquean también las acciones en código, no solo en la plantilla.
+    - El superadmin queda sujeto a la misma regla: solo administra notas que él mismo escribió. Para la limpieza operativa al eliminar una cotización existe la RPC `delete_notes_for_quote`.
+    - **Layout de la tarjeta:** `fecha → autor → acciones` en una sola línea inferior (`.nota-meta` con `gap` uniforme y `.nota-acciones { margin-left: auto }`). Los botones ya no son `position: absolute`, por lo que `.nota-item` no reserva padding extra a la derecha.
+
+22. **Materiales del vendedor: guía automática y pre solicitudes (26/09/2026 — Ajuste 17, unificado):**
+    - **Un solo módulo:** los tres materiales (`guia`, `pre_fisica`, `pre_moral`) se administran desde **un único panel** `/admin/materiales` (ruta hija de `/admin` con `moduleGuard('guias')`) y se ven en el vendedor desde **una única ruta** `/material/:clave` (`AuthGuard`). Componentes: `components/admin/admin-materiales/` y `components/vendedor/material/`.
+    - **Tabla única `public.materiales`** (`clave` PK, `modo`, `titulo`, `descripcion`, `contenido`, `url`, `actualizado_at`) leída y escrita por `services/materiales.service.ts`. La migración `20260926030000_materiales_unified.sql` traslada la configuración previa de `pre_solicitudes` y **elimina esa tabla**.
+    - **Tres modos para los tres materiales:** `pdf` (sube el PDF al bucket privado `guias`), `contenido` (texto editable que se muestra con `white-space: pre-wrap`) y `url` (enlace externo validado con `http(s)://`). Cambiar de modo no borra los demás campos. Cada modo tiene su estado vacío cuando falta el recurso.
+    - **Solo para el perfil `seller`:** Mis Cotizaciones muestra 3 botones en el encabezado verde, antes de «Nueva Cotización», con `esVendedor = computed(() => auth.currentProfile()?.role === 'seller')`.
+    - **Comportamiento de los botones (conservado del diseño previo):** `abrirGuia()` abre el PDF directamente en una pestaña nueva con URL firmada de 120 s si el modo es `pdf`; si el administrador configuró `contenido`/`url`, navega a `/material/guia`. `abrirMaterial(clave)` siempre navega a `/material/<clave>` para las dos pre solicitudes.
+    - **Almacenamiento:** bucket privado `guias` con rutas fijas por clave (`MATERIAL_PDF_PATH`): `guia-autometrica.pdf`, `pre-solicitud-persona-fisica.pdf`, `pre-solicitud-persona-moral.pdf`. Límite 15 MB, validación de `application/pdf` y `upsert`. Las rutas NO cambiaron al unificar, por lo que los archivos ya subidos siguen sirviéndose.
+    - **Permiso `guias` (clave conservada, no renombrada):** superadmin siempre; socios solo con `permisos.guias === true` (helper SQL `has_guias_permission()` y `MaterialesService.canManage()`). Los vendedores solo leen la configuración y ven el PDF por URL firmada; no pueden escribir.
+    - **Rutas antiguas conservadas como alias:** `/admin/guias` y `/admin/pre-solicitudes` redirigen a `materiales`; `/pre-solicitud/fisica` y `/pre-solicitud/moral` redirigen a `material/pre_fisica` y `material/pre_moral`. El menú lateral y la navegación móvil tienen una sola entrada **Materiales**.

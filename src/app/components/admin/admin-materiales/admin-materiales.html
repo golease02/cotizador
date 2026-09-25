@@ -1,0 +1,215 @@
+<div class="mat-page">
+  <header class="mat-header">
+    <div class="mat-headings">
+      <span class="mat-eyebrow">Panel de administrador</span>
+      <h1>Materiales</h1>
+      <p>
+        Configura lo que ven los vendedores al presionar los botones de
+        <strong>Mis Cotizaciones</strong>: Guía Autométrica, Pre Solicitud Persona Física y Pre
+        Solicitud Persona Moral.
+      </p>
+    </div>
+  </header>
+
+  <div class="mat-alert" *ngIf="error()" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>{{ error() }}</span>
+  </div>
+
+  <div class="mat-loading" *ngIf="cargando()">
+    <span class="mat-spinner" aria-hidden="true"></span>
+    <span>Cargando configuración...</span>
+  </div>
+
+  <ng-container *ngIf="!cargando()">
+    <!-- Selector de material -->
+    <div class="mat-switch" role="tablist" aria-label="Material a configurar">
+      <button
+        type="button"
+        role="tab"
+        *ngFor="let m of materiales"
+        [attr.aria-selected]="activo() === m.clave"
+        [class.is-active]="activo() === m.clave"
+        (click)="cambiarMaterial(m.clave)"
+      >
+        {{ m.etiqueta }}
+      </button>
+    </div>
+
+    <p class="mat-hint-top">{{ activoMeta.descripcionCorta }}</p>
+
+    <section class="mat-card">
+      <!-- Selector de modo -->
+      <div class="mat-modes">
+        <h2>¿Qué debe mostrar el vendedor?</h2>
+        <div class="mat-mode-grid">
+          <button
+            type="button"
+            class="mat-mode"
+            [class.is-active]="modo === 'pdf'"
+            (click)="cambiarModo('pdf')"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <path d="M14 2v6h6"></path>
+            </svg>
+            <strong>PDF</strong>
+            <span>Sube un documento que el vendedor podrá ver y abrir.</span>
+          </button>
+
+          <button
+            type="button"
+            class="mat-mode"
+            [class.is-active]="modo === 'contenido'"
+            (click)="cambiarModo('contenido')"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+            </svg>
+            <strong>Contenido</strong>
+            <span>Escribe aquí el texto que se mostrará en la página.</span>
+          </button>
+
+          <button
+            type="button"
+            class="mat-mode"
+            [class.is-active]="modo === 'url'"
+            (click)="cambiarModo('url')"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M2 12h20"></path>
+              <path
+                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+              ></path>
+            </svg>
+            <strong>URL externa</strong>
+            <span>Redirige al vendedor a una página alojada en otro sitio.</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Campos comunes -->
+      <div class="mat-fields">
+        <h2>Datos de la página</h2>
+
+        <label class="mat-field">
+          <span>Título</span>
+          <input type="text" [(ngModel)]="titulo" [placeholder]="activoMeta.etiqueta" />
+        </label>
+
+        <label class="mat-field">
+          <span>Descripción corta</span>
+          <input
+            type="text"
+            [(ngModel)]="descripcion"
+            placeholder="Resumen que aparece bajo el título"
+          />
+        </label>
+
+        <!-- Contenido editable -->
+        <div class="mat-block" *ngIf="modo === 'contenido'">
+          <label class="mat-field">
+            <span>Contenido</span>
+            <textarea
+              rows="12"
+              [(ngModel)]="contenido"
+              placeholder="Escribe aquí las secciones, requisitos y documentos que el vendedor debe presentar."
+            ></textarea>
+          </label>
+          <p class="mat-hint">Se muestra tal cual en la página del vendedor, respetando los saltos de línea.</p>
+        </div>
+
+        <!-- URL externa -->
+        <div class="mat-block" *ngIf="modo === 'url'">
+          <label class="mat-field">
+            <span>URL (http:// o https://)</span>
+            <input type="url" [(ngModel)]="url" placeholder="https://ejemplo.com/tramite" />
+          </label>
+          <p class="mat-hint">
+            Al presionar el botón, el vendedor será enviado a esta dirección en una pestaña
+            nueva.
+          </p>
+        </div>
+
+        <!-- PDF -->
+        <div class="mat-block" *ngIf="modo === 'pdf'">
+          <h3>Documento PDF</h3>
+
+          <div class="mat-pdf-status" *ngIf="tienePdf()">
+            <span class="mat-pill">PDF cargado</span>
+            <span>Los vendedores ya pueden abrirlo.</span>
+          </div>
+          <div class="mat-pdf-status is-empty" *ngIf="!tienePdf()">
+            <span class="mat-pill is-empty">Sin PDF</span>
+            <span>Sube un documento para habilitar la vista del vendedor.</span>
+          </div>
+
+          <div class="mat-pdf-actions" *ngIf="puedeAdministrar()">
+            <label class="mat-file">
+              <input
+                type="file"
+                accept="application/pdf"
+                (change)="onFileSelected($event)"
+                [disabled]="subiendo()"
+              />
+              <span class="mat-file-btn">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                {{ tienePdf() ? 'Reemplazar PDF' : 'Seleccionar PDF' }}
+              </span>
+            </label>
+
+            <button
+              type="button"
+              class="mat-btn-danger"
+              *ngIf="tienePdf()"
+              (click)="eliminarPdf()"
+              [disabled]="subiendo()"
+            >
+              Eliminar PDF
+            </button>
+          </div>
+
+          <p class="mat-hint">Solo archivos PDF, máximo {{ formatBytes(maxBytes) }}.</p>
+
+          <div class="mat-preview" *ngIf="pdfPreviewUrl()">
+            <iframe [src]="pdfPreviewUrl()" title="Vista previa del PDF"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aviso de solo lectura -->
+      <div class="mat-readonly" *ngIf="!puedeAdministrar()">
+        <p>
+          Tu cuenta no tiene el permiso <strong>guias</strong>, por lo que solo puedes consultar la
+          configuración.
+        </p>
+      </div>
+
+      <!-- Guardar -->
+      <div class="mat-actions" *ngIf="puedeAdministrar()">
+        <span class="mat-dirty" *ngIf="hayCambios">Tienes cambios sin guardar</span>
+        <button
+          type="button"
+          class="mat-btn-ghost"
+          (click)="descartar()"
+          [disabled]="!hayCambios || guardando()"
+        >
+          Descartar
+        </button>
+        <button type="button" class="mat-btn-primary" (click)="guardar()" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </section>
+  </ng-container>
+</div>

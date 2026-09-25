@@ -5,6 +5,7 @@ import { signal } from '@angular/core';
 import { AdminSeguimientoComponent } from './admin-seguimiento';
 import { SeguimientoItem, SeguimientoService } from '../../../services/seguimiento.service';
 import { QuotesService } from '../../../services/quotes.service';
+import { NotesService } from '../../../services/notes.service';
 import { AuthService } from '../../../services/auth.service';
 import { FinancialCalculatorService } from '../../../services/financial-calculator.service';
 import { DEFAULT_CALCULATOR_CONFIG, STATE_PLATES_CATALOG } from '../../../models/leasing.model';
@@ -66,6 +67,13 @@ describe('AdminSeguimientoComponent', () => {
     deleteQuote: vi.fn(),
   };
 
+  const mockNotesService = {
+    getNotes: vi.fn(),
+    createNote: vi.fn(),
+    updateOwnNote: vi.fn(),
+    deleteOwnNote: vi.fn(),
+  };
+
   const mockAuthService = {
     canAccessModule: () => true,
     currentUser: () => ({ id: 'admin-1' }),
@@ -89,6 +97,7 @@ describe('AdminSeguimientoComponent', () => {
         provideRouter([]),
         { provide: SeguimientoService, useValue: mockSeguimiento },
         { provide: QuotesService, useValue: mockQuotesService },
+        { provide: NotesService, useValue: mockNotesService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: FinancialCalculatorService, useValue: mockCalculator },
         { provide: ToastService, useValue: mockToast },
@@ -121,6 +130,10 @@ describe('AdminSeguimientoComponent', () => {
     mockSeguimiento.actualizarDatos.mockResolvedValue(true);
     mockQuotesService.getQuoteCalculation.mockReset().mockResolvedValue(null);
     mockQuotesService.deleteQuote.mockReset().mockResolvedValue({ error: null });
+    mockNotesService.getNotes.mockReset().mockResolvedValue({ data: [], error: null });
+    mockNotesService.createNote.mockReset().mockResolvedValue({ error: null });
+    mockNotesService.updateOwnNote.mockReset().mockResolvedValue({ error: null });
+    mockNotesService.deleteOwnNote.mockReset().mockResolvedValue({ error: null });
     mockCalculator.calculateQuote.mockReset();
 
     itemsSignal.set([
@@ -569,17 +582,23 @@ describe('AdminSeguimientoComponent', () => {
         isInsuranceEstimated: false,
       });
 
-    it('should open the notas modal and list the notes of the quote', async () => {
-      notasRows = [
-        {
-          id: 'n1',
-          entidad_tipo: 'quote',
-          entidad_id: '1',
-          texto: 'Llamar mañana',
-          created_at: diasAtras(1),
-        },
-      ];
-      stubNotasClient();
+    it('should open the notas modal and list the notes with their author', async () => {
+      mockNotesService.getNotes.mockResolvedValue({
+        data: [
+          {
+            id: '3f1b9a52-0c4d-4f7e-9a11-2b6c8d5e4f30',
+            entidad_tipo: 'quote',
+            entidad_id: '1',
+            texto: 'Llamar mañana',
+            creado_por: 'otro-asesor',
+            created_at: diasAtras(1),
+            autor_nombre: 'Otro Asesor',
+            autor_rol: 'socio',
+            es_propia: false,
+          },
+        ],
+        error: null,
+      });
       await crearComponente();
       const item = component.filtrados().find((i) => i.quoteId === 1)!;
 
@@ -590,6 +609,9 @@ describe('AdminSeguimientoComponent', () => {
       expect(component.selectedQuoteId).toBe(1);
       expect(component.notasCotizacion.length).toBe(1);
       expect(component.notaError).toBe('');
+      expect(mockNotesService.getNotes).toHaveBeenCalledWith('quote', 1);
+      expect(fixture.nativeElement.textContent).toContain('Otro Asesor');
+      expect(fixture.nativeElement.querySelectorAll('.nota-acciones').length).toBe(0);
 
       component.cerrarNotasQuote();
       fixture.detectChanges();
@@ -624,23 +646,51 @@ describe('AdminSeguimientoComponent', () => {
       component.notaText = '  Cliente confirmó visita  ';
       await component.guardarNotaQuote();
 
+      expect(mockNotesService.createNote).toHaveBeenCalledWith(
+        'quote',
+        '1',
+        'Cliente confirmó visita',
+      );
       expect(mockToast.success).toHaveBeenCalledWith('Nota agregada correctamente');
       expect(mockToast.error).not.toHaveBeenCalled();
       expect(component.notaLoading).toBe(false);
     });
 
-    it('should delete a note after confirmation', async () => {
-      notasRows = [{ id: 'n1', entidad_id: '1', texto: 'Nota vieja' }];
-      stubNotasClient();
+    it('should delete only the note created by the current user', async () => {
+      const ownNote = {
+        id: '3f1b9a52-0c4d-4f7e-9a11-2b6c8d5e4f30',
+        entidad_tipo: 'quote' as const,
+        entidad_id: '1',
+        texto: 'Nota propia',
+        creado_por: 'admin-1',
+        created_at: diasAtras(1),
+        autor_nombre: 'César González',
+        autor_rol: 'super_admin' as const,
+        es_propia: true,
+      };
+      const otherNote = {
+        ...ownNote,
+        id: '8c2d0e11-77aa-4b1c-8e02-51d9f0a3b6c4',
+        es_propia: false,
+        autor_nombre: 'Otro Asesor',
+      };
+      mockNotesService.getNotes.mockResolvedValue({ data: [ownNote, otherNote], error: null });
       await crearComponente();
       const item = component.filtrados().find((i) => i.quoteId === 1)!;
       await component.abrirNotas(item);
+      fixture.detectChanges();
 
-      component.eliminarNotaQuote({ id: 'n1', texto: 'Nota vieja' });
+      expect(fixture.nativeElement.querySelectorAll('.nota-acciones').length).toBe(1);
+      component.editarNotaQuote(otherNote);
+      expect(component.notaEditando).toBeNull();
+      component.eliminarNotaQuote(otherNote);
+      expect(component.showNotaConfirmModal).toBe(false);
+
+      component.eliminarNotaQuote(ownNote);
       expect(component.showNotaConfirmModal).toBe(true);
-
       await component.confirmarEliminarNota();
 
+      expect(mockNotesService.deleteOwnNote).toHaveBeenCalledWith(ownNote.id);
       expect(mockToast.success).toHaveBeenCalledWith('Nota eliminada correctamente');
       expect(component.showNotaConfirmModal).toBe(false);
       expect(component.notaToDelete).toBeNull();

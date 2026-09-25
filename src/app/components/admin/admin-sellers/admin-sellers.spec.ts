@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js';
 import { AdminSellersComponent } from './admin-sellers';
 import { AuthService, Profile } from '../../../services/auth.service';
 import { AdminScopeService } from '../../../services/admin-scope.service';
+import { NotesService } from '../../../services/notes.service';
 import {
   getSupabaseClient,
   resetSessionReady,
@@ -16,6 +17,7 @@ describe('AdminSellersComponent scope', () => {
   let fixture: ComponentFixture<AdminSellersComponent>;
   let component: AdminSellersComponent;
   let scope: AdminScopeService;
+  let notes: NotesService;
   let auth: AuthService;
   let profile: Profile;
   let network: { id: string }[];
@@ -88,6 +90,7 @@ describe('AdminSellersComponent scope', () => {
     setSessionUser({ id: profile.id } as User);
     await auth.loadProfile(profile.id);
     scope = TestBed.inject(AdminScopeService);
+    notes = TestBed.inject(NotesService);
     TestBed.tick();
   });
 
@@ -147,5 +150,79 @@ describe('AdminSellersComponent scope', () => {
 
     expect(marcas).toEqual([...marcas].sort());
     expect(new Set(marcas).size).toBe(marcas.length);
+  });
+
+  it('should show note authors and only allow actions on notes created by the advisor', async () => {
+    await render();
+    const ownNote = {
+      id: '3f1b9a52-0c4d-4f7e-9a11-2b6c8d5e4f30',
+      entidad_tipo: 'seller' as const,
+      entidad_id: 'seller-a',
+      texto: 'Nota del asesor',
+      creado_por: 'admin-a',
+      created_at: new Date().toISOString(),
+      autor_nombre: 'César González',
+      autor_rol: 'super_admin' as const,
+      es_propia: true,
+    };
+    const otherNote = {
+      ...ownNote,
+      id: '8c2d0e11-77aa-4b1c-8e02-51d9f0a3b6c4',
+      es_propia: false,
+      autor_nombre: 'Otro Asesor',
+      autor_rol: 'socio' as const,
+    };
+    vi.spyOn(notes, 'getNotes').mockResolvedValue({ data: [ownNote, otherNote], error: null });
+
+    await component.abrirNotas(component.sellers()[0]);
+    fixture.detectChanges();
+
+    const root: HTMLElement = fixture.nativeElement;
+    const authors = root.querySelectorAll('.nota-autor');
+    expect(authors.length).toBe(2);
+    expect(authors[0].textContent?.trim()).toBe('César González');
+    expect(authors[1].textContent?.trim()).toBe('Otro Asesor');
+    expect(root.querySelectorAll('.nota-acciones').length).toBe(1);
+
+    // Orden de la fila: fecha -> autor -> acciones dentro de .nota-meta
+    const meta = authors[0].closest('.nota-meta') as HTMLElement;
+    expect(meta).toBeTruthy();
+    const order = Array.from(meta.children).map((el) => el.className);
+    expect(order[0]).toContain('nota-fecha');
+    expect(order[1]).toContain('nota-autor');
+    expect(order[2]).toContain('nota-acciones');
+
+    component.editarNota(otherNote);
+    expect(component.notaEditando).toBeNull();
+    component.eliminarNota(otherNote);
+    expect(component.showNotaConfirmModal).toBe(false);
+  });
+
+  it('should include the author in the seller notes tooltip', async () => {
+    await render();
+    vi.spyOn(notes, 'getNotes').mockResolvedValue({
+      data: [
+        {
+          id: '3f1b9a52-0c4d-4f7e-9a11-2b6c8d5e4f30',
+          entidad_tipo: 'seller',
+          entidad_id: 'seller-a',
+          texto: 'Revisar documentación',
+          creado_por: 'admin-a',
+          created_at: new Date().toISOString(),
+          autor_nombre: 'César González',
+          autor_rol: 'super_admin',
+          es_propia: true,
+        },
+      ],
+      error: null,
+    });
+
+    await component.mostrarNotasTooltip(
+      { clientX: 20, clientY: 20 } as MouseEvent,
+      component.sellers()[0],
+    );
+
+    expect(component.sellerTooltipContent).toContain('Revisar documentación');
+    expect(component.sellerTooltipContent).toContain('César González');
   });
 });

@@ -280,7 +280,7 @@ export class AuthService {
    *  - 'dashboard' es el panel principal y es INHERENTE al socio (como 'rendimiento');
    *    los vendedores nunca acceden al panel admin.
    *  - 'stats' es una clave JSONB muerta, exclusiva del super admin.
-   *  - 'seguimiento' es un permiso granular (JSONB).
+   *  - 'seguimiento' y 'guias' son permisos granulares (JSONB).
    *  Socio: el resto de módulos ('sellers', 'quotes', 'plates', 'parameters',
    *  'notas') se evalúan vía el JSONB de permisos. */
   public canAccessModule(module: string): boolean {

@@ -42,6 +42,7 @@ export class MobileAdminNavigationComponent implements OnDestroy {
         permission: 'parameters',
         icon: 'parameters',
       },
+      { label: 'Materiales', route: '/admin/materiales', permission: 'guias', icon: 'parameters' },
     ];
 
     return modules.filter(

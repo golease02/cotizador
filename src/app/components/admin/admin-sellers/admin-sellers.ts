@@ -15,6 +15,7 @@ import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { getSupabaseClient } from '../../../services/supabase-client';
 import { AdminScopeService } from '../../../services/admin-scope.service';
+import { EntityNote, NotesService } from '../../../services/notes.service';
 import { ToastService } from '../../../services/toast.service';
 
 @Component({
@@ -28,6 +29,7 @@ export class AdminSellersComponent implements OnInit {
   private admin = inject(AdminService);
   public auth = inject(AuthService);
   private client = getSupabaseClient();
+  private notesService = inject(NotesService);
   private cdr = inject(ChangeDetectorRef);
   private readonly scope = inject(AdminScopeService);
   private sellersRequest = 0;
@@ -107,16 +109,16 @@ export class AdminSellersComponent implements OnInit {
 
   // ------------------- NOTAS -------------------
   showNotasModal = false;
-  notasVendedor: any[] = [];
+  notasVendedor: EntityNote[] = [];
   showSellerTooltip = false;
   sellerTooltipContent = '';
   sellerTooltipPosition = { x: 0, y: 0 };
   notaText = '';
-  notaEditando: any = null;
+  notaEditando: EntityNote | null = null;
   notaLoading = false;
   notaError = '';
   showNotaConfirmModal = false;
-  notaToDelete: any = null;
+  notaToDelete: EntityNote | null = null;
 
   // ------------------- SEMAFORO COTIZACIONES -------------------
   /** Mapa de colores por vendedor: { revisadas, porCaducar, pendientes, recientes } */
@@ -830,19 +832,22 @@ export class AdminSellersComponent implements OnInit {
     await this.cargarNotas(seller.id);
   }
 
+  esNotaPropia(nota: EntityNote): boolean {
+    return nota.es_propia;
+  }
+
+  getNotaAutorNombre(nota: EntityNote): string {
+    return nota.autor_nombre || 'Autor no disponible';
+  }
+
   async cargarNotas(sellerId: string) {
     this.notaLoading = true;
     try {
-      const { data, error } = await this.client
-        .from('notas')
-        .select('*')
-        .eq('entidad_tipo', 'seller')
-        .eq('entidad_id', sellerId)
-        .order('created_at', { ascending: false });
+      const { data, error } = await this.notesService.getNotes('seller', sellerId);
       if (error) {
         this.notaError = 'Error al cargar notas: ' + (error.message || 'desconocido');
       } else {
-        this.notasVendedor = data || [];
+        this.notasVendedor = data;
         this.notaError = '';
       }
     } catch (err: any) {
@@ -853,51 +858,35 @@ export class AdminSellersComponent implements OnInit {
   }
 
   async guardarNota() {
-    if (!this.canManageNotas) return;
+    if (!this.canManageNotas || !this.selectedSellerId) return;
     if (!this.notaText.trim()) return;
     this.notaLoading = true;
     this.notaError = '';
 
-    const user = this.auth.currentUser();
-    const payload = {
-      entidad_tipo: 'seller',
-      entidad_id: this.selectedSellerId,
-      texto: this.notaText.trim(),
-      creado_por: user?.id || null,
-      created_at: new Date().toISOString(),
-    };
-
-    let error = null;
-    if (this.notaEditando) {
-      const { error: updateError } = await this.client
-        .from('notas')
-        .update({ texto: this.notaText.trim() })
-        .eq('id', this.notaEditando.id);
-      error = updateError;
-    } else {
-      const { error: insertError } = await this.client.from('notas').insert([payload]);
-      error = insertError;
-    }
+    const editando = this.notaEditando;
+    const { error } = editando
+      ? await this.notesService.updateOwnNote(editando.id, this.notaText.trim())
+      : await this.notesService.createNote('seller', this.selectedSellerId, this.notaText.trim());
 
     if (error) {
       this.notaError = 'Error al guardar nota';
     } else {
       this.notaText = '';
       this.notaEditando = null;
-      await this.cargarNotas(this.selectedSellerId!);
+      await this.cargarNotas(this.selectedSellerId);
     }
     this.notaLoading = false;
     this.cdr.detectChanges();
   }
 
-  editarNota(nota: any) {
-    if (!this.canManageNotas) return;
+  editarNota(nota: EntityNote) {
+    if (!this.canManageNotas || !this.esNotaPropia(nota)) return;
     this.notaEditando = nota;
     this.notaText = nota.texto;
   }
 
-  eliminarNota(nota: any) {
-    if (!this.canManageNotas) return;
+  eliminarNota(nota: EntityNote) {
+    if (!this.canManageNotas || !this.esNotaPropia(nota)) return;
     this.notaToDelete = nota;
     this.showNotaConfirmModal = true;
     this.cdr.detectChanges();
@@ -905,10 +894,10 @@ export class AdminSellersComponent implements OnInit {
 
   async confirmarEliminarNota() {
     if (!this.canManageNotas) return;
-    if (!this.notaToDelete) return;
+    if (!this.notaToDelete || !this.esNotaPropia(this.notaToDelete)) return;
     this.notaLoading = true;
     this.showNotaConfirmModal = false;
-    const { error } = await this.client.from('notas').delete().eq('id', this.notaToDelete.id);
+    const { error } = await this.notesService.deleteOwnNote(this.notaToDelete.id);
     if (error) {
       this.notaError = 'Error al eliminar nota';
     } else {
@@ -938,25 +927,21 @@ export class AdminSellersComponent implements OnInit {
 
   // ===================== TOOLTIP =====================
 
-  mostrarNotasTooltip(event: MouseEvent, seller: any) {
+  async mostrarNotasTooltip(event: MouseEvent, seller: any) {
     if (!this.canManageNotas) return;
-    this.client
-      .from('notas')
-      .select('texto, created_at')
-      .eq('entidad_tipo', 'seller')
-      .eq('entidad_id', seller.id)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        const notes = !error && data ? data.map((note) => `• ${note.texto}`).join('\n') : '';
-        this.sellerTooltipContent = notes || 'Sin notas';
-        this.showSellerTooltip = true;
-        let x = event.clientX + 14;
-        let y = event.clientY + 14;
-        if (x + 300 > window.innerWidth) x = event.clientX - 314;
-        if (y + 140 > window.innerHeight) y = event.clientY - 150;
-        this.sellerTooltipPosition = { x, y };
-        this.cdr.detectChanges();
-      });
+    const { data, error } = await this.notesService.getNotes('seller', seller.id);
+    const notes =
+      !error && data.length
+        ? data.map((note) => `• ${note.texto} — ${this.getNotaAutorNombre(note)}`).join('\n')
+        : '';
+    this.sellerTooltipContent = notes || 'Sin notas';
+    this.showSellerTooltip = true;
+    let x = event.clientX + 14;
+    let y = event.clientY + 14;
+    if (x + 300 > window.innerWidth) x = event.clientX - 314;
+    if (y + 140 > window.innerHeight) y = event.clientY - 150;
+    this.sellerTooltipPosition = { x, y };
+    this.cdr.detectChanges();
   }
 
   ocultarNotasTooltip() {
