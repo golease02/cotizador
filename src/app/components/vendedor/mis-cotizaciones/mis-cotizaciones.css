@@ -507,7 +507,19 @@
 }
 
 @media (max-width: 768px) {
+  /* El encabezado ya no se oculta: sin él la pantalla arrancaba directo con los
+     botones y se veía vacía. Se muestra compacto (sin los 152px de alto de
+     escritorio) y SIN `.header-actions`, porque esos botones ya están
+     replicados en `.mobile-materiales` y "Nueva Cotización" vive en la barra
+     inferior. Solo queda el título y el contador. */
   .dashboard-header {
+    min-height: 0;
+    align-items: stretch;
+    flex-direction: column;
+    padding: 1.25rem;
+  }
+
+  .dashboard-header .header-actions {
     display: none;
   }
 
@@ -541,24 +553,8 @@
     padding: 0 0.85rem 1.5rem;
   }
 
-  .dashboard-header {
-    min-height: 0;
-    align-items: stretch;
-    flex-direction: column;
-    padding: 1.25rem;
-  }
-
   .header-left h1 {
     font-size: 1.7rem;
-  }
-
-  .header-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .btn-primary {
-    width: 100%;
   }
 
   .detail-header {
